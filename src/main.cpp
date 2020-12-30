@@ -18,6 +18,7 @@ unsigned MigrateOP = 0;
 
 int main(int argv, char **argc){
     // argument
+	// argument1 = dataname
     if(argv != 2)
         return EXIT_FAILURE;
     
