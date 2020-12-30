@@ -9,7 +9,15 @@ struct Unit{
     }
 
     void readData(){
-
+        switch (_options.read_mode)
+        {
+        case Options::function_list::TRD_READ:
+            /* code */
+            break;
+        
+        default:
+            break;
+        }
     }
 
     void updateDate(){

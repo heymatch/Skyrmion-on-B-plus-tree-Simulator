@@ -12,6 +12,8 @@ struct Options{
     unsigned update_mode;
     unsigned insert_mode;
     unsigned delete_mode;
+    unsigned merge_split_mode;
+    unsigned balance_mode;
 
     enum function_list{
         TRD_READ,
