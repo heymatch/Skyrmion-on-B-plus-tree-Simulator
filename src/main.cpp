@@ -35,10 +35,10 @@ int main(int argv, char **argc){
         options_traditional.word_length = WORD_LENGTH;
         options_traditional.track_length = TRACK_LENGTH;
         options_traditional.unit_size = UNIT_SIZE;
-        options_traditional.read_mode = Options::function_list::TRD_READ;
-        options_traditional.update_mode = Options::function_list::TRD_UPDATE;
-        options_traditional.insert_mode = Options::function_list::TRD_INSERT;
-        options_traditional.delete_mode = Options::function_list::TRD_DELETE;
+        options_traditional.read_mode = Options::read_function::TRAD;
+        options_traditional.update_mode = Options::update_function::TRAD;
+        options_traditional.insert_mode = Options::insert_function::TRAD;
+        options_traditional.delete_mode = Options::delete_function::TRAD;
         
         try{
             Node tNode(options_traditional);

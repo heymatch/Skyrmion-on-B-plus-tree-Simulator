@@ -11,7 +11,7 @@ struct Unit{
     void readData(){
         switch (_options.read_mode)
         {
-        case Options::function_list::TRD_READ:
+        case Options::read_function::TRAD:
             /* code */
             break;
         

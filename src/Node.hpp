@@ -20,7 +20,7 @@ struct Node{
     void readData(unsigned idx){
        switch (_options.read_mode)
        {
-       case Options::function_list::TRD_READ:
+       case Options::read_function::TRAD:
            /* code */
            break;
        
@@ -33,7 +33,7 @@ struct Node{
     void updateData(unsigned data){
         switch (_options.update_mode)
         {
-        case Options::function_list::TRD_UPDATE:
+        case Options::update_function::TRAD:
             /* code */
             break;
         default:
@@ -45,7 +45,7 @@ struct Node{
     void insertData(unsigned data){
         switch (_options.insert_mode)
         {
-        case Options::function_list::TRD_INSERT:
+        case Options::insert_function::TRAD:
             for(int i = 0; i < _options.track_length; ++i){
                 if(!_used_words[i]){
                     _used_words[i] = true;
@@ -64,7 +64,7 @@ struct Node{
     void deleteData(unsigned idx){
         switch (_options.delete_mode)
         {
-        case Options::function_list::TRD_DELETE:
+        case Options::delete_function::TRAD:
             /* code */
             break;
         default:

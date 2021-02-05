@@ -4,35 +4,51 @@
 struct Options{
     unsigned word_length;
     unsigned track_length; // number of words
-    unsigned unit_size;
+    unsigned unit_size; // e.g., single track, double tracks
 
-    unsigned kp_length;
+    unsigned kp_length; // access port sharing
+
+    unsigned node_structure;
+    enum node_ordering{
+        UNSORTED,
+        SORTED
+    };
 
     unsigned read_mode;
-    unsigned update_mode;
-    unsigned insert_mode;
-    unsigned delete_mode;
-    unsigned merge_split_mode;
-    unsigned balance_mode;
+    enum read_function{
+        TRAD, 
+        RANGE_READ
+    };
 
-    enum function_list{
-        TRD_READ,
-        TRD_UPDATE,
-        TRD_INSERT,
-        TRD_DELETE,
-        TRD_SPLIT,
-        TRD_MERGE,
-        TRD_BORROW,
-        
+    unsigned search_mode;
+    enum search_function{
+        TRAD,
+        BIT_BINARY_SEARCH
+    };
+
+    unsigned update_mode;
+    enum update_function{
+        TRAD, // overwrite
         PERMUTATION_WRITE,
-        
-        RANGE_READ,
-        PERMUTE_UPDATE,
-        PERMUTE_INSERT,
-        MARK_DELETE,
-        UNIT_MERGE,
-        UNIT_SPLIT,
-        UNIT_BALANCE
+        PERMUTE
+    };
+
+    unsigned insert_mode;
+    enum insert_function{
+        TRAD, // scan insert
+        BIT_BINARY_INSERT
+    };
+
+    unsigned delete_mode;
+    enum delete_function{
+        TRAD,
+        BALANCE
+    };
+
+    unsigned split_merge_mode;
+    enum split_merge_mode{
+        TRAD,
+        UNIT
     };
 };
 
