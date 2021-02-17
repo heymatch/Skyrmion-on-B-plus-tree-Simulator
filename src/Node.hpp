@@ -14,20 +14,34 @@ struct Node{
     Node(Options options) : _options(options){
         // _data = new KeyPtrSet[_options.word_length];
         _data = new unsigned[_options.word_length]();
-        _used_words = new bool[_options.word_length]();
+        _bitmap = new bool[_options.word_length]();
     }
 
     void readData(unsigned idx){
        switch (_options.read_mode)
        {
-       case Options::read_function::TRAD:
-           /* code */
-           break;
-       
+       case Options::read_function::SEQUENTIAL:
+            break;
        default:
-           throw "undefined operation";
-           break;
+            throw "undefined operation";
+            break;
        } 
+    }
+
+    void searchData(unsigned data){
+        switch (_options.search_mode)
+        {
+        case Options::search_function::SEQUENTIAL:
+            /* code */
+            break;
+        case Options::search_function::TRAD_BINARY_SEARCH:
+            break;
+        case Options::search_function::BIT_BINARY_SEARCH:
+            break;
+        default:
+            throw "search operation fail";
+            break;
+        }
     }
 
     void updateData(unsigned data){
@@ -43,17 +57,33 @@ struct Node{
     }
 
     void insertData(unsigned data){
+        /* read node(bitmap and data) */
+        /* search insert position */
         switch (_options.insert_mode)
         {
         case Options::insert_function::TRAD:
-            for(int i = 0; i < _options.track_length; ++i){
-                if(!_used_words[i]){
-                    _used_words[i] = true;
-                    _data[i] = data;
-                    break;
+            switch (_options.node_ordering)
+            {
+            case Options::ordering::SORTED:
+
+                break;
+            case Options::ordering::UNSORTED:
+                for(int i = 0; i < _options.track_length; ++i){
+                    if(!_bitmap[i]){
+                        _bitmap[i] = true;
+                        _data[i] = data;
+                        break;
+                    }
                 }
+                throw "full";
+                break;
+            default:
+                throw "undefined operation";
+                break;
             }
-            throw "full";
+            break;
+        case Options::insert_function::BIT_BINARY_INSERT:
+            throw "Developing";
             break;
         default:
             throw "undefined operation";
@@ -75,7 +105,7 @@ struct Node{
 
     // KeyPtrSet *_data;
     unsigned *_data;
-    bool *_used_words;
+    bool *_bitmap;
     ////
     const Options _options;
 };

@@ -8,40 +8,45 @@ struct Options{
 
     unsigned kp_length; // access port sharing
 
-    unsigned node_structure;
-    enum node_ordering{
+    unsigned node_ordering;
+    enum ordering{
         UNSORTED,
         SORTED
     };
+    void checkSorted(){
+        if(node_ordering != ordering::SORTED)
+            throw "This operation needs sorted structure";
+    }
 
     unsigned read_mode;
     enum read_function{
-        TRAD, 
+        SEQUENTIAL, 
         RANGE_READ
     };
 
     unsigned search_mode;
     enum search_function{
-        TRAD,
+        SEQUENTIAL,
+        TRAD_BINARY_SEARCH,
         BIT_BINARY_SEARCH
     };
 
     unsigned update_mode;
     enum update_function{
-        TRAD, // overwrite
+        OVERWRITE,
         PERMUTATION_WRITE,
         PERMUTE
     };
 
     unsigned insert_mode;
     enum insert_function{
-        TRAD, // scan insert
+        SEQUENTIAL,
         BIT_BINARY_INSERT
     };
 
     unsigned delete_mode;
     enum delete_function{
-        TRAD,
+        RANDOM,
         BALANCE
     };
 
@@ -50,6 +55,8 @@ struct Options{
         TRAD,
         UNIT
     };
+
+    
 };
 
 
