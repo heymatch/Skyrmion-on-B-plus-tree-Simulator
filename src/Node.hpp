@@ -7,14 +7,14 @@
 #define NODE_H
 
 #include "Options.hpp"
-#include "KeyPtrSet.hpp"
 #include <ostream>
 
 struct Node{
-    Node(Options options) : _options(options){
+    Node(Options options = Options(), bool isLeaf = true) : _options(options){
         // _data = new KeyPtrSet[_options.word_length];
         _data = new unsigned[_options.word_length]();
         _bitmap = new bool[_options.word_length]();
+        _isLeaf = isLeaf;
     }
 
     void readData(unsigned idx){
@@ -72,7 +72,7 @@ struct Node{
     }
 
     void insertData(unsigned data){
-        /* read node(bitmap and data) */
+        /* read node(metadata, bitmap and data) */
         /* search insert position */
         switch (_options.insert_mode)
         {
@@ -80,7 +80,7 @@ struct Node{
             switch (_options.node_ordering)
             {
             case Options::ordering::SORTED:
-                /* code */
+                throw "Developing";
                 break;
             case Options::ordering::UNSORTED:
             {
@@ -95,7 +95,7 @@ struct Node{
                 break;
             }
             default:
-                throw "undefined operation";
+                throw "undefined ordering";
                 break;
             }
             break;
@@ -104,7 +104,7 @@ struct Node{
             throw "Developing";
             break;
         default:
-            throw "undefined operation";
+            throw "undefined insert operation";
             break;
         }
     }
@@ -127,19 +127,21 @@ struct Node{
     // KeyPtrSet *_data;
     unsigned *_data;
     bool *_bitmap;
+    bool _isLeaf;
+    //bool _isValid;
     ////
-    const Options _options;
+    Options _options;
 };
 
 std::ostream &operator<<(std::ostream &out, const Node &right){
-    out << "[";
+    out << "(";
     bool first = true;
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
         else out << ", ";
         out << right._data[i];
     }
-    out << "]";
+    out << ")";
     return out;
 }
 

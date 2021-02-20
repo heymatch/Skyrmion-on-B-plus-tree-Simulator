@@ -5,7 +5,7 @@
 using namespace std;
 
 #include "Options.hpp"
-#include "Node.hpp"
+#include "BPTree.hpp"
 
 unsigned UnitId = 0;
 unsigned LeafNodeId = 0;
@@ -29,28 +29,29 @@ int main(int argv, char **argc){
     {
         const unsigned WORD_LENGTH = 32;
         const unsigned TRACK_LENGTH = 8;
-        const unsigned UNIT_SIZE = 1; 
+        const unsigned UNIT_SIZE = 2; 
 
-        Options options_traditional;
-        options_traditional.word_length = WORD_LENGTH;
-        options_traditional.track_length = TRACK_LENGTH;
-        options_traditional.unit_size = UNIT_SIZE;
-        options_traditional.kp_length = 1;
-        options_traditional.node_ordering = Options::ordering::UNSORTED;
-        options_traditional.read_mode = Options::read_function::SEQUENTIAL;
-        options_traditional.search_mode = Options::search_function::SEQUENTIAL;
-        options_traditional.update_mode = Options::update_function::OVERWRITE;
-        options_traditional.insert_mode = Options::insert_function::SEQUENTIAL;
-        options_traditional.delete_mode = Options::delete_function::SEQUENTIAL;
-        options_traditional.split_merge_mode = Options::split_merge_function::TRAD;
+        Options options_traditional(
+            WORD_LENGTH,
+            TRACK_LENGTH,
+            UNIT_SIZE,
+            1,
+            Options::ordering::UNSORTED,
+            Options::read_function::SEQUENTIAL,
+            Options::search_function::SEQUENTIAL,
+            Options::update_function::OVERWRITE,
+            Options::insert_function::SEQUENTIAL,
+            Options::delete_function::SEQUENTIAL,
+            Options::split_merge_function::TRAD
+        );
         
         try{
-            Node tNode(options_traditional);
+            BPTree tree(options_traditional);
             unsigned data;
             while(fin >> data){
-                tNode.insertData(data);
+                tree.insertData(data);
             }
-            cout << tNode << endl;
+            cout << tree << endl;
         }
         catch(const char *e){
             cout << e << endl;

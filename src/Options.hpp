@@ -77,7 +77,18 @@ struct Options{
             insert_function insert_mode = insert_function::None,
             delete_function delete_mode = delete_function::None,
             split_merge_function split_merge_mode = split_merge_function::None
-        )
+        ) :
+        word_length(word_length),
+        track_length(track_length),
+        unit_size(unit_size),
+        kp_length(kp_length),
+        node_ordering(node_ordering),
+        read_mode(read_mode),
+        search_mode(search_mode),
+        update_mode(update_mode),
+        insert_mode(insert_mode),
+        delete_mode(delete_mode),
+        split_merge_mode(split_merge_mode)
     {
         
     }
