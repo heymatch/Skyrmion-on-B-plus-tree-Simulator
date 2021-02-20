@@ -1,3 +1,4 @@
-mkdir obj
+@ECHO OFF
+MKDIR obj
 make
-Skyrmion testcase.txt
+autotest test

@@ -7,14 +7,14 @@ IF "%1" == "ans" ( GOTO ANS ) ELSE ( GOTO DONE )
 
 :TEST
 FOR /l %%a IN (1 1 1) DO (
-    Skyrmion.exe test/testcase%%a.txt > test\output%%a.txt 
-    FC test\answer%%a.txt test\output%%a.txt
+    Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
+    FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
 FOR /l %%a IN (1 1 1) DO (
-    @Skyrmion.exe test/testcase%%a.txt > test\answer%%a.txt 
+    @Skyrmion.exe test\testcase%%a.txt > test\answer%%a.ans 
 )
 GOTO DONE
 
