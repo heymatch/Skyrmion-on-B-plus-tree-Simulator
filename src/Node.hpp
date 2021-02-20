@@ -20,11 +20,13 @@ struct Node{
     void readData(unsigned idx){
        switch (_options.read_mode)
        {
-       case Options::read_function::SEQUENTIAL:
+        case Options::read_function::SEQUENTIAL:
+            /* code */
             break;
         case Options::read_function::RANGE_READ:
+            /* code */
             break;
-       default:
+        default:
             throw "undefined read operation";
             break;
        } 
@@ -37,8 +39,10 @@ struct Node{
             /* code */
             break;
         case Options::search_function::TRAD_BINARY_SEARCH:
+            /* code */
             break;
         case Options::search_function::BIT_BINARY_SEARCH:
+            /* code */
             break;
         default:
             throw "undefined search operation";
@@ -53,10 +57,13 @@ struct Node{
             /* code */
             break;
         case Options::update_function::PERMUTATION_WRITE:
+            /* code */
             break;
         case Options::update_function::PERMUTE_WORD_COUNTER:
+            /* code */
             break;
         case Options::update_function::PERMUTE_FEW_COUNTER:
+            /* code */
             break;
         default:
             throw "undefined update operation";
@@ -73,24 +80,27 @@ struct Node{
             switch (_options.node_ordering)
             {
             case Options::ordering::SORTED:
-
+                /* code */
                 break;
             case Options::ordering::UNSORTED:
+            {
                 for(int i = 0; i < _options.track_length; ++i){
                     if(!_bitmap[i]){
                         _bitmap[i] = true;
                         _data[i] = data;
-                        break;
+                        return;
                     }
                 }
                 throw "full";
                 break;
+            }
             default:
                 throw "undefined operation";
                 break;
             }
             break;
         case Options::insert_function::BIT_BINARY_INSERT:
+            /* code */
             throw "Developing";
             break;
         default:

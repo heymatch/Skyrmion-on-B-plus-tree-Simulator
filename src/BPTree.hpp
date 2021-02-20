@@ -10,7 +10,7 @@ public:
     }
     
 private:
-    Unit _root;
+    Unit *_root;
 };
 
 #endif

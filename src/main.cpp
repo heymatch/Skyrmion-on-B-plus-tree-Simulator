@@ -35,10 +35,14 @@ int main(int argv, char **argc){
         options_traditional.word_length = WORD_LENGTH;
         options_traditional.track_length = TRACK_LENGTH;
         options_traditional.unit_size = UNIT_SIZE;
-        options_traditional.read_mode = Options::read_function::TRAD;
-        options_traditional.update_mode = Options::update_function::TRAD;
-        options_traditional.insert_mode = Options::insert_function::TRAD;
-        options_traditional.delete_mode = Options::delete_function::TRAD;
+        options_traditional.kp_length = 1;
+        options_traditional.node_ordering = Options::ordering::UNSORTED;
+        options_traditional.read_mode = Options::read_function::SEQUENTIAL;
+        options_traditional.search_mode = Options::search_function::SEQUENTIAL;
+        options_traditional.update_mode = Options::update_function::OVERWRITE;
+        options_traditional.insert_mode = Options::insert_function::SEQUENTIAL;
+        options_traditional.delete_mode = Options::delete_function::SEQUENTIAL;
+        options_traditional.split_merge_mode = Options::split_merge_function::TRAD;
         
         try{
             Node tNode(options_traditional);
