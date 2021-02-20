@@ -17,9 +17,9 @@ SRC := $(SRC_LIST)
 # object
 OBJ_PATH := ./obj/
 ifeq ($(OS), Windows_NT)
-OBJ := $(patsubst %.hpp, $(OBJ_PATH)%.o, $(SRC_LIST)) ./obj/main.o
+OBJ := $(patsubst %.hpp, $(OBJ_PATH)%.o, $(SRC_LIST))
 else
-OBJ := $(patsubst $(SRC_PATH)%.hpp, $(OBJ_PATH)%.o, $(SRC_LIST)) ./obj/main.o
+OBJ := $(patsubst $(SRC_PATH)%.hpp, $(OBJ_PATH)%.o, $(SRC_LIST))
 endif
 
 # part compile
@@ -31,14 +31,11 @@ all: clear compile
 # compile only
 compile: $(OBJ)
 ifeq ($(OS), Windows_NT)
-	$(CC) $(CFLAGS) -o Skyrmion.exe $(OBJ)
+	$(CC) $(CFLAGS) -o $(OBJ_PATH)main.o -c $(SRC_PATH)main.cpp
+	$(CC) $(CFLAGS) -o Skyrmion.exe $(OBJ) $(OBJ_PATH)main.o
 else
 	$(CC) $(CFLAGS) -o Skyrmion $(OBJ)
 endif
-
-# compile main
-$(OBJ_PATH)main.o: $(SRC_PATH)main.cpp
-	$(CC) $(CFLAGS) -o $@ -c $<
 
 # compile pair of .cpp and .hpp 	
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(SRC_PATH)%.hpp
