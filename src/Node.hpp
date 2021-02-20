@@ -22,8 +22,10 @@ struct Node{
        {
        case Options::read_function::SEQUENTIAL:
             break;
+        case Options::read_function::RANGE_READ:
+            break;
        default:
-            throw "undefined operation";
+            throw "undefined read operation";
             break;
        } 
     }
@@ -39,7 +41,7 @@ struct Node{
         case Options::search_function::BIT_BINARY_SEARCH:
             break;
         default:
-            throw "search operation fail";
+            throw "undefined search operation";
             break;
         }
     }
@@ -47,11 +49,17 @@ struct Node{
     void updateData(unsigned data){
         switch (_options.update_mode)
         {
-        case Options::update_function::TRAD:
+        case Options::update_function::OVERWRITE:
             /* code */
             break;
+        case Options::update_function::PERMUTATION_WRITE:
+            break;
+        case Options::update_function::PERMUTE_WORD_COUNTER:
+            break;
+        case Options::update_function::PERMUTE_FEW_COUNTER:
+            break;
         default:
-            throw "undefined operation";
+            throw "undefined update operation";
             break;
         }
     }
@@ -61,7 +69,7 @@ struct Node{
         /* search insert position */
         switch (_options.insert_mode)
         {
-        case Options::insert_function::TRAD:
+        case Options::insert_function::SEQUENTIAL:
             switch (_options.node_ordering)
             {
             case Options::ordering::SORTED:
@@ -94,7 +102,10 @@ struct Node{
     void deleteData(unsigned idx){
         switch (_options.delete_mode)
         {
-        case Options::delete_function::TRAD:
+        case Options::delete_function::SEQUENTIAL:
+            /* code */
+            break;
+        case Options::delete_function::BALANCE:
             /* code */
             break;
         default:

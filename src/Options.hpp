@@ -35,7 +35,8 @@ struct Options{
     enum update_function{
         OVERWRITE,
         PERMUTATION_WRITE,
-        PERMUTE
+        PERMUTE_WORD_COUNTER,
+        PERMUTE_FEW_COUNTER
     };
 
     unsigned insert_mode;
@@ -46,7 +47,7 @@ struct Options{
 
     unsigned delete_mode;
     enum delete_function{
-        RANDOM,
+        SEQUENTIAL,
         BALANCE
     };
 
