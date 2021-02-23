@@ -10,7 +10,7 @@ public:
         _root = nullptr;
     }
 
-    void searchDate(){
+    void searchData(unsigned idx){
 
     }
 
@@ -18,14 +18,25 @@ public:
 
     }
 
-    void insertData(unsigned data){
+    void insertData(unsigned idx, unsigned data){
         if(_root == nullptr){
             _root = new Unit(_options);
         }
-        _root->insertData(data, 0);
+        if(_root->isFull(0)){
+            splitNode();
+        }
+        _root->insertData(idx, data, 0);
     }
 
-    void deleteDate(){
+    void deleteData(){
+
+    }
+
+    void splitNode(){
+
+    }
+
+    void mergeNode(){
 
     }
     

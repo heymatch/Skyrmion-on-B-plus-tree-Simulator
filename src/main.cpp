@@ -47,9 +47,9 @@ int main(int argv, char **argc){
         
         try{
             BPTree tree(options_traditional);
-            unsigned data;
-            while(fin >> data){
-                tree.insertData(data);
+            unsigned idx;
+            while(fin >> idx){
+                tree.insertData(idx, 0);
             }
             cout << tree << endl;
         }

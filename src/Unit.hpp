@@ -70,11 +70,12 @@ struct Unit{
         }
     }
 
-    void insertData(unsigned data, unsigned offset){
+    void insertData(unsigned idx, unsigned data, unsigned offset){
+        /* check full */
         switch (_options.insert_mode)
         {
         case Options::insert_function::SEQUENTIAL:
-            _tracks[offset].insertData(data);
+            _tracks[offset].insertData(idx, data);
             break;
         case Options::insert_function::BIT_BINARY_INSERT:
             /* code */
@@ -102,6 +103,7 @@ struct Unit{
     }
 
     void splitNode(){
+        /* Read data half of a node */
         switch (_options.split_merge_mode)
         {
         case Options::split_merge_function::TRAD:
@@ -129,6 +131,14 @@ struct Unit{
             throw "undefined operation";
             break;
         }
+    }
+
+    bool isFull(unsigned offset){
+        for(int i = 0; i < _options.track_length; ++i){
+            if(!_tracks[offset]._bitmap[i])
+                return false;
+        }
+        return true;
     }
 
     Node *_tracks;

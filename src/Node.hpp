@@ -12,7 +12,7 @@
 struct Node{
     Node(Options options = Options(), bool isLeaf = true) : _options(options){
         // _data = new KeyPtrSet[_options.word_length];
-        _data = new unsigned[_options.word_length]();
+        _index = new unsigned[_options.word_length]();
         _bitmap = new bool[_options.word_length]();
         _isLeaf = isLeaf;
     }
@@ -50,7 +50,7 @@ struct Node{
         }
     }
 
-    void updateData(unsigned data){
+    void updateData(unsigned index, unsigned data){
         switch (_options.update_mode)
         {
         case Options::update_function::OVERWRITE:
@@ -71,7 +71,7 @@ struct Node{
         }
     }
 
-    void insertData(unsigned data){
+    void insertData(unsigned idx, unsigned data){
         /* read node(metadata, bitmap and data) */
         /* search insert position */
         switch (_options.insert_mode)
@@ -87,7 +87,7 @@ struct Node{
                 for(int i = 0; i < _options.track_length; ++i){
                     if(!_bitmap[i]){
                         _bitmap[i] = true;
-                        _data[i] = data;
+                        _index[i] = idx;
                         return;
                     }
                 }
@@ -109,7 +109,7 @@ struct Node{
         }
     }
 
-    void deleteData(unsigned idx){
+    void deleteData(unsigned data){
         switch (_options.delete_mode)
         {
         case Options::delete_function::SEQUENTIAL:
@@ -125,7 +125,8 @@ struct Node{
     }
 
     // KeyPtrSet *_data;
-    unsigned *_data;
+    unsigned *_index;
+    void **_data;
     bool *_bitmap;
     bool _isLeaf;
     //bool _isValid;
@@ -139,7 +140,7 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
         else out << ", ";
-        out << right._data[i];
+        out << right._index[i];
     }
     out << ")";
     return out;
