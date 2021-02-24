@@ -11,15 +11,22 @@
 
 struct Node{
     Node(Options options = Options(), bool isLeaf = true) : _options(options){
-        // _data = new KeyPtrSet[_options.word_length];
+        //_data = new KeyPtrSet[_options.word_length];
         _index = new unsigned[_options.word_length]();
         _bitmap = new bool[_options.word_length]();
+        _ptr = new void*[_options.word_length]();
         _isLeaf = isLeaf;
     }
 
-    void readData(unsigned idx){
-       switch (_options.read_mode)
-       {
+    // Return array of indexes
+    // 0 index
+    unsigned *readData(unsigned lower, unsigned upper){
+        if(upper < lower)
+            throw "invalid read bound";
+         
+        // calculate performance
+        switch (_options.read_mode)
+        {
         case Options::read_function::SEQUENTIAL:
             /* code */
             break;
@@ -29,15 +36,26 @@ struct Node{
         default:
             throw "undefined read operation";
             break;
-       } 
+        }
+
+        unsigned *arr = new unsigned[upper - lower + 1];
+        for(int i = lower; i < upper; ++i){
+            arr[i] = _index[i];
+        }
+        return arr; 
     }
 
-    void searchData(unsigned data){
+    // Return data pointer.
+    unsigned *searchData(unsigned idx){
         switch (_options.search_mode)
         {
         case Options::search_function::SEQUENTIAL:
-            /* code */
-            break;
+            for(int i = 0; i < _options.track_length; ++i){
+                if(_bitmap[i] && _index[i] == idx){
+                    return (unsigned *)_ptr[i];
+                }
+            }
+            throw "search not found";
         case Options::search_function::TRAD_BINARY_SEARCH:
             /* code */
             break;
@@ -71,42 +89,26 @@ struct Node{
         }
     }
 
+    // insertDate() and connectNode() can be merge to one function after KeyPtrSet Complete
+
+    // For leaf node, ptr points to data
     void insertData(unsigned idx, unsigned data){
         /* read node(metadata, bitmap and data) */
-        /* search insert position */
-        switch (_options.insert_mode)
-        {
-        case Options::insert_function::SEQUENTIAL:
-            switch (_options.node_ordering)
-            {
-            case Options::ordering::SORTED:
-                throw "Developing";
-                break;
-            case Options::ordering::UNSORTED:
-            {
-                for(int i = 0; i < _options.track_length; ++i){
-                    if(!_bitmap[i]){
-                        _bitmap[i] = true;
-                        _index[i] = idx;
-                        return;
-                    }
-                }
-                throw "full";
-                break;
-            }
-            default:
-                throw "undefined ordering";
-                break;
-            }
-            break;
-        case Options::insert_function::BIT_BINARY_INSERT:
-            /* code */
-            throw "Developing";
-            break;
-        default:
-            throw "undefined insert operation";
-            break;
-        }
+        unsigned insertPos = getInsertPosition(); /* EVALUATE SEARCH */
+        _bitmap[insertPos] = true;
+        _index[insertPos] = idx;
+        /* EVALUATE INSERTION */
+        _ptr[insertPos] = new unsigned(data);
+    }
+
+    // For internal node, ptr points to next node
+    void connectNode(unsigned idx, Unit *unit){
+        /* read node(metadata, bitmap and data) */
+        unsigned insertPos = getInsertPosition(); /* EVALUATE SEARCH */
+        _bitmap[insertPos] = true;
+        _index[insertPos] = idx;
+        /* EVALUATE INSERTION */
+        _ptr[insertPos] = unit;
     }
 
     void deleteData(unsigned data){
@@ -124,9 +126,36 @@ struct Node{
         }
     }
 
+    unsigned getInsertPosition(){
+        switch (_options.insert_mode)
+        {
+        case Options::insert_function::SEQUENTIAL:
+            switch (_options.node_ordering)
+            {
+            case Options::ordering::SORTED:
+                throw "Developing";
+            case Options::ordering::UNSORTED:
+                for(int i = 0; i < _options.track_length; ++i){
+                    if(!_bitmap[i]){
+                        return i;
+                    }
+                }
+                throw "full";
+            default:
+                throw "undefined ordering";
+            }
+            break;
+        case Options::insert_function::BIT_BINARY_INSERT:
+            /* code */
+            throw "Developing";
+        default:
+            throw "undefined insert operation";
+        }
+    }
+
     // KeyPtrSet *_data;
     unsigned *_index;
-    void **_data;
+    void **_ptr;
     bool *_bitmap;
     bool _isLeaf;
     //bool _isValid;

@@ -1,6 +1,7 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
+#include "System.hpp"
 #include "Unit.hpp"
 
 class BPTree{
@@ -22,9 +23,6 @@ public:
         if(_root == nullptr){
             _root = new Unit(_options);
         }
-        if(_root->isFull(0)){
-            splitNode();
-        }
         _root->insertData(idx, data, 0);
     }
 
@@ -32,12 +30,27 @@ public:
 
     }
 
-    void splitNode(){
+    void splitNode(unsigned wait_insert_idx){
+        /*
+        */
 
+        
+        
+
+        if(_root->isLeaf()){
+
+        }
+        else{
+
+        }
     }
 
     void mergeNode(){
 
+    }
+
+    Node *findParent(Unit *child){
+        
     }
     
 private:

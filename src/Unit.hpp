@@ -3,6 +3,7 @@
 
 #include "Options.hpp"
 #include "Node.hpp"
+//#include "KeyPtrSet.hpp"
 #include <ostream>
 
 struct Unit{
@@ -11,24 +12,15 @@ struct Unit{
         for(int i = 0; i < _options.track_length; ++i){
             _tracks[i] = Node(_options);
         }
+        _isRoot = true;
     }
 
     ~Unit(){
         delete[] _tracks;
     }
 
-    void readData(){
-        switch (_options.read_mode)
-        {
-        case Options::read_function::SEQUENTIAL:
-            /* code */
-            break;
-        case Options::read_function::RANGE_READ:
-            /* code */
-            break;
-        default:
-            break;
-        }
+    unsigned *readData(unsigned offset){
+        return _tracks[offset].readData(0, _options.track_length);
     }
 
     void searchData(){
@@ -71,20 +63,31 @@ struct Unit{
     }
 
     void insertData(unsigned idx, unsigned data, unsigned offset){
-        /* check full */
-        switch (_options.insert_mode)
-        {
-        case Options::insert_function::SEQUENTIAL:
-            _tracks[offset].insertData(idx, data);
-            break;
-        case Options::insert_function::BIT_BINARY_INSERT:
-            /* code */
-            throw "Developing";
-            break;
-        default:
-            throw "undefined insert operation";
-            break;
+        if(isLeaf()){
+            switch (_options.insert_mode)
+            {
+            case Options::insert_function::SEQUENTIAL:
+                insertCurrent(idx, data, offset);
+                break;
+            case Options::insert_function::BIT_BINARY_INSERT:
+                /* code */
+                throw "Developing";
+                break;
+            default:
+                throw "undefined insert operation";
+            }
         }
+        else{
+            throw "Developing";
+        }
+    }
+
+    void insertCurrent(unsigned idx, unsigned data, unsigned offset){
+        if(isFull(offset)){
+            splitNode(idx);
+
+        }
+        _tracks[offset].insertData(idx, data);
     }
 
     void deleteData(){
@@ -102,13 +105,36 @@ struct Unit{
         }
     }
 
-    void splitNode(){
-        /* Read data half of a node */
+    // Return KeyPtrSet
+    unsigned splitNode(unsigned wait_insert_idx){
+        
         switch (_options.split_merge_mode)
         {
         case Options::split_merge_function::TRAD:
-            /* code */
-            break;
+            {
+                unsigned readSize = _options.track_length;
+                unsigned *read = readData(0);
+                unsigned insertSize = 1;
+                unsigned *insert = new unsigned[insertSize];
+                insert[0] = wait_insert_idx;
+                
+                unsigned *sorted = makeSortedArray(read, readSize, insert, insertSize);
+                switch(_options.node_ordering){
+                    case Options::ordering::SORTED:
+                        throw "Developing";
+                    case Options::ordering::UNSORTED:
+                    {
+                        Unit *newUnit = new Unit(_options);
+                        for(int i = (readSize + insertSize) / 2; i < (readSize + insertSize); ++i){
+                            newUnit->insertCurrent(sorted[i], 0);
+                        }
+                    }
+                        break;
+                    default:
+                        throw "undefined split operation";
+                }
+                break;
+            }
         case Options::split_merge_function::UNIT:
             /* code */
             break;
@@ -141,8 +167,19 @@ struct Unit{
         return true;
     }
 
+    bool isLeaf(){
+        return _tracks[0]._isLeaf;
+    }
+
+    void deLeaf(){
+        for(int i = 0; i < _options.unit_size; ++i){
+            _tracks[i]._isLeaf = false;
+        }
+    }
+
     Node *_tracks;
     ////
+    bool _isRoot;
     Options _options;
 };
 
