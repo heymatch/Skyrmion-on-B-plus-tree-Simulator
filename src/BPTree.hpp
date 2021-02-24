@@ -23,7 +23,7 @@ public:
         if(_root == nullptr){
             _root = new Unit(_options);
         }
-        _root->insertData(idx, data, 0);
+        _root = _root->insertData(idx, data, 0);
     }
 
     void deleteData(){

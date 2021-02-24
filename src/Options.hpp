@@ -6,7 +6,8 @@ struct Options{
     unsigned track_length; // number of words
     unsigned unit_size; // e.g., single track, double tracks
 
-    unsigned kp_length; // access port sharing
+    unsigned kp_length; // key pointer length
+    unsigned ap_sharing; // access port sharing
 
     enum struct ordering : unsigned{
         None,

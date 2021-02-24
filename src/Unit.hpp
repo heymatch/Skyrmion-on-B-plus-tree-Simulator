@@ -1,9 +1,10 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include "System.hpp"
 #include "Options.hpp"
 #include "Node.hpp"
-//#include "KeyPtrSet.hpp"
+#include "KeyPtrSet.hpp"
 #include <ostream>
 
 struct Unit{
@@ -62,13 +63,12 @@ struct Unit{
         }
     }
 
-    void insertData(unsigned idx, unsigned data, unsigned offset){
+    Unit *insertData(unsigned idx, unsigned data, unsigned offset){
         if(isLeaf()){
             switch (_options.insert_mode)
             {
             case Options::insert_function::SEQUENTIAL:
-                insertCurrent(idx, data, offset);
-                break;
+                return insertCurrentData(idx, data, offset);
             case Options::insert_function::BIT_BINARY_INSERT:
                 /* code */
                 throw "Developing";
@@ -80,14 +80,36 @@ struct Unit{
         else{
             throw "Developing";
         }
+
+        return this;
     }
 
-    void insertCurrent(unsigned idx, unsigned data, unsigned offset){
+    Unit *insertCurrentData(unsigned idx, unsigned data, unsigned offset){
+        if(isFull(offset)){
+            KeyPtrSet promote = splitNode(idx);
+            if(_isRoot){
+                deRoot();
+                Unit *newRoot = new Unit(_options);
+                newRoot->deLeaf();
+                newRoot->insertCurrentPointer(*promote.key, this, 0);
+                newRoot->_tracks[0].connectSideUnit((Unit *)promote.ptr);
+                return newRoot;
+            }
+        }
+
+        _tracks[offset].insertData(idx, data);
+
+        return this;
+    }
+
+    Unit *insertCurrentPointer(unsigned idx, Unit *unit, unsigned offset){
         if(isFull(offset)){
             splitNode(idx);
-
         }
-        _tracks[offset].insertData(idx, data);
+
+        _tracks[offset].connectUnit(idx, unit);
+
+        return this;
     }
 
     void deleteData(){
@@ -106,33 +128,44 @@ struct Unit{
     }
 
     // Return KeyPtrSet
-    unsigned splitNode(unsigned wait_insert_idx){
-        
+    KeyPtrSet splitNode(unsigned wait_insert_idx){
+        KeyPtrSet promote(_options);
+
         switch (_options.split_merge_mode)
         {
         case Options::split_merge_function::TRAD:
             {
+                Unit *newUnit = new Unit(_options);
+                newUnit->deRoot();
+
                 unsigned readSize = _options.track_length;
-                unsigned *read = readData(0);
+                unsigned *read = readData(0); // offset
                 unsigned insertSize = 1;
                 unsigned *insert = new unsigned[insertSize];
                 insert[0] = wait_insert_idx;
                 
-                unsigned *sorted = makeSortedArray(read, readSize, insert, insertSize);
+                unsigned *sorted = System::makeSortedArray(read, readSize, insert, insertSize);
+                unsigned *deleteIndexes = System::makeSplitDeleteIndexesArray(read, readSize, sorted[(readSize + insertSize) / 2]);
+
                 switch(_options.node_ordering){
                     case Options::ordering::SORTED:
                         throw "Developing";
                     case Options::ordering::UNSORTED:
                     {
-                        Unit *newUnit = new Unit(_options);
                         for(int i = (readSize + insertSize) / 2; i < (readSize + insertSize); ++i){
-                            newUnit->insertCurrent(sorted[i], 0);
+                            newUnit->insertCurrentData(sorted[i], 0, 0);
                         }
+                        _tracks[0].deleteMark(deleteIndexes, readSize / 2); // offset
                     }
                         break;
                     default:
                         throw "undefined split operation";
                 }
+
+                promote.setPtr(newUnit);
+                promote.addKey(sorted[(readSize + insertSize) / 2]);
+
+                /* delete allocation memory */
                 break;
             }
         case Options::split_merge_function::UNIT:
@@ -140,8 +173,9 @@ struct Unit{
             break;
         default:
             throw "undefined operation";
-            break;
         }
+
+        return promote;
     }
 
     void mergeNode(){
@@ -167,7 +201,7 @@ struct Unit{
         return true;
     }
 
-    bool isLeaf(){
+    bool isLeaf() const{
         return _tracks[0]._isLeaf;
     }
 
@@ -179,12 +213,24 @@ struct Unit{
 
     Node *_tracks;
     ////
+
+    void deRoot(){
+        _isRoot = false;
+    }
+
     bool _isRoot;
     Options _options;
 };
 
 std::ostream &operator<<(std::ostream &out, const Unit &right){
-    out << "\t[\n";
+    out << "\t[\t";
+    if(right.isLeaf()){
+        out << "Leaf Unit";
+    }
+    else{
+        out << "Internal Unit";
+    }
+    out << ":\n";
     bool first = true;
     for(int i = 0; i < right._options.unit_size; ++i){
         if(first)first = false;
@@ -192,6 +238,18 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
         out << "\t\t" << right._tracks[i];
     }
     out << "\n\t]\n";
+    if(!right.isLeaf()){
+        for(int i = 0; i < right._options.unit_size; ++i){
+            for(int j = 0; j < right._options.track_length; ++j){
+                if(right._tracks[i]._ptr[j] != nullptr){
+                    out << *(Unit *)right._tracks[i]._ptr[j];
+                }
+            }
+            if(right._tracks[i]._side != nullptr){
+                out << *(Unit *)right._tracks[0]._side;
+            }
+        }
+    }
     return out;
 }
 

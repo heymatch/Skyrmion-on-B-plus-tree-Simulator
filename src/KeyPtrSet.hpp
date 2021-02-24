@@ -1,31 +1,44 @@
 #ifndef KEYPTRSET_H
 #define KEYPTRSET_H
 
-#include "Unit.hpp"
+#include "Options.hpp"
+#include <ostream>
 
 struct KeyPtrSet{
-    KeyPtrSet(unsigned capacity = 0) : _capacity(capacity){
+    KeyPtrSet(Options options) : _options(options){
+        ptr = new void *;
+        key = new unsigned[_options.kp_length - 1];
+
         _size = 0;
-        key = new unsigned(0);
-        ptr = (void **)(new Unit*[_capacity]);
+    }
+
+    void setPtr(void *addr){
+        ptr = addr;
+    }
+
+    void addKey(unsigned val){
+        if(_size == _options.kp_length - 1)
+            throw "KeyPtrSet overflow";
+        key[_size++] = val;
     }
 
     unsigned *key;
-    void **ptr;
+    void *ptr;
     ////
-    const unsigned _capacity;
     unsigned _size;
+    Options _options;
 };
 
 std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
     out << "(";
-    out << right.key << ", ";
+    out << right.ptr << ", ";
     bool first = true;
-    for(int i = 0; right._capacity; ++i){
+    for(int i = 0; i < right._options.kp_length - 1; ++i){
         if(first)first = false;
         else out << ", ";
-        out << right.ptr[i] << ", ";
+        out << right.key[i];
     }
+    out << ")";
     return out;
 }
 

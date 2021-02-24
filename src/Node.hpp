@@ -7,7 +7,10 @@
 #define NODE_H
 
 #include "Options.hpp"
+#include "Unit.hpp"
 #include <ostream>
+
+struct Unit;
 
 struct Node{
     Node(Options options = Options(), bool isLeaf = true) : _options(options){
@@ -16,6 +19,7 @@ struct Node{
         _bitmap = new bool[_options.word_length]();
         _ptr = new void*[_options.word_length]();
         _isLeaf = isLeaf;
+        _side = nullptr;
     }
 
     // Return array of indexes
@@ -89,7 +93,7 @@ struct Node{
         }
     }
 
-    // insertDate() and connectNode() can be merge to one function after KeyPtrSet Complete
+    // insertDate() and connectUnit() can be merge to one function after KeyPtrSet Complete
 
     // For leaf node, ptr points to data
     void insertData(unsigned idx, unsigned data){
@@ -101,14 +105,18 @@ struct Node{
         _ptr[insertPos] = new unsigned(data);
     }
 
-    // For internal node, ptr points to next node
-    void connectNode(unsigned idx, Unit *unit){
+    // For internal node, ptr points to next unit
+    void connectUnit(unsigned idx, Unit *unit){
         /* read node(metadata, bitmap and data) */
         unsigned insertPos = getInsertPosition(); /* EVALUATE SEARCH */
         _bitmap[insertPos] = true;
         _index[insertPos] = idx;
         /* EVALUATE INSERTION */
         _ptr[insertPos] = unit;
+    }
+
+    void connectSideUnit(Unit *unit){
+        _side = unit;
     }
 
     void deleteData(unsigned data){
@@ -123,6 +131,12 @@ struct Node{
         default:
             throw "undefined operation";
             break;
+        }
+    }
+
+    void deleteMark(unsigned *arr, unsigned arrSize){
+        for(int i = 0; i < arrSize; ++i){
+            _bitmap[arr[i]] = false;
         }
     }
 
@@ -158,6 +172,7 @@ struct Node{
     void **_ptr;
     bool *_bitmap;
     bool _isLeaf;
+    Unit *_side;
     //bool _isValid;
     ////
     Options _options;
@@ -170,6 +185,7 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
         if(first)first = false;
         else out << ", ";
         out << right._index[i];
+        if(!right._bitmap[i]) out << "*";
     }
     out << ")";
     return out;

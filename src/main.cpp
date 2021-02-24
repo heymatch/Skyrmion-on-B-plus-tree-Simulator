@@ -29,13 +29,14 @@ int main(int argv, char **argc){
     {
         const unsigned WORD_LENGTH = 32;
         const unsigned TRACK_LENGTH = 8;
-        const unsigned UNIT_SIZE = 2; 
+        const unsigned UNIT_SIZE = 2;
+        const unsigned KP_LENGTH = 2;
 
         Options options_traditional(
             WORD_LENGTH,
             TRACK_LENGTH,
             UNIT_SIZE,
-            1,
+            KP_LENGTH,
             Options::ordering::UNSORTED,
             Options::read_function::SEQUENTIAL,
             Options::search_function::SEQUENTIAL,
