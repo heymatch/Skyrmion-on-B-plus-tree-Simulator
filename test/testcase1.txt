@@ -1,1 +1,9 @@
-5 4 2 11 1 100 200 7 9
+insert 51
+insert 41
+insert 31
+insert 71
+insert 61
+insert 111
+insert 123
+#insert 245
+#insert 313
