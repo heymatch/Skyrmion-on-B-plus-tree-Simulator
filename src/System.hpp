@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <ostream>
 
 namespace System{
     unsigned binary_search(){
@@ -31,16 +32,21 @@ namespace System{
         return arr;
     }
 
-    unsigned *makeSplitDeleteIndexesArray(unsigned *a, unsigned a_len, unsigned mid){
+    unsigned *makeSplitDeleteIndexesArray(unsigned &out_len, unsigned *a, unsigned a_len, unsigned mid){
         unsigned *arr = new unsigned[a_len / 2];
         int it = 0;
 
         for(int i = 0; i < a_len; ++i){
+            
             if(a[i] >= mid){
                 arr[it++] = i;
+                //std::clog << arr[it-1] << " ";
             }
+            
         }
+        //std::clog << std::endl;
 
+        out_len = it;
         return arr;
     }
 }

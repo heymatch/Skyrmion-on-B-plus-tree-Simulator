@@ -2,19 +2,46 @@
 #include <fstream>
 #include <cstdlib>
 #include <algorithm>
+#include <sstream>
 using namespace std;
 
 #include "Options.hpp"
 #include "BPTree.hpp"
 
-unsigned UnitId = 0;
-unsigned LeafNodeId = 0;
-unsigned InternalNodeId = 0;
+enum Operation{
+    SEARCH,
+    INSERT,
+    DELETE,
+    UPDATE,
+    SKIP
+};
 
-unsigned ShiftOP = 0;
-unsigned InjectOP = 0;
-unsigned DetectOP = 0;
-unsigned MigrateOP = 0;
+unsigned parser(string str, unsigned &idx, unsigned &data){
+    stringstream ss(str);
+    string op;
+    ss >> op >> idx >> data;
+    for(char &it: op){
+        it = tolower(it);
+    }
+    if(op == "search"){
+        return Operation::SEARCH;
+    }
+    else if(op == "insert"){
+        return Operation::INSERT;
+    }
+    else if(op == "delete"){
+        return Operation::DELETE;
+    }
+    else if(op == "update"){
+        return Operation::UPDATE;
+    }
+    else if(op == ""){
+        return Operation::SKIP;
+    }
+    else if(op[0] == '#'){
+        return Operation::SKIP;
+    }
+}
 
 int main(int argv, char **argc){
     // argument
@@ -28,8 +55,8 @@ int main(int argv, char **argc){
     // traditional operation on single track skyrmion
     {
         const unsigned WORD_LENGTH = 32;
-        const unsigned TRACK_LENGTH = 8;
-        const unsigned UNIT_SIZE = 2;
+        const unsigned TRACK_LENGTH = 4;
+        const unsigned UNIT_SIZE = 1;
         const unsigned KP_LENGTH = 2;
 
         Options options_traditional(
@@ -37,7 +64,7 @@ int main(int argv, char **argc){
             TRACK_LENGTH,
             UNIT_SIZE,
             KP_LENGTH,
-            Options::ordering::UNSORTED,
+            Options::ordering::SORTED,
             Options::read_function::SEQUENTIAL,
             Options::search_function::SEQUENTIAL,
             Options::update_function::OVERWRITE,
@@ -46,19 +73,40 @@ int main(int argv, char **argc){
             Options::split_merge_function::TRAD
         );
         
+        BPTree tree(options_traditional);
+        string input;
         try{
-            BPTree tree(options_traditional);
-            unsigned idx;
-            while(fin >> idx){
-                tree.insertData(idx, 0);
+            while(getline(fin, input)){
+                unsigned index = 0, data = 0;
+                switch(parser(input, index, data)){
+                    case Operation::SEARCH:
+                        try{
+                            tree.searchData(index);
+                        }
+                        catch(const char* e){
+                            cout << e << endl;
+                        }
+                        break;
+                    case Operation::INSERT:
+                        tree.insertData(index, data);
+                        break;
+                    case Operation::DELETE:
+                        break;
+                    case Operation::UPDATE:
+                        break;
+                    case Operation::SKIP:
+                        break;
+                    default:
+                        throw "undefined BPTree operation";
+                }
             }
             cout << tree << endl;
         }
         catch(const char *e){
             cout << e << endl;
         }
-        
     }
-    
+
+    std::clog << "<log> exit success" << std::endl;
     return EXIT_SUCCESS;
 }

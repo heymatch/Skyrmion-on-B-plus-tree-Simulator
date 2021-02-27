@@ -11,7 +11,7 @@ public:
         _root = nullptr;
     }
 
-    void searchData(unsigned idx){
+    unsigned *searchData(unsigned idx){
 
     }
 
@@ -23,29 +23,17 @@ public:
         if(_root == nullptr){
             _root = new Unit(_options);
         }
-        _root = _root->insertData(idx, data, 0);
+        _root->insertData(idx, data, 0);
+        
+        if(_root->_tracks[0]._parent != nullptr){
+            _root = _root->_tracks[0]._parent;
+            //std::clog << "<log> _root: " << _root->_tracks[0] << std::endl;
+            //std::clog << "<log> _root->_tracks[0]._parent: " << _root->_tracks[0]._parent << std::endl;
+        }
+            
     }
 
     void deleteData(){
-
-    }
-
-    void splitNode(unsigned wait_insert_idx){
-        /*
-        */
-
-        
-        
-
-        if(_root->isLeaf()){
-
-        }
-        else{
-
-        }
-    }
-
-    void mergeNode(){
 
     }
 
@@ -60,6 +48,7 @@ private:
 };
 
 std::ostream &operator<<(std::ostream &out, const BPTree &right){
+    std::clog << "<log> BPTree Print" << std::endl;
     out << "{\n";
     out << *(right._root);
     out << "\n}\n";
