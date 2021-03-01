@@ -14,21 +14,26 @@
 struct Unit;
 
 struct Node{
-    Node(Options options = Options(), bool isLeaf = true) : _options(options){
-        //_data = new KeyPtrSet[_options.word_length];
-        _index = new unsigned[_options.word_length]();
-        _bitmap = new bool[_options.word_length]();
-        _ptr = new void*[_options.word_length]();
-        _isLeaf = isLeaf;
-        _side = nullptr;
-        _parent = nullptr;
-        _id = NodeId++;
-        _sideBitmap = false;
+    Node(Options options = Options(), bool None = true, bool isLeaf = true) : _options(options){
+        if(!None){
+            _data = new KeyPtrSet[_options.track_length]();
+            _bitmap = new bool[_options.track_length]();
+            _isLeaf = isLeaf;
+            _side = nullptr;
+            _parent = nullptr;
+            _id = NodeId++;
+            _sideBitmap = false;
+            if(!isLeaf){
+                for(int i = 0; i < _options.track_length; ++i){
+                    _data[i] = KeyPtrSet(_options.kp_length);
+                }
+            }
+        }
     }
 
-    // Return array of indexes
+    // Return array of KeyPtrSet
     // 0 index
-    unsigned *readData(unsigned lower, unsigned upper){
+    KeyPtrSet *readData(unsigned lower, unsigned upper){
         if(upper < lower)
             throw "invalid read bound";
          
@@ -46,35 +51,46 @@ struct Node{
             break;
         }
 
-        unsigned *arr = new unsigned[upper - lower + 1];
+        KeyPtrSet *arr = new KeyPtrSet[upper - lower + 1];
         for(int i = lower; i < upper; ++i){
-            arr[i] = _index[i];
+            arr[i] = _data[i];
         }
         return arr; 
     }
 
-    // Return data pointer.
-    unsigned *searchData(unsigned idx){
-        switch (_options.search_mode)
-        {
-        case Options::search_function::SEQUENTIAL:
+    // Return data pointer
+    void *searchData(unsigned idx){
+        if(_isLeaf){
+            switch (_options.search_mode)
+            {
+            case Options::search_function::SEQUENTIAL:
+                for(int i = 0; i < _options.track_length; ++i){
+                    if(_bitmap[i] && _data[i].getKey(0) == idx){
+                        return _data[i].getPtr();
+                    }
+                }
+                throw -1;
+            case Options::search_function::TRAD_BINARY_SEARCH:
+                /* code */
+                break;
+            case Options::search_function::BIT_BINARY_SEARCH:
+                /* code */
+                break;
+            default:
+                throw "undefined search operation";
+                break;
+            }
+        }
+        else{
             for(int i = 0; i < _options.track_length; ++i){
-                if(_bitmap[i] && _index[i] == idx){
-                    return (unsigned *)_ptr[i];
+                if(_bitmap[i] && idx < _data[i].getKey(0)){
+                    return _data[i].getPtr();
                 }
             }
-            throw "search not found";
-        case Options::search_function::TRAD_BINARY_SEARCH:
-            /* code */
-            break;
-        case Options::search_function::BIT_BINARY_SEARCH:
-            /* code */
-            break;
-        default:
-            throw "undefined search operation";
-            break;
+            return _side;
         }
     }
+    
 
     void updateData(unsigned index, unsigned data){
         switch (_options.update_mode)
@@ -97,56 +113,94 @@ struct Node{
         }
     }
 
-    // insertData() and connectUnit() can be merge to one function after KeyPtrSet Complete
+    // Insert KeyPtrSet
+    void insertData(unsigned idx, void *data){
+        // read node(metadata, bitmap and data)
+        if(_isLeaf){
+            KeyPtrSet newData(2);
+            newData.setPtr(data);
+            newData.addKey(idx);
 
-    // For leaf node, ptr points to data
-    void insertData(unsigned idx, unsigned data){
-        /* read node(metadata, bitmap and data) */
-        bool insertSide = true;
-        unsigned insertPos = getInsertPosition(idx, insertSide); /* EVALUATE SEARCH */
-        switch (_options.node_ordering){
-            case Options::ordering::SORTED:
-            {
-                bool shift = false;
-                for(int i = _options.track_length-1; i > insertPos; --i){
-                    if(!shift && !_bitmap[i]){
-                        shift = true;
+            bool insertSide = true;
+            unsigned insertPos = getInsertPosition(idx, insertSide);
+
+            switch (_options.node_ordering){
+                case Options::ordering::SORTED:
+                {
+                    bool shift = false;
+                    for(int i = _options.track_length-1; i > insertPos; --i){
+                        if(!shift && !_bitmap[i]){
+                            shift = true;
+                        }
+                        if(shift){
+                            _data[i] = _data[i-1];
+                            _bitmap[i] = _bitmap[i-1];
+                        }
                     }
-                    if(shift){
-                        _index[i] = _index[i-1];
-                        _bitmap[i] = _bitmap[i-1];
-                        _ptr[i] = _ptr[i-1];
-                    }
+                    //std::clog << "<log> insertPos: " << insertPos << std::endl;
+                    //std::clog << "<log> _data[insertPos]: " << _data[insertPos] << std::endl;
+                    _bitmap[insertPos] = true;
+                    _data[insertPos] = newData;
                 }
-                _bitmap[insertPos] = true;
-                _index[insertPos] = idx;
-                /* EVALUATE INSERTION */
-                _ptr[insertPos] = new unsigned(data);
+                    break;
+                case Options::ordering::UNSORTED:
+                    _data[insertPos] = newData;
+                    _bitmap[insertPos] = true;
+                    break;
+                default:
+                    throw "undefined insert operation";
             }
-                break;
-            case Options::ordering::UNSORTED:
-                _bitmap[insertPos] = true;
-                _index[insertPos] = idx;
-                /* EVALUATE INSERTION */
-                _ptr[insertPos] = new unsigned(data);
-                break;
-            default:
-                throw "undefined insert operation";
+        }
+        else{
+            KeyPtrSet newData(_options.kp_length, false);
+            newData.setPtr(data);
+            newData.addKey(idx);
+
+            bool insertSide = false;
+            unsigned insertPos = getInsertPosition(idx, insertSide);
+
+            bool shift = false;
+            for(int i = _options.track_length-1; i > insertPos; --i){
+                if(!shift && !_bitmap[i]){
+                    shift = true;
+                }
+                if(shift){
+                    _data[i] = _data[i-1];
+                    _bitmap[i] = _bitmap[i-1];
+                }
+            }
+            _bitmap[insertPos] = true;
+            _data[insertPos] = newData;
+            //std::clog << "<log> insertPos: " << insertPos << std::endl;
+            //std::clog << "<log> insertSide: " << insertSide << std::endl;
+
+            if(_side != nullptr){
+                if(insertSide){
+                    void *temp = _side;
+                    _side = (Unit *)_data[insertPos].getPtr();
+                    _data[insertPos].setPtr(temp);
+                }
+                else{
+                    void *temp = _data[insertPos+1].getPtr();
+                    _data[insertPos+1].setPtr(_data[insertPos].getPtr());
+                    _data[insertPos].setPtr(temp);
+                }
+            }
         }
     }
-
+/*
     // For internal node, ptr points to next unit
     void connectUnit(unsigned idx, Unit *unit){
-        /* read node(metadata, bitmap and data) */
+        // read node(metadata, bitmap and data) 
         bool insertSide = false;
-        unsigned insertPos = getInsertPosition(idx, insertSide); /* EVALUATE SEARCH */
+        unsigned insertPos = getInsertPosition(idx, insertSide); // EVALUATE SEARCH 
         //std::clog << "<log> idx: " << idx << std::endl;
         //std::clog << "<log> insertPos: " << std::boolalpha << insertSide << std::endl;
         if(insertSide && _side != nullptr){
             _bitmap[insertPos] = true;
             _index[insertPos] = idx;
             _ptr[insertPos] = _side;
-            _side = unit;
+            connectSideUnit(unit);
         }
         else{
             bool shift = false;
@@ -165,23 +219,23 @@ struct Node{
             
             _bitmap[insertPos] = true;
             _index[insertPos] = idx;
-            /* EVALUATE INSERTION */
+            // EVALUATE INSERTION 
             if(_ptr[insertPos] == nullptr)
                 _ptr[insertPos] = unit;
             else 
                 _ptr[insertPos+1] = unit;
             
-            /*
-            std::clog << unit << std::endl;
-            std::clog << _ptr[insertPos] << std::endl;
-            for(int i = 0; i < _options.track_length; ++i){
-                std::clog << _ptr[i] << " "; 
-            }
-            std::clog << std::endl;
-            */
+            
+            // std::clog << unit << std::endl;
+            // std::clog << _ptr[insertPos] << std::endl;
+            // for(int i = 0; i < _options.track_length; ++i){
+            //     std::clog << _ptr[i] << " "; 
+            // }
+            // std::clog << std::endl;
+            
         }
         
-    }
+    }*/
 
     void connectSideUnit(Unit *unit){
         _side = unit;
@@ -211,6 +265,10 @@ struct Node{
             _bitmap[arr[i]] = false;
         }
     }
+
+    void deleteMark(unsigned idx){
+        _bitmap[idx] = false;
+    }
     
     // Return insert position
     unsigned getInsertPosition(unsigned wait_insert_idx, bool &insertSide){
@@ -234,7 +292,7 @@ struct Node{
                     if(full) throw "full";
                    
                     for(int i = 0; i < last; ++i){
-                        if(_bitmap[i] && wait_insert_idx < _index[i]){
+                        if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
                             return i;
                         }
                     }
@@ -287,7 +345,7 @@ struct Node{
             if(full) throw "full";
             
             for(int i = 0; i < last; ++i){
-                if(_bitmap[i] && wait_insert_idx < _index[i]){
+                if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
                     return i;
                 }
             }
@@ -298,9 +356,11 @@ struct Node{
         
     }
 
-    // KeyPtrSet *_data;
-    unsigned *_index;
-    void **_ptr;
+    KeyPtrSet *_data;
+    //unsigned *_index;
+    //void **_ptr;
+
+    // Metadata
     bool *_bitmap;
     bool _isLeaf;
     Unit *_side;
@@ -319,7 +379,7 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
         else out << ", ";
-        out << right._index[i];
+        out << right._data[i];
         if(!right._bitmap[i]) out << "*";
     }
     out << ")";

@@ -5,11 +5,13 @@
 #include <ostream>
 
 struct KeyPtrSet{
-    KeyPtrSet(Options options) : _options(options){
-        ptr = new void *;
-        key = new unsigned[_options.kp_length - 1];
+    KeyPtrSet(unsigned capacity = 2, bool dataPtr = true){
+        ptr = new void *();
+        key = new unsigned[capacity - 1]();
 
         _size = 0;
+        _capacity = capacity;
+        _dataPtr = dataPtr;
     }
 
     void setPtr(void *addr){
@@ -17,28 +19,39 @@ struct KeyPtrSet{
     }
 
     void addKey(unsigned val){
-        if(_size == _options.kp_length - 1)
+        if(_size == _capacity - 1)
             throw "KeyPtrSet overflow";
         key[_size++] = val;
+    }
+
+    unsigned getKey(unsigned idx) const{
+        return key[idx];
+    }
+
+    void *getPtr() const{
+        return ptr;
     }
 
     unsigned *key;
     void *ptr;
     ////
     unsigned _size;
-    Options _options;
+    unsigned _capacity;
+    bool _dataPtr;
 };
 
 std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
-    out << "(";
-    out << right.ptr << ", ";
+    out << "<";
+    if(right._dataPtr)
+        out << *((unsigned *)right.ptr) << ", ";
+    //else out << right.ptr << ", ";
     bool first = true;
-    for(int i = 0; i < right._options.kp_length - 1; ++i){
+    for(int i = 0; i < right._capacity - 1; ++i){
         if(first)first = false;
         else out << ", ";
         out << right.key[i];
     }
-    out << ")";
+    out << ">";
     return out;
 }
 

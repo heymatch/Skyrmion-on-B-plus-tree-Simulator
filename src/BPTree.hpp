@@ -3,6 +3,7 @@
 
 #include "System.hpp"
 #include "Unit.hpp"
+#include <iostream>
 
 class BPTree{
     friend std::ostream &operator<<(std::ostream &out, const BPTree &right);
@@ -12,7 +13,7 @@ public:
     }
 
     unsigned *searchData(unsigned idx){
-
+        return _root->searchData(idx);
     }
 
     void updateData(){
@@ -48,7 +49,7 @@ private:
 };
 
 std::ostream &operator<<(std::ostream &out, const BPTree &right){
-    std::clog << "<log> BPTree Print" << std::endl;
+    //std::clog << "<log> BPTree Print" << std::endl;
     out << "{\n";
     out << *(right._root);
     out << "\n}\n";

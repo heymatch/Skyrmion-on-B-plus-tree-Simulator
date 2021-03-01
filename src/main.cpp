@@ -19,7 +19,13 @@ enum Operation{
 unsigned parser(string str, unsigned &idx, unsigned &data){
     stringstream ss(str);
     string op;
-    ss >> op >> idx >> data;
+    ss >> op;
+    if(op[0] == '#'){
+        return Operation::SKIP;
+    }
+    ss >> idx >> data;
+    if(data == 0)data = rand() % 1000 + 1;
+
     for(char &it: op){
         it = tolower(it);
     }
@@ -38,9 +44,6 @@ unsigned parser(string str, unsigned &idx, unsigned &data){
     else if(op == ""){
         return Operation::SKIP;
     }
-    else if(op[0] == '#'){
-        return Operation::SKIP;
-    }
 }
 
 int main(int argv, char **argc){
@@ -51,6 +54,9 @@ int main(int argv, char **argc){
     
     // load data
     ifstream fin(argc[1]);
+
+    // initial
+    srand(0);
 
     // traditional operation on single track skyrmion
     {
@@ -81,7 +87,11 @@ int main(int argv, char **argc){
                 switch(parser(input, index, data)){
                     case Operation::SEARCH:
                         try{
-                            tree.searchData(index);
+                            unsigned *dataPtr = tree.searchData(index);
+                            if(dataPtr == nullptr)
+                                cout << "Search index " << index << ": " << "Not found" << endl;
+                            else
+                                cout << "Search index " << index << ": " << *dataPtr << endl;
                         }
                         catch(const char* e){
                             cout << e << endl;
@@ -99,7 +109,9 @@ int main(int argv, char **argc){
                     default:
                         throw "undefined BPTree operation";
                 }
+                //std::clog << "<log> " << input << " finish" << std::endl;
             }
+            std::clog << "<log> input success" << std::endl;
             cout << tree << endl;
         }
         catch(const char *e){
