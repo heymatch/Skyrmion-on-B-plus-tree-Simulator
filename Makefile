@@ -37,7 +37,7 @@ else
 	$(CC) $(CFLAGS) -o Skyrmion $(OBJ)
 endif
 
-# compile pair of .cpp and .hpp 	
+# compile pair of .hpp 	
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(SRC_PATH)%.hpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 

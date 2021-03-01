@@ -1,9 +1,5 @@
-insert 51
+insert 51 
 insert 41
-insert 31
-insert 71
-insert 61
-insert 111
-insert 123
-#insert 245
-#insert 313
+insert 21
+search 21
+search 1
