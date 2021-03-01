@@ -155,8 +155,8 @@ struct Unit{
                 //std::clog << "<log> newRoot: " << (*newRoot)._tracks[0] << std::endl;
                 return;
             }
-            this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
-            ((Unit *)promote.ptr)->connectParentUnit(this->_tracks[0]._parent, 0);
+            insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
+            ((Unit *)promote.ptr)->connectParentUnit(this, 0);
             return;
         }
 
@@ -215,7 +215,8 @@ struct Unit{
                     default:
                         throw "undefined split operation";
                 }*/
-
+                
+                // Use copyHalfNode() to replace below
                 if(isLeaf()){
                     for(int i = (indexSize + insertSize) / 2; i < (indexSize + insertSize); ++i){
                         if(sorted[i] != wait_insert_idx)
@@ -253,6 +254,10 @@ struct Unit{
         }
 
         return promote;
+    }
+
+    void copyHalfNode(){
+
     }
 
     void mergeNode(){
