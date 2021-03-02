@@ -165,7 +165,9 @@ struct Unit{
             }
             //std::clog << "<log> this->_tracks[0]._parent: " << this->_tracks[0]._parent << std::endl;
             this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
-            ((Unit *)promote.ptr)->connectParentUnit(this->_tracks[0]._parent);
+            if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
+                ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
+
             _tracks[offset]._parent->insertData(idx, data, 0);
             return;
         }
@@ -176,25 +178,53 @@ struct Unit{
     void insertCurrentPointer(unsigned idx, Unit *unit, unsigned offset){
         if(isLeaf())
             throw "This function is for Internal node";
-        /*if(isFull(offset)){
+        if(isFull(offset)){
             //std::clog << "<log> test point begin 2" << std::endl;
-            KeyPtrSet promote = splitNode(idx);
+            KeyPtrSet promote = splitNode(idx, offset);
             if(_isRoot){
                 deRoot();
+
                 Unit *newRoot = new Unit(_options);
                 newRoot->deLeaf();
+
                 newRoot->insertCurrentPointer(*promote.key, this, 0);
-                this->connectParentUnit(newRoot, 0);
-                newRoot->_tracks[0].connectSideUnit((Unit *)promote.ptr);
-                ((Unit *)promote.ptr)->connectParentUnit(newRoot, 0);
-                insertCurrentPointer(idx, unit, 0);
+                this->connectParentUnit(newRoot);
+
+                newRoot->connectSideUnit((Unit *)promote.ptr);
+                ((Unit *)promote.ptr)->connectParentUnit(newRoot);
+                
+                if(idx < promote.getKey(0))
+                    insertCurrentPointer(idx, unit, offset);
+                else if(idx > promote.getKey(0))
+                    getParentUnit()->getSideUnit()->insertCurrentPointer(idx, unit, 0);
+                else 
+                    getParentUnit()->getSideUnit()->_tracks[0]._data[0].setPtr(unit);
                 //std::clog << "<log> newRoot: " << (*newRoot)._tracks[0] << std::endl;
                 return;
             }
-            insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
-            ((Unit *)promote.ptr)->connectParentUnit(this, 0);
+            //insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
+            //((Unit *)promote.ptr)->connectParentUnit(this, 0);
+            this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
+            if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
+                ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
+
+
+            Unit *rightUnit = getParentRightUnit(idx);
+            if(idx < promote.getKey(0))
+                insertCurrentPointer(idx, unit, offset);
+            else if(idx > promote.getKey(0))
+                rightUnit->insertCurrentPointer(idx, unit, 0);
+            else{
+                rightUnit->_tracks[0]._data[0].setPtr(unit);
+                ((Unit *)rightUnit->_tracks[0]._data[0].getPtr())->connectParentUnit(rightUnit);
+                //std::clog << "<log> rightUnit->_tracks[0]._data[0].getPtr(): " << rightUnit->_tracks[0]._data[0].getPtr() << std::endl;
+                //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
+                //((Unit *)promote.getPtr())->connectParentUnit(getParentRightUnit());
+            }
+                
+
             return;
-        }*/
+        }
 
         _tracks[offset].insertData(idx, unit);
     }
@@ -203,12 +233,25 @@ struct Unit{
         _tracks[0].connectSideUnit(unit);
     }
 
-    Unit *getSideUnit(){
+    Unit *getSideUnit() const{
         return _tracks[0]._side;
     }
 
     void connectParentUnit(Unit *unit){
         _tracks[0].connectParentNode(unit);
+    }
+
+    Unit *getParentUnit() const{
+        return _tracks[0]._parent;
+    }
+
+    Unit *getParentRightUnit(unsigned idx) const{
+        for(int i = 0; i < _options.track_length-1; ++i){
+            if(getParentUnit()->_tracks[0]._bitmap[i+1] && idx < getParentUnit()->_tracks[0]._data[i+1].getKey(0)){
+                return (Unit *)_tracks[0]._parent->_tracks[0]._data[i+1].getPtr();
+            }
+        }
+        return _tracks[0]._parent->getSideUnit();
     }
 
     void deleteData(){
@@ -238,51 +281,15 @@ struct Unit{
             newUnit->deRoot();
             if(!isLeaf()) newUnit->deLeaf();
 
-
-            // Use copyHalfNode() to replace below
-
-            /*
-            unsigned indexSize = _options.track_length;
-            unsigned *index = readData(0); // offset
-
-            unsigned insertSize = 1;
-            unsigned *insert = new unsigned[insertSize];
-            insert[0] = wait_insert_idx;
-            unsigned deleteSize = 0;
-            
-            unsigned *sorted = System::makeSortedArray(index, indexSize, insert, insertSize);
-            unsigned *deleteIndexes = System::makeSplitDeleteIndexesArray(deleteSize, index, indexSize, sorted[(indexSize + insertSize) / 2]);
-            
-            
-            if(isLeaf()){
-                for(int i = (indexSize + insertSize) / 2; i < (indexSize + insertSize); ++i){
-                    if(sorted[i] != wait_insert_idx)
-                        newUnit->insertCurrentData(sorted[i], 0, 0);
-                }
-                _tracks[0].deleteMark(deleteIndexes, deleteSize); // offset
-            }
-            else{
-                for(int i = (indexSize + insertSize) / 2 + 1; i < (indexSize + insertSize); ++i){
-                    if(sorted[i] != wait_insert_idx){
-                        newUnit->insertCurrentPointer(sorted[i], (Unit *)_tracks[0]._ptr[i-1], 0);
-                        ((Unit *)_tracks[0]._ptr[i-1])->connectParentUnit(newUnit, 0);
-                    }
-                }
-                newUnit->_tracks[0].connectSideUnit(_tracks[0]._side);
-                _tracks[0]._side->connectParentUnit(newUnit, 0);
-                newUnit->_tracks[0]._sideBitmap = true;
-
-                _tracks[0].deleteMark(deleteIndexes, deleteSize); // offset
-                _tracks[0].connectSideUnit((Unit *)_tracks[0]._ptr[(indexSize + insertSize) / 2 - 1]);
-                _tracks[0]._sideBitmap = true;
-            }*/
-
             unsigned promoteKey = System::getMid(_tracks[offset]._data, _options.track_length, wait_insert_idx);
-            copyHalfNode(_tracks[offset], newUnit->_tracks[0]);
-
             promote.setPtr(newUnit);
             promote.addKey(promoteKey);
-
+            
+            copyHalfNode(_tracks[offset], newUnit->_tracks[0], promote);
+            if(!isLeaf()){
+                getSideUnit()->connectParentUnit(this);
+                newUnit->getSideUnit()->connectParentUnit(newUnit);
+            }
             /* delete allocation memory */
             break;
         }
@@ -296,20 +303,55 @@ struct Unit{
         return promote;
     }
 
-    void copyHalfNode(Node &source, Node &destination){
-        switch(_options.node_ordering){
-            case Options::ordering::SORTED:
-                for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                    destination._data[j] = source._data[i];
+    void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote = 0){
+        if(isLeaf()){
+            switch(_options.node_ordering){
+                case Options::ordering::SORTED:
+                    for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
+                        destination._data[j] = source._data[i];
 
-                    destination._bitmap[j] = true;
-                    source._bitmap[i] = false;
+                        destination._bitmap[j] = true;
+                        source._bitmap[i] = false;
+                    }
+                    break;
+                case Options::ordering::UNSORTED:
+                    break;
+                default:
+                    throw "undefined ordering";
+            }
+        }
+        else{
+            
+            for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
+                destination._data[j] = source._data[i];
+
+                destination._bitmap[j] = true;
+                source._bitmap[i] = false;
+
+                ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
+            }
+            destination.connectSideUnit(source._side);
+
+            bool promoteMid = true;
+            for(int i = 0; i < _options.track_length / 2; ++i){
+                if(source._data[i].getKey(0) == promote.getKey(0)){
+                    source.deleteMark(i);
+                    promoteMid = false;
+                    source.connectSideUnit((Unit *)source._data[i].getPtr());
                 }
-                break;
-            case Options::ordering::UNSORTED:
-                break;
-            default:
-                throw "undefined ordering";
+            }
+            for(int i = 0; i < _options.track_length / 2; ++i){
+                if(destination._data[i].getKey(0) == promote.getKey(0)){
+                    destination.deleteMark(i);
+                    promoteMid = false;
+                    source.connectSideUnit((Unit *)destination._data[0].getPtr());
+                }
+            }
+
+            if(promoteMid){
+                source.connectSideUnit((Unit *)destination._data[0].getPtr());
+                //destination._data[0].setPtr((Unit *)promote.getPtr());
+            }
         }
     }
 
@@ -371,7 +413,8 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     if(right.isLeaf()) out << "Leaf Unit";
     else out << "Internal Unit";
     out << " " << right._id;
-    //out << " " << &right;
+    out << " " << &right;
+    out << " Parent: " << right.getParentUnit();
     if(right._isRoot) out << " Root";
     ///
     out << ":\n";

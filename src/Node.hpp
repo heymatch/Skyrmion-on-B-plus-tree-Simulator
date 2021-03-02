@@ -181,8 +181,10 @@ struct Node{
                     _data[insertPos].setPtr(temp);
                 }
                 else{
-                    void *temp = _data[insertPos+1].getPtr();
-                    _data[insertPos+1].setPtr(_data[insertPos].getPtr());
+                    int i = 0;
+                    while(!_bitmap[insertPos+i+1])++i;
+                    void *temp = _data[insertPos+i+1].getPtr();
+                    _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
                     _data[insertPos].setPtr(temp);
                 }
             }
@@ -267,7 +269,42 @@ struct Node{
     }
 
     void deleteMark(unsigned idx){
-        _bitmap[idx] = false;
+        if(_isLeaf){
+            _bitmap[idx] = false;
+        }
+        else{
+            _bitmap[idx] = false;
+            if(isRightMostIndex(idx)){
+                connectSideUnit((Unit *)_data[idx].getPtr());
+            }
+            else if(isLeftMostIndex(idx)){
+                _data[idx+1].setPtr((Unit *)_data[idx].getPtr());
+            }
+        }
+    }
+
+    bool isRightMostIndex(unsigned idx) const{
+        if(!_bitmap[idx])
+            return false;
+
+        for(int i = idx; i < _options.track_length; ++i){
+            if(_bitmap[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    bool isLeftMostIndex(unsigned idx) const{
+        if(!_bitmap[idx])
+            return false;
+
+        for(int i = 0; i < idx; ++i){
+            if(_bitmap[i])
+                return false;
+        }
+
+        return true;
     }
     
     // Return insert position
@@ -345,7 +382,10 @@ struct Node{
             if(full) throw "full";
             
             for(int i = 0; i < last; ++i){
-                if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
+                if(i == 0 && wait_insert_idx < _data[i+1].getKey(0)){
+                    return i;
+                }
+                else if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
                     return i;
                 }
             }
