@@ -92,7 +92,7 @@ struct Node{
     }
     
 
-    void updateData(unsigned index, unsigned data){
+    void updateData(unsigned idx, unsigned data){
         switch (_options.update_mode)
         {
         case Options::update_function::OVERWRITE:
@@ -190,54 +190,6 @@ struct Node{
             }
         }
     }
-/*
-    // For internal node, ptr points to next unit
-    void connectUnit(unsigned idx, Unit *unit){
-        // read node(metadata, bitmap and data) 
-        bool insertSide = false;
-        unsigned insertPos = getInsertPosition(idx, insertSide); // EVALUATE SEARCH 
-        //std::clog << "<log> idx: " << idx << std::endl;
-        //std::clog << "<log> insertPos: " << std::boolalpha << insertSide << std::endl;
-        if(insertSide && _side != nullptr){
-            _bitmap[insertPos] = true;
-            _index[insertPos] = idx;
-            _ptr[insertPos] = _side;
-            connectSideUnit(unit);
-        }
-        else{
-            bool shift = false;
-            for(int i = _options.track_length-1; i > insertPos; --i){
-                if(!shift && !_bitmap[i]){
-                    shift = true;
-                }
-                if(shift){
-                    _index[i] = _index[i-1];
-                    _bitmap[i] = _bitmap[i-1];
-                    if(i != insertPos+1){
-                        _ptr[i] = _ptr[i-1];
-                    }
-                }
-            }
-            
-            _bitmap[insertPos] = true;
-            _index[insertPos] = idx;
-            // EVALUATE INSERTION 
-            if(_ptr[insertPos] == nullptr)
-                _ptr[insertPos] = unit;
-            else 
-                _ptr[insertPos+1] = unit;
-            
-            
-            // std::clog << unit << std::endl;
-            // std::clog << _ptr[insertPos] << std::endl;
-            // for(int i = 0; i < _options.track_length; ++i){
-            //     std::clog << _ptr[i] << " "; 
-            // }
-            // std::clog << std::endl;
-            
-        }
-        
-    }*/
 
     void connectSideUnit(Unit *unit){
         _side = unit;
@@ -248,7 +200,7 @@ struct Node{
         _parent = unit;
     }
 
-    void deleteData(unsigned data){
+    void deleteData(unsigned idx){
         switch (_options.delete_mode)
         {
         case Options::delete_function::SEQUENTIAL:
@@ -259,6 +211,10 @@ struct Node{
             break;
         default:
             throw "undefined operation";
+        }
+        for(int i = 0; i < _options.track_length; ++i){
+            if(idx == _data[i].getKey(0))
+                deleteMark(i);
         }
     }
 
@@ -329,7 +285,10 @@ struct Node{
                     if(full) throw "full";
                    
                     for(int i = 0; i < last; ++i){
-                        if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
+                        if(i == 0 && wait_insert_idx < _data[i+1].getKey(0)){
+                            return i;
+                        }
+                        else if(_bitmap[i] && wait_insert_idx < _data[i].getKey(0)){
                             return i;
                         }
                     }

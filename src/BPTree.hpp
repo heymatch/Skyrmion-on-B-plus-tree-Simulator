@@ -16,8 +16,11 @@ public:
         return _root->searchData(idx);
     }
 
-    void updateData(){
-
+    void updateData(unsigned idx, unsigned data){
+        unsigned *dataPtr = _root->searchData(idx);
+        if(dataPtr != nullptr){
+            *dataPtr = data;
+        }
     }
 
     void insertData(unsigned idx, unsigned data){
@@ -34,8 +37,8 @@ public:
             
     }
 
-    void deleteData(){
-
+    void deleteData(unsigned idx){
+        _root->deleteData(idx, 0);
     }
 
     Node *findParent(Unit *child){

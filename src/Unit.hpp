@@ -71,25 +71,8 @@ struct Unit{
         return dataPtr;
     }
 
-    void updateData(){
-        switch (_options.update_mode)
-        {
-        case Options::update_function::OVERWRITE:
-            /* code */
-            break;
-        case Options::update_function::PERMUTATION_WRITE:
-            /* code */
-            break;
-        case Options::update_function::PERMUTE_WORD_COUNTER:
-            /* code */
-            break;
-        case Options::update_function::PERMUTE_FEW_COUNTER:
-            /* code */
-            break;
-        default:
-            throw "undefined update operation";
-            break;
-        }
+    void updateData(unsigned idx, unsigned data){
+        
     }
 
     void insertData(unsigned idx, unsigned data, unsigned offset){
@@ -254,7 +237,7 @@ struct Unit{
         return _tracks[0]._parent->getSideUnit();
     }
 
-    void deleteData(){
+    void deleteData(unsigned idx, unsigned offset){
         switch (_options.delete_mode)
         {
         case Options::delete_function::SEQUENTIAL:
@@ -266,6 +249,12 @@ struct Unit{
         default:
             throw "undefined operation";
             break;
+        }
+        if(isLeaf()){
+            _tracks[offset].deleteData(idx);
+        }
+        else{
+            throw "Developing internal delete";
         }
     }
 

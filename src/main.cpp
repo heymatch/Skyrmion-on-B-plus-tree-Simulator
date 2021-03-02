@@ -99,10 +99,15 @@ int main(int argv, char **argc){
                         break;
                     case Operation::INSERT:
                         tree.insertData(index, data);
+                        cout << "Insert index " << index << ": " << data << endl;
                         break;
                     case Operation::DELETE:
+                        tree.deleteData(index);
+                        cout << "Delete index " << index << endl;
                         break;
                     case Operation::UPDATE:
+                        tree.updateData(index, data);
+                        cout << "Update index " << index << ": " << data << endl;
                         break;
                     case Operation::SKIP:
                         break;
@@ -111,7 +116,7 @@ int main(int argv, char **argc){
                 }
                 //std::clog << "<log> " << input << " finish" << std::endl;
             }
-            std::clog << "<log> input success" << std::endl;
+            std::clog << "<log> input " << argc[1] << " success" << std::endl;
             cout << tree << endl;
         }
         catch(const char *e){
