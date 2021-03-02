@@ -12,20 +12,21 @@ FC test\answer%1.ans test\output%1.out
 GOTO DONE
 
 :TEST
-FOR /l %%a IN (1 1 3) DO (
+FOR /l %%a IN (1 1 5) DO (
+    REM COPY test\output%%a.out test\past%%a.out 
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
 )
 GOTO DONE
 
 :CMP
-FOR /l %%a IN (1 1 3) DO (
+FOR /l %%a IN (1 1 5) DO (
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
     FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
-FOR /l %%a IN (1 1 3) DO (
+FOR /l %%a IN (1 1 5) DO (
     @Skyrmion.exe test\testcase%%a.txt > test\answer%%a.ans 
 )
 GOTO DONE
