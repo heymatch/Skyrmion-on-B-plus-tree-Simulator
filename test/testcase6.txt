@@ -1,0 +1,10 @@
+insert 51 
+insert 41
+insert 21
+search 21
+search 1
+delete 21
+search 21
+insert 100
+insert 30
+update 30 999
