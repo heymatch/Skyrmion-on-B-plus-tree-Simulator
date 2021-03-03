@@ -1,0 +1,2 @@
+main:
+	g++ tester.cpp
