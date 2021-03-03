@@ -53,6 +53,7 @@ private:
 
 std::ostream &operator<<(std::ostream &out, const BPTree &right){
     //std::clog << "<log> BPTree Print" << std::endl;
+    //std::clog << "<log> &right: " << &right << std::endl;
     out << "{\n";
     out << *(right._root);
     out << "\n}\n";

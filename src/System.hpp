@@ -70,10 +70,16 @@ namespace System{
         //std::clog << V[it-1] << " ";
         //std::clog << std::endl;
         //std::clog << it << std::endl;
-        //std::clog << V[t_len / 2] << std::endl;
 
         std::sort(V.begin(), V.end());
-
+        /*
+        clog << "<log> V[]: ";
+        for(unsigned &it: V){
+            clog << it << " ";
+        }
+        clog << endl;
+        clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
+        */
         return V[t_len / 2];
     }
 

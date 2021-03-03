@@ -46,14 +46,19 @@ unsigned parser(string str, unsigned &idx, unsigned &data){
     }
 }
 
-int main(int argv, char **argc){
+int main(int argc, char **argv){
     // argument
 	// argument1 = dataname
-    if(argv != 2)
+    if(argc != 2)
         return EXIT_FAILURE;
     
     // load data
-    ifstream fin(argc[1]);
+    ifstream fin(argv[1]);
+    if(fin.fail()){
+        cerr << "file: '" << argv[1] << "' open error" << endl;
+
+        return EXIT_FAILURE;
+    }
 
     // initial
     srand(0);
@@ -116,7 +121,7 @@ int main(int argv, char **argc){
                 }
                 //std::clog << "<log> " << input << " finish" << std::endl;
             }
-            std::clog << "<log> input " << argc[1] << " success" << std::endl;
+            std::clog << "<log> input " << argv[1] << " success" << std::endl;
             cout << tree << endl;
         }
         catch(const char *e){

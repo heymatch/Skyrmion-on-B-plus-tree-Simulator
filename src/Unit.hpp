@@ -72,7 +72,7 @@ struct Unit{
     }
 
     void updateData(unsigned idx, unsigned data){
-        
+
     }
 
     void insertData(unsigned idx, unsigned data, unsigned offset){
@@ -274,7 +274,7 @@ struct Unit{
             promote.setPtr(newUnit);
             promote.addKey(promoteKey);
             
-            copyHalfNode(_tracks[offset], newUnit->_tracks[0], promote);
+            copyHalfNode(_tracks[offset], newUnit->_tracks[0], promote, wait_insert_idx);
             if(!isLeaf()){
                 getSideUnit()->connectParentUnit(this);
                 newUnit->getSideUnit()->connectParentUnit(newUnit);
@@ -292,15 +292,25 @@ struct Unit{
         return promote;
     }
 
-    void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote = 0){
+    void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote, unsigned wait_insert_idx){
         if(isLeaf()){
             switch(_options.node_ordering){
                 case Options::ordering::SORTED:
-                    for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                        destination._data[j] = source._data[i];
+                    if(wait_insert_idx < promote.getKey(0)){
+                        for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
+                            destination._data[j] = source._data[i];
 
-                        destination._bitmap[j] = true;
-                        source._bitmap[i] = false;
+                            destination._bitmap[j] = true;
+                            source._bitmap[i] = false;
+                        }
+                    }
+                    else{
+                        for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
+                            destination._data[j] = source._data[i];
+
+                            destination._bitmap[j] = true;
+                            source._bitmap[i] = false;
+                        }
                     }
                     break;
                 case Options::ordering::UNSORTED:
@@ -310,26 +320,38 @@ struct Unit{
             }
         }
         else{
-            
-            for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                destination._data[j] = source._data[i];
+            unsigned mid = _options.track_length / 2;
+            if(wait_insert_idx < promote.getKey(0)){
+                for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
+                    destination._data[j] = source._data[i];
 
-                destination._bitmap[j] = true;
-                source._bitmap[i] = false;
+                    destination._bitmap[j] = true;
+                    source._bitmap[i] = false;
 
-                ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
+                    ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
+                }
+            }
+            else{
+                for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
+                    destination._data[j] = source._data[i];
+
+                    destination._bitmap[j] = true;
+                    source._bitmap[i] = false;
+
+                    ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
+                }
             }
             destination.connectSideUnit(source._side);
 
             bool promoteMid = true;
-            for(int i = 0; i < _options.track_length / 2; ++i){
+            for(int i = 0; i < _options.track_length; ++i){
                 if(source._data[i].getKey(0) == promote.getKey(0)){
                     source.deleteMark(i);
                     promoteMid = false;
                     source.connectSideUnit((Unit *)source._data[i].getPtr());
                 }
             }
-            for(int i = 0; i < _options.track_length / 2; ++i){
+            for(int i = 0; i < _options.track_length; ++i){
                 if(destination._data[i].getKey(0) == promote.getKey(0)){
                     destination.deleteMark(i);
                     promoteMid = false;
