@@ -1,0 +1,6 @@
+insert 5000
+insert 7500
+insert 10000
+insert 2500
+delete 2500
+insert 8787

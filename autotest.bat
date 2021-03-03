@@ -8,25 +8,25 @@ IF "%1" == "ans" ( GOTO ANS )
 IF "%1" == "" ( GOTO DONE )
 
 Skyrmion.exe test\testcase%1.txt > test\output%1.out 
-FC test\answer%1.ans test\output%1.out
+REM FC test\answer%1.ans test\output%1.out
 GOTO DONE
 
 :TEST
-FOR /l %%a IN (1 1 6) DO (
+FOR /l %%a IN (1 1 7) DO (
     REM COPY test\output%%a.out test\past%%a.out 
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
 )
 GOTO DONE
 
 :CMP
-FOR /l %%a IN (1 1 6) DO (
+FOR /l %%a IN (1 1 7) DO (
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
     FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
-FOR /l %%a IN (1 1 6) DO (
+FOR /l %%a IN (1 1 7) DO (
     @Skyrmion.exe test\testcase%%a.txt > test\answer%%a.ans 
 )
 GOTO DONE
