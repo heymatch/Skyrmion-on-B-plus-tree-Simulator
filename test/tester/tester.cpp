@@ -1,11 +1,15 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int main(){
+int main(int argc, char **argv){
+    if(argc != 3)
+        return EXIT_FAILURE;
+
     ofstream fout("testcase.txt");
     
-    int numberOfTestcases = 100;
-    int base = 100;
+    srand(atoi(argv[2]));
+    int numberOfTestcases = atoi(argv[1]);
+    int base = atoi(argv[1]);
 
     int index[numberOfTestcases] = {};
     for(int i = 1; i <= numberOfTestcases; ++i){
