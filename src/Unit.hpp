@@ -151,7 +151,7 @@ struct Unit{
             if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
                 ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
 
-            _tracks[offset]._parent->insertData(idx, data, 0);
+            getRoot()->insertData(idx, data, 0);
             return;
         }
 
@@ -176,12 +176,19 @@ struct Unit{
                 newRoot->connectSideUnit((Unit *)promote.ptr);
                 ((Unit *)promote.ptr)->connectParentUnit(newRoot);
                 
-                if(idx < promote.getKey(0))
+                Unit *rightUnit = (Unit *)promote.ptr;
+                if(idx < promote.getKey(0)){
                     insertCurrentPointer(idx, unit, offset);
-                else if(idx > promote.getKey(0))
-                    getParentUnit()->getSideUnit()->insertCurrentPointer(idx, unit, 0);
-                else 
-                    getParentUnit()->getSideUnit()->_tracks[0]._data[0].setPtr(unit);
+                    unit->connectParentUnit(this);
+                }
+                else if(idx > promote.getKey(0)){
+                    rightUnit->insertCurrentPointer(idx, unit, 0);
+                    unit->connectParentUnit(rightUnit);
+                }
+                else{ 
+                    rightUnit->_tracks[0]._data[0].setPtr(unit);
+                    unit->connectParentUnit(rightUnit);
+                }
                 //std::clog << "<log> newRoot: " << (*newRoot)._tracks[0] << std::endl;
                 return;
             }
@@ -192,24 +199,30 @@ struct Unit{
                 ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
 
 
-            Unit *rightUnit = getParentRightUnit(idx);
-            if(idx < promote.getKey(0))
+            //Unit *rightUnit = getParentRightUnit(idx);
+            Unit *rightUnit = (Unit *)promote.ptr;
+            if(idx < promote.getKey(0)){
                 insertCurrentPointer(idx, unit, offset);
-            else if(idx > promote.getKey(0))
+                unit->connectParentUnit(this);
+            }
+            else if(idx > promote.getKey(0)){
                 rightUnit->insertCurrentPointer(idx, unit, 0);
+                unit->connectParentUnit(rightUnit);
+            }
             else{
                 rightUnit->_tracks[0]._data[0].setPtr(unit);
                 ((Unit *)rightUnit->_tracks[0]._data[0].getPtr())->connectParentUnit(rightUnit);
+                unit->connectParentUnit(rightUnit);
                 //std::clog << "<log> rightUnit->_tracks[0]._data[0].getPtr(): " << rightUnit->_tracks[0]._data[0].getPtr() << std::endl;
                 //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
                 //((Unit *)promote.getPtr())->connectParentUnit(getParentRightUnit());
             }
-                
 
             return;
         }
 
         _tracks[offset].insertData(idx, unit);
+        unit->connectParentUnit(this);
     }
 
     void connectSideUnit(Unit *unit){
@@ -403,7 +416,14 @@ struct Unit{
         }
     }
 
-    
+    Unit *getRoot(){
+        Unit *unit = this;
+        while(unit->_tracks[0]._parent != nullptr){
+            unit = unit->_tracks[0]._parent;
+        }
+
+        return unit;
+    }
 
     Node *_tracks;
     ////

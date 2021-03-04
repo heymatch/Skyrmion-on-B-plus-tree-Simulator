@@ -404,6 +404,7 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
         out << right._data[i];
         if(!right._bitmap[i]) out << "*";
     }
+    out << " _side: " << right._side;
     out << ")";
     return out;
 }

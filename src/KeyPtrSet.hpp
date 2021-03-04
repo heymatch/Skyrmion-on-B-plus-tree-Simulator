@@ -44,7 +44,7 @@ std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
     out << "<";
     if(right._dataPtr)
         out << *((unsigned *)right.ptr) << ", ";
-    //else out << right.ptr << ", ";
+    else out << right.ptr << ", ";
     bool first = true;
     for(int i = 0; i < right._capacity - 1; ++i){
         if(first)first = false;

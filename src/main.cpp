@@ -66,7 +66,7 @@ int main(int argc, char **argv){
     // traditional operation on single track skyrmion
     {
         const unsigned WORD_LENGTH = 32;
-        const unsigned TRACK_LENGTH = 4;
+        const unsigned TRACK_LENGTH = 6; //! odd lead to problem
         const unsigned UNIT_SIZE = 1;
         const unsigned KP_LENGTH = 2;
 
