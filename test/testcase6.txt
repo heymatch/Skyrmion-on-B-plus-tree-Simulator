@@ -3,7 +3,7 @@ insert 41
 insert 21
 search 21
 search 1
-delete 21
+#delete 21
 search 21
 insert 100
 insert 30

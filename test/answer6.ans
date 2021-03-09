@@ -1,0 +1,17 @@
+Insert index 51: 39
+Insert index 41: 720
+Insert index 21: 239
+Search index 21: 239
+Search index 1: Not found
+Delete index 21
+Search index 21: Not found
+Insert index 100: 286
+Insert index 30: 451
+Update index 30: 999
+{
+	[	Leaf Unit 0 0xb029f0 Parent: 0 Root:
+		(<999, 30>, <720, 41>, <39, 51>, <286, 100>, <0, 0>*, <0, 0>* _side: 0)
+	]
+
+}
+

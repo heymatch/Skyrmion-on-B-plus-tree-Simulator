@@ -1,0 +1,49 @@
+Insert index 51: 39
+Insert index 41: 720
+Insert index 21: 239
+Search index 21: 239
+Search index 1: Not found
+Insert index 31: 798
+Insert index 71: 366
+Insert index 61: 286
+Insert index 111: 451
+Insert index 123: 613
+Insert index 245: 854
+Insert index 313: 101
+Search index 41: 720
+Search index 31: 798
+Insert index 1000: 538
+Search index 245: 854
+Insert index 81: 946
+Insert index 85: 286
+Insert index 500: 998
+Insert index 700: 681
+Search index 1000: 538
+Insert index 200: 892
+Insert index 125: 656
+Insert index 174: 907
+Insert index 115: 458
+Insert index 120: 324
+Insert index 117: 882
+{
+	[	Internal Unit 2 0xcc7470 Parent: 0 Root:
+		(<0x7629f0, 51>, <0xcc7420, 111>, <0xcc7da0, 125>, <0xcc7f80, 313>, <0, 0>*, <0, 0>* _side: 0xcc7f30)
+	]
+	[	Leaf Unit 0 0x7629f0 Parent: 0xcc7470:
+		(<239, 21>, <798, 31>, <720, 41>, <39, 51>*, <286, 61>*, <366, 71>* _side: 0xcc7420)
+	]
+	[	Leaf Unit 1 0xcc7420 Parent: 0xcc7470:
+		(<39, 51>, <286, 61>, <366, 71>, <946, 81>, <286, 85>, <854, 245>* _side: 0)
+	]
+	[	Leaf Unit 3 0xcc7da0 Parent: 0xcc7470:
+		(<451, 111>, <458, 115>, <882, 117>, <324, 120>, <613, 123>, <854, 245>* _side: 0)
+	]
+	[	Leaf Unit 5 0xcc7f80 Parent: 0xcc7470:
+		(<656, 125>, <907, 174>, <892, 200>, <854, 245>, <0, 0>*, <0, 0>* _side: 0)
+	]
+	[	Leaf Unit 4 0xcc7f30 Parent: 0xcc7470:
+		(<101, 313>, <998, 500>, <681, 700>, <538, 1000>, <0, 0>*, <0, 0>* _side: 0)
+	]
+
+}
+
