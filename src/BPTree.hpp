@@ -39,6 +39,9 @@ public:
 
     void deleteData(unsigned idx){
         _root->deleteData(idx, 0);
+        if(!_root->_isRoot){
+            _root = _root->getSideUnit();
+        }
     }
 
     Node *findParent(Unit *child){

@@ -113,6 +113,10 @@ struct Node{
         }
     }
 
+    void updateIndex(unsigned offset, unsigned idx){
+        _data[offset].setKey(0, idx);
+    }
+
     // Insert KeyPtrSet
     void insertData(unsigned idx, void *data){
         // read node(metadata, bitmap and data)
@@ -121,7 +125,7 @@ struct Node{
             newData.setPtr(data);
             newData.addKey(idx);
 
-            bool insertSide = true;
+            bool insertSide = false;
             unsigned shiftPos = getShiftPosition();
             unsigned insertPos = getInsertPosition(idx, insertSide);
 
@@ -232,9 +236,13 @@ struct Node{
             throw "undefined operation";
         }
         for(int i = 0; i < _options.track_length; ++i){
-            if(idx == _data[i].getKey(0))
+            if(idx == _data[i].getKey(0)){
                 deleteMark(i);
+                return;
+            }
         }
+
+        throw "delete not found";
     }
 
     void deleteMark(unsigned *arr, unsigned arrSize){
@@ -243,26 +251,61 @@ struct Node{
         }
     }
 
-    void deleteMark(unsigned offset){
+    void deleteMark(unsigned offset, bool side = false){
         if(_isLeaf){
             _bitmap[offset] = false;
         }
         else{
-            _bitmap[offset] = false;
-            if(isRightMostIndex(offset)){
+            if(isRightMostOffset(offset)){
                 connectSideUnit((Unit *)_data[offset].getPtr());
             }
-            else if(isLeftMostIndex(offset)){
-                _data[offset+1].setPtr((Unit *)_data[offset].getPtr()); // !
+            _bitmap[offset] = false;
+        }
+    }
+
+    unsigned getMinIndex(){
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i]){
+                return _data[i].getKey(0);
             }
         }
     }
 
-    bool isRightMostIndex(unsigned idx) const{
-        if(!_bitmap[idx])
+    KeyPtrSet getMinData(){
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i]){
+                return _data[i];
+            }
+        }
+    }
+
+    unsigned getMaxIndex(){
+        for(int i = _options.track_length; i >= 0; --i){
+            if(_bitmap[i]){
+                return _data[i].getKey(0);
+            }
+        }
+    }
+
+    unsigned getLeftMostOffset(){
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i])
+                return i;
+        }
+    }
+
+    unsigned getRightMostOffset(){
+        for(int i = _options.track_length - 1; i >= 0; ++i){
+            if(_bitmap[i])
+                return i;
+        }
+    }
+
+    bool isRightMostOffset(unsigned offset) const{
+        if(!_bitmap[offset])
             return false;
 
-        for(int i = idx; i < _options.track_length; ++i){
+        for(int i = offset + 1; i < _options.track_length; ++i){
             if(_bitmap[i])
                 return false;
         }
@@ -270,16 +313,36 @@ struct Node{
         return true;
     }
 
-    bool isLeftMostIndex(unsigned idx) const{
-        if(!_bitmap[idx])
+    bool isLeftMostOffset(unsigned offset) const{
+        if(!_bitmap[offset])
             return false;
 
-        for(int i = 0; i < idx; ++i){
+        for(int i = 0; i < offset; ++i){
             if(_bitmap[i])
                 return false;
         }
 
         return true;
+    }
+
+    unsigned getClosestRightIndex(unsigned offset){
+        for(int i = offset + 1; i < _options.track_length; ++i){
+            if(_bitmap[i]){
+                return i;
+            }
+        }
+
+        throw "getCloseRightIndex() fail";
+    }
+
+    unsigned getClosestLeftIndex(unsigned offset){
+        for(int i = offset - 1; i >= 0; --i){
+            if(_bitmap[i]){
+                return i;
+            }
+        }
+
+        throw "getCloseLeftIndex() fail";
     }
     
     // Return insert position
@@ -376,6 +439,17 @@ struct Node{
             throw "full";
         
         return shiftPoint;
+    }
+
+    bool isHalf() const{
+        unsigned counter = 0;
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i]){
+                counter++;
+            }
+        }
+
+        return counter == _options.track_length / 2;
     }
 
     KeyPtrSet *_data;

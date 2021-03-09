@@ -18,6 +18,10 @@ struct KeyPtrSet{
         ptr = addr;
     }
 
+    void setKey(unsigned offset, unsigned val){
+        key[offset] = val;
+    }
+
     void addKey(unsigned val){
         if(_size == _capacity - 1)
             throw "KeyPtrSet overflow";
