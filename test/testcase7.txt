@@ -14,5 +14,10 @@ insert 1234567
 insert 11111
 insert 123457
 insert 111475
-delete 123457
+insert 14215
+insert 74652
+insert 14754
+@@@
 delete 11111
+@@@
+delete 14215

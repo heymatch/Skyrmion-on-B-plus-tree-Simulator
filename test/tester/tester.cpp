@@ -25,7 +25,7 @@ int main(int argc, char **argv){
     }
 
     for(int i = 1; i <= numberOfTestcases; ++i){
-        fout << "search " << index[i] << endl;
+        fout << "delete " << index[i] << endl;
     }
 
     fout.close();
