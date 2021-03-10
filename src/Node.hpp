@@ -236,7 +236,10 @@ struct Node{
             throw "undefined operation";
         }
         for(int i = 0; i < _options.track_length; ++i){
-            if(idx == _data[i].getKey(0)){
+            if(_bitmap[i] && idx == _data[i].getKey(0)){
+                if(!_isLeaf && isRightMostOffset(i)){
+                    connectSideUnit((Unit *)_data[i].getPtr());
+                }
                 deleteMark(i);
                 return;
             }
@@ -252,14 +255,14 @@ struct Node{
     }
 
     void deleteMark(unsigned offset, bool side = false){
-        if(_isLeaf){
-            _bitmap[offset] = false;
-        }
-        else{
-            if(isRightMostOffset(offset)){
-                connectSideUnit((Unit *)_data[offset].getPtr());
+        _bitmap[offset] = false;
+    }
+
+    unsigned getOffsetByIndex(unsigned idx){
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i] && idx == _data[i].getKey(0)){
+                return i;
             }
-            _bitmap[offset] = false;
         }
     }
 
@@ -273,6 +276,14 @@ struct Node{
 
     KeyPtrSet getMinData(){
         for(int i = 0; i < _options.track_length; ++i){
+            if(_bitmap[i]){
+                return _data[i];
+            }
+        }
+    }
+
+    KeyPtrSet getMaxData(){
+        for(int i = _options.track_length; i >= 0; --i){
             if(_bitmap[i]){
                 return _data[i];
             }
@@ -295,7 +306,7 @@ struct Node{
     }
 
     unsigned getRightMostOffset(){
-        for(int i = _options.track_length - 1; i >= 0; ++i){
+        for(int i = _options.track_length - 1; i >= 0; --i){
             if(_bitmap[i])
                 return i;
         }
@@ -325,7 +336,7 @@ struct Node{
         return true;
     }
 
-    unsigned getClosestRightIndex(unsigned offset){
+    unsigned getClosestRightOffset(unsigned offset){
         for(int i = offset + 1; i < _options.track_length; ++i){
             if(_bitmap[i]){
                 return i;
@@ -335,7 +346,7 @@ struct Node{
         throw "getCloseRightIndex() fail";
     }
 
-    unsigned getClosestLeftIndex(unsigned offset){
+    unsigned getClosestLeftOffset(unsigned offset){
         for(int i = offset - 1; i >= 0; --i){
             if(_bitmap[i]){
                 return i;
@@ -470,7 +481,13 @@ struct Node{
 
 std::ostream &operator<<(std::ostream &out, const Node &right){
     //std::clog << "<log> Node Print" << std::endl;
+    /// status
     out << "(";
+    out << "Node";
+    out << " " << right._id;
+    out << " " << &right;
+    out << "\t";
+    ///
     bool first = true;
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
