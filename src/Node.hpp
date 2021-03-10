@@ -223,7 +223,7 @@ struct Node{
         _parent = unit;
     }
 
-    void deleteData(unsigned idx){
+    void deleteData(unsigned idx, bool side = false){
         switch (_options.delete_mode)
         {
         case Options::delete_function::SEQUENTIAL:
@@ -237,7 +237,7 @@ struct Node{
         }
         for(int i = 0; i < _options.track_length; ++i){
             if(_bitmap[i] && idx == _data[i].getKey(0)){
-                if(!_isLeaf && isRightMostOffset(i)){
+                if(!_isLeaf && isRightMostOffset(i) && !side){
                     connectSideUnit((Unit *)_data[i].getPtr());
                 }
                 deleteMark(i);

@@ -38,15 +38,16 @@ public:
     }
 
     void deleteData(unsigned idx){
-        _root->deleteData(idx, 0);
+        bool mergeFlag = false;
+        _root->deleteData(idx, 0, 0, mergeFlag);
         if(!_root->_isRoot){
             _root = _root->getSideUnit();
         }
     }
-
+    /*
     Node *findParent(Unit *child){
         
-    }
+    }*/
     
 private:
     Unit *_root;
