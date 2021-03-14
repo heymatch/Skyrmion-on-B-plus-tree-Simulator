@@ -48,37 +48,66 @@ insert 98
 insert 55
 insert 54
 insert 78
+#@@@
 delete 62
+#@@@
 delete 72
+#@@@
 delete 57
+#@@@
 delete 73
+#@@@
+#!!!
 delete 64
+#@@@
 delete 60
+#@@@
+#!!!
 delete 100
 #@@@
 delete 58
-@@@
+#@@@
+#!!!
 delete 67
-@@@
+#@@@
 delete 71
-@@@
+#@@@
 delete 80
+#@@@
 delete 91
+#@@@
 delete 81
+#@@@
 delete 52
+#@@@
+#!!!
 delete 70
+#@@@
 delete 75
+#@@@
 delete 74
+#@@@
 delete 69
+#@@@
 delete 96
+#@@@
 delete 82
+#@@@
 delete 65
+#@@@
+#!!!
 delete 83
+#@@@
 delete 97
+#@@@
 delete 61
+#@@@
 delete 56
+@@@
 delete 95
+@@@
 delete 93
+#@@@
 delete 76
 delete 94
 delete 51
@@ -92,13 +121,21 @@ delete 86
 delete 89
 delete 68
 delete 99
+#@@@
 delete 66
+#@@@
 delete 53
 delete 90
 delete 79
+@@@
 delete 87
+@@@
 delete 63
+@@@
 delete 98
+@@@
 delete 55
+@@@
 delete 54
+@@@
 delete 78
