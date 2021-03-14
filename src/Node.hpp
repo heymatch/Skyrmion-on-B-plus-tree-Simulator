@@ -118,7 +118,7 @@ struct Node{
     }
 
     // Insert KeyPtrSet
-    void insertData(unsigned idx, void *data){
+    void insertData(unsigned idx, void *data, bool split = true){
         // read node(metadata, bitmap and data)
         if(_isLeaf){
             KeyPtrSet newData(2);
@@ -173,6 +173,7 @@ struct Node{
             unsigned insertPos = getInsertPosition(idx, insertSide);
 
             //std::clog << "<log> insertPos: " << insertPos << std::endl;
+            //std::clog << "<log> shiftPos: " << shiftPos << std::endl;
             //std::clog << "<log> idx: " << idx << std::endl;
 
             if(_bitmap[insertPos]){
@@ -203,7 +204,7 @@ struct Node{
                     _side = (Unit *)_data[insertPos].getPtr();
                     _data[insertPos].setPtr(temp);
                 }
-                else{
+                else if(!insertSide && split){
                     int i = 0;
                     while(!_bitmap[insertPos+i+1])++i;
                     void *temp = _data[insertPos+i+1].getPtr();
@@ -235,9 +236,12 @@ struct Node{
         default:
             throw "undefined operation";
         }
+
         for(int i = 0; i < _options.track_length; ++i){
             if(_bitmap[i] && idx == _data[i].getKey(0)){
-                if(!_isLeaf && isRightMostOffset(i) && !side){
+                // delete side unit
+                if(!_isLeaf && isRightMostOffset(i) && side){
+                    //std::clog << "<log> delete side" << std::endl;
                     connectSideUnit((Unit *)_data[i].getPtr());
                 }
                 deleteMark(i);
@@ -264,6 +268,7 @@ struct Node{
                 return i;
             }
         }
+        return _options.track_length;
     }
 
     unsigned getMinIndex(){
@@ -303,6 +308,8 @@ struct Node{
             if(_bitmap[i])
                 return i;
         }
+
+        return -1;
     }
 
     unsigned getRightMostOffset(){
@@ -310,6 +317,8 @@ struct Node{
             if(_bitmap[i])
                 return i;
         }
+
+        return -1;
     }
 
     bool isRightMostOffset(unsigned offset) const{
@@ -325,6 +334,7 @@ struct Node{
     }
 
     bool isLeftMostOffset(unsigned offset) const{
+        //std::clog << "<log> offset: " << offset << std::endl;
         if(!_bitmap[offset])
             return false;
 
@@ -484,6 +494,8 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
     /// status
     out << "(";
     out << "Node";
+    if(right._isLeaf) out << " Leaf";
+    else out << " Internal";
     out << " " << right._id;
     out << " " << &right;
     out << "\t";

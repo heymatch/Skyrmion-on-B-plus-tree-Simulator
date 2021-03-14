@@ -58,9 +58,16 @@ private:
 std::ostream &operator<<(std::ostream &out, const BPTree &right){
     //std::clog << "<log> BPTree Print" << std::endl;
     //std::clog << "<log> &right: " << &right << std::endl;
-    out << "{\n";
-    out << *(right._root);
-    out << "\n}\n";
+    
+    if(right._root == nullptr){
+        out << "B+ Tree is not constructed!";
+    }
+    else{
+        out << "{\n";
+        out << *(right._root);
+        out << "\n}\n";
+    }
+    
     return out;
 }
 

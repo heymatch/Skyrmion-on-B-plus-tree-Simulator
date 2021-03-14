@@ -366,7 +366,8 @@ struct Unit{
     }
 
     void deleteData(unsigned idx, unsigned unit_offset, unsigned data_offset, bool &mergeFlag){
-        //std::clog << "<log> <deleteData()> idx: " << idx << std::endl;
+        //std::clog << "<log> <deleteData()> begin" << std::endl;
+        //std::clog << "<log> <deleteData()> _id: " << _id << std::endl;
 
         switch (_options.delete_mode)
         {
@@ -383,32 +384,155 @@ struct Unit{
 
         if(isLeaf()){
             deleteCurrentData(idx, unit_offset, data_offset, data_offset, mergeFlag);
+            std::clog << "<log> <deleteData()> mergeFlag: " << mergeFlag << std::endl;
+            std::clog << "<log> <deleteData()> end" << std::endl;
         }
         else{
             for(int i = 0; i < _options.unit_size; ++i){
                 for(int j = 0; j < _options.track_length; ++j){
                     Unit *nextUnit = (Unit *)_tracks[i]._data[j].getPtr();
+
                     if(_tracks[i]._bitmap[j] && nextUnit != nullptr && idx < _tracks[i]._data[j].getKey(0)){
                         nextUnit->deleteData(idx, unit_offset, j, mergeFlag);
+                        std::clog << "<log> <deleteData()> mergeFlag: " << mergeFlag << std::endl;
+                        std::clog << "<log> <deleteData()> nextUnit->_tracks[0]: " << nextUnit->_tracks[0] << std::endl;
                         if(mergeFlag){
+                            
                             unsigned deleteIndex = _tracks[i]._data[j].getKey(0);
-                            deleteCurrentData(deleteIndex, unit_offset, data_offset, data_offset, mergeFlag);
+                            //std::clog << "<log> <deleteData()> deleteIndex: " << deleteIndex << std::endl;
+                            //std::clog << "<log> <deleteData()> idx: " << idx << std::endl;
+                            deleteCurrentData(deleteIndex, unit_offset, j, data_offset, mergeFlag);
+
+                            //std::clog << "<log> <deleteData()> test point begin" << std::endl;
+                            /*
+                            std::clog << "<log> <deleteData()> nextUnit->isLeaf(): " << nextUnit->isLeaf() << std::endl;
+                            std::clog << "<log> <deleteData()> data_offset: " << data_offset << std::endl;
+                            if(nextUnit->isLeaf()){
+                                bool side = false;
+                                
+                                Unit *rightUnit = findRightUnit(unit_offset, j, data_offset, side);
+                                Unit *leftUnit = findLeftUnit(unit_offset, j, data_offset);
+
+                                std::clog << "<log> <deleteData()> _id: " << _id << std::endl;
+                                std::clog << "<log> <deleteData()> leftUnit: " << leftUnit << std::endl;
+                                std::clog << "<log> <deleteData()> rightUnit: " << rightUnit << std::endl;
+
+                                for(int k = 0; k < _options.track_length; ++k){
+                                    if(_tracks[i]._bitmap[k]){
+                                        if(_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                                            _tracks[i]._data[k].setKey(0, getSideUnit()->_tracks[0].getMinIndex());
+                                        }
+                                        else if(_tracks[i].getRightMostOffset() != -1){
+                                            unsigned cloestRightOffset = _tracks[i].getClosestRightOffset(k);
+                                            Unit *next = (Unit *)_tracks[i]._data[cloestRightOffset].getPtr();
+                                            _tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                                        }
+                                    }
+                                }
+
+                                if(leftUnit != nullptr){
+                                    //std::clog << "<log> <deleteData()> _tracks[i]: " << leftUnit->_tracks[i] << std::endl;
+                                    for(int k = 0; k < _options.track_length; ++k){
+                                        if(leftUnit->_tracks[i]._bitmap[k]){
+                                            if(leftUnit->_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                                                leftUnit->_tracks[i]._data[k].setKey(0, leftUnit->getSideUnit()->_tracks[0].getMinIndex());
+                                            }
+                                            else if(leftUnit->_tracks[i].getRightMostOffset() != -1){
+                                                unsigned cloestRightOffset = leftUnit->_tracks[i].getClosestRightOffset(k);
+                                                Unit *next = (Unit *)leftUnit->_tracks[i]._data[cloestRightOffset].getPtr();
+                                                leftUnit->_tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                                            }
+                                        }
+                                    }
+                                    //std::clog << "<log> <deleteData()> _tracks[i]: " << leftUnit->_tracks[i] << std::endl;
+                                }
+
+                                if(rightUnit != nullptr){
+                                    //std::clog << "<log> <deleteData()> _tracks[i]: " << rightUnit->_tracks[i] << std::endl;
+                                    for(int k = 0; k < _options.track_length; ++k){
+                                        if(rightUnit->_tracks[i]._bitmap[k]){
+                                            if(rightUnit->_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                                                rightUnit->_tracks[i]._data[k].setKey(0, rightUnit->getSideUnit()->_tracks[0].getMinIndex());
+                                            }
+                                            else if(rightUnit->_tracks[i].getRightMostOffset() != -1){
+                                                unsigned cloestRightOffset = rightUnit->_tracks[i].getClosestRightOffset(k);
+                                                Unit *next = (Unit *)rightUnit->_tracks[i]._data[cloestRightOffset].getPtr();
+                                                rightUnit->_tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                                            }
+                                        }
+                                    }
+                                    //std::clog << "<log> <deleteData()> _tracks[i]: " << rightUnit->_tracks[i] << std::endl;
+                                }
+                                
+                            }
+                            */
+                            //std::clog << "<log> <deleteData()> test point end" << std::endl;
                             
                         }
+                        adjInternalIndex();
                         return;
                     }
                 }
                 // check side unit
                 Unit *nextUnit = getSideUnit();
                 nextUnit->deleteData(idx, unit_offset, _options.track_length, mergeFlag);
+                std::clog << "<log> <deleteData()> side mergeFlag: " << mergeFlag << std::endl;
+                
+                        
+                //std::clog << "<log> <deleteData()> _tracks[unit_offset]._data[_options.track_length-1].getKey(0): " << _tracks[unit_offset]._data[_options.track_length-1].getKey(0) << std::endl;
+                //std::clog << "<log> <deleteData()> idx: " << idx << std::endl;
+
                 if(mergeFlag){
                     //std::clog << "<log> <deleteData()> Unit _id: " << _id << std::endl;
                     unsigned deleteOffset = _tracks[unit_offset].getRightMostOffset();
                     unsigned deleteIndex = _tracks[unit_offset]._data[deleteOffset].getKey(0);
                     //std::clog << "<log> Side deleteOffset: " << deleteOffset << std::endl;
                     //std::clog << "<log> Side deleteIndex: " << deleteIndex << std::endl;
-                    deleteCurrentData(deleteIndex, unit_offset, deleteOffset, data_offset, mergeFlag);
+                    //_tracks[i]._data[_options.track_length-1].setKey(0, nextUnit->_tracks[unit_offset].getMinIndex());
+                    deleteCurrentData(deleteIndex, unit_offset, _options.track_length, data_offset, mergeFlag);
+                    std::clog << "<log> <deleteData()> side nextUnit->_tracks[0]: " << nextUnit->_tracks[0] << std::endl;
+                    /*
+                    if(nextUnit->isLeaf()){
+                        //std::clog << "<log> data_offset: " << data_offset << std::endl;
+                        //std::clog << "<log> <deleteData()> _id: " << _id << std::endl;
+
+                        for(int k = 0; k < _options.track_length; ++k){
+                            if(_tracks[i]._bitmap[k]){
+                                if(_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                                    _tracks[i]._data[k].setKey(0, getSideUnit()->_tracks[0].getMinIndex());
+                                }
+                                else if(_tracks[i].getRightMostOffset() != -1){
+                                    unsigned cloestRightOffset = _tracks[i].getClosestRightOffset(k);
+                                    Unit *next = (Unit *)_tracks[i]._data[cloestRightOffset].getPtr();
+                                    _tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                                }
+                            }
+                        }
+
+                        if(getParentUnit() != nullptr){
+                            Unit *leftUnit = findLeftUnit(unit_offset, _options.track_length, data_offset);
+                            std::clog << "<log> leftUnit: " << leftUnit << std::endl;
+                            if(leftUnit != nullptr){
+                                //std::clog << "<log> <deleteData()> _tracks[i]: " << leftUnit->_tracks[i] << std::endl;
+                                for(int k = 0; k < _options.track_length; ++k){
+                                    if(leftUnit->_tracks[i]._bitmap[k]){
+                                        if(leftUnit->_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                                            leftUnit->_tracks[i]._data[k].setKey(0, leftUnit->getSideUnit()->_tracks[0].getMinIndex());
+                                        }
+                                        else if(leftUnit->_tracks[i].getRightMostOffset() != -1){
+                                            unsigned cloestRightOffset = leftUnit->_tracks[i].getClosestRightOffset(k);
+                                            Unit *next = (Unit *)leftUnit->_tracks[i]._data[cloestRightOffset].getPtr();
+                                            leftUnit->_tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                                        }
+                                    }
+                                }
+                                //std::clog << "<log> <deleteData()> _tracks[i]: " << leftUnit->_tracks[i] << std::endl;
+                            }
+                        }
+                        
+                    }*/
                 }
+                adjInternalIndex();
                 return;
             }
 
@@ -418,226 +542,214 @@ struct Unit{
 
     void deleteCurrentData(unsigned idx, unsigned unit_offset, unsigned data_offset, unsigned enter_offset, bool &mergeFlag){
         std::clog << "<log> <deleteCurrentData()> idx: " << idx << std::endl;
+        std::clog << "<log> <deleteCurrentData()> _id: " << _id << std::endl;
+        //std::clog << "<log> <deleteCurrentData()> begin" << std::endl;
+        //std::clog << "<log> data_offset: " << data_offset << std::endl;
+        //std::clog << "<log> enter_offset: " << enter_offset << std::endl;
 
         if(_isRoot){
-            _tracks[unit_offset].deleteData(idx);
+            //std::clog << "<log> delete at root" << std::endl;
+            bool dataSide = false;
+            if(data_offset == _options.track_length){
+                dataSide = true;
+            }
+            _tracks[unit_offset].deleteData(idx, dataSide);
+
             if(isEmpty(0)){
                 this->setRoot(false);
-                getSideUnit()->setRoot(true);
-                getSideUnit()->connectParentUnit(nullptr);
+                if(getSideUnit() != nullptr){
+                    getSideUnit()->setRoot(true);
+                    getSideUnit()->connectParentUnit(nullptr);
+                }
             }
         }
         else if(isLeaf()){
-            Unit *selfUnit = this;
-            Unit *rightUnit = nullptr;
-            Unit *leftUnit = nullptr;
+            Unit *selfUnit = this; // to be delete
             bool side = false;
+            Unit *rightUnit = findRightUnit(unit_offset, data_offset, enter_offset, side);
+            Unit *leftUnit = findLeftUnit(unit_offset, data_offset, enter_offset);
 
-            std::clog << "<log> Leaf data_offset: " << data_offset << std::endl;
-            if(!getParentUnit()->_tracks[unit_offset].isLeftMostOffset(data_offset)){
-                unsigned leftOffset = getParentUnit()->_tracks[unit_offset].getClosestLeftOffset(data_offset);
-                leftUnit = (Unit *)getParentUnit()->_tracks[unit_offset]._data[leftOffset].getPtr();
-                //std::clog << "<log> leftUnit: " << leftUnit << std::endl;
-            }
-
-            if(data_offset == _options.track_length){
-                //side = true;
-                //rightUnit = getParentUnit()->getSideUnit();
-                //std::clog << "<log> rightUnit Side: " << rightUnit << std::endl;
-            }
-            else if(!getParentUnit()->_tracks[unit_offset].isRightMostOffset(data_offset)){
-                unsigned rightOffset = getParentUnit()->_tracks[unit_offset].getClosestRightOffset(data_offset);
-                rightUnit = (Unit *)getParentUnit()->_tracks[unit_offset]._data[rightOffset].getPtr();
-                //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
-            }
-            else{
-                side = true;
-                rightUnit = getParentUnit()->getSideUnit();
-            }
+            
 
             std::clog << "<log> Leaf selfUnit: " << selfUnit << std::endl;
             std::clog << "<log> Leaf leftUnit: " << leftUnit << std::endl;
             std::clog << "<log> Leaf rightUnit: " << rightUnit << std::endl;
 
-            // Check merge or not
+            // Check merge or borrow
             if(isHalf(unit_offset)){
-                if(rightUnit != nullptr){
-                    KeyPtrSet borrow = borrowDataFromRight(selfUnit->_tracks[unit_offset], rightUnit->_tracks[0]);
+                if(leftUnit != nullptr){
+                    KeyPtrSet borrow = borrowDataFromLeft(*leftUnit, *selfUnit);
                     //std::clog << "<log> borrow: " << borrow << std::endl;
                     if(borrow.getKey(0) == 0){
-                        mergeNode(selfUnit->_tracks[unit_offset], rightUnit->_tracks[0]);
-
-                        if(side){
-                            getParentUnit()->connectSideUnit(selfUnit);
-                        }
-                        else{
-                            unsigned cloestRightOffset = getParentUnit()->_tracks[unit_offset].getClosestRightOffset(data_offset);
-                            getParentUnit()->_tracks[unit_offset]._data[cloestRightOffset].setPtr(selfUnit);
-                        }
+                        //std::clog << "<log> Unit _id: " << _id << std::endl;
+                        mergeNodeFromRight(*leftUnit, *selfUnit);
                         mergeFlag = true;
-                        //getParentUnit()->deleteCurrentData(deleteIndex, unit_offset, data_offset);
-                        
+                        leftUnit->_tracks[unit_offset].deleteData(idx); 
+                        //std::clog << "<log> test point 1" << std::endl;
                     }
                     else{
-                        getParentUnit()->_tracks[unit_offset]._data[data_offset].setKey(0, rightUnit->_tracks[0].getMinIndex());
+                        //getParentUnit()->_tracks[unit_offset]._data[data_offset-1].setKey(0, selfUnit->_tracks[0].getMinIndex());
+                        _tracks[unit_offset].deleteData(idx);  
                         //_tracks[unit_offset].insertData(rightUnit->_tracks[0].getMinIndex(), rightUnit->_tracks[0].getMinData().getPtr());
                     }
-                    _tracks[unit_offset].deleteData(idx);
-                    if(data_offset >= 1 && getParentUnit()->_tracks[unit_offset]._data[data_offset-1].getKey(0) == idx){
-                        getParentUnit()->_tracks[unit_offset]._data[data_offset-1].setKey(0, _tracks[unit_offset].getMinData().getKey(0));
-                    }
+
                 }
-                // For side unit
-                else if(leftUnit != nullptr){
-                    KeyPtrSet borrow = borrowDataFromRight(selfUnit->_tracks[0], leftUnit->_tracks[unit_offset]);
+                else if(rightUnit != nullptr){
+                    KeyPtrSet borrow = borrowDataFromRight(*selfUnit, *rightUnit);
                     //std::clog << "<log> borrow: " << borrow << std::endl;
                     if(borrow.getKey(0) == 0){
-                        std::clog << "<log> Unit _id: " << _id << std::endl;
-                        mergeNode(selfUnit->_tracks[unit_offset], leftUnit->_tracks[0]);
+                        selfUnit->_tracks[unit_offset].deleteData(idx);
+                        mergeNodeFromLeft(*selfUnit, *rightUnit);
                         mergeFlag = true;
+                        
+                        //std::clog << "<log> rightUnit->_tracks[unit_offset]: " << rightUnit->_tracks[unit_offset] << std::endl;
                     }
                     else{
-                        getParentUnit()->_tracks[unit_offset]._data[data_offset].setKey(0, selfUnit->_tracks[0].getMinIndex());
+                        //getParentUnit()->_tracks[unit_offset]._data[data_offset].setKey(0, rightUnit->_tracks[0].getMinIndex());
+                        _tracks[unit_offset].deleteData(idx);  
                         //_tracks[unit_offset].insertData(rightUnit->_tracks[0].getMinIndex(), rightUnit->_tracks[0].getMinData().getPtr());
                     }
-
-                    selfUnit->_tracks[unit_offset].deleteData(idx, side); 
-                    //unsigned leftOffset = getParentUnit()->_tracks[unit_offset].getClosestLeftOffset(data_offset);
-                    //if(data_offset >= 1 && getParentUnit()->_tracks[unit_offset]._data[leftOffset].getKey(0) == idx){
-                    //    getParentUnit()->_tracks[unit_offset]._data[leftOffset].setKey(0, _tracks[unit_offset].getMinData().getKey(0));
+                    //if(data_offset >= 1 && getParentUnit()->_tracks[unit_offset]._data[data_offset-1].getKey(0) == idx){
+                    //    getParentUnit()->_tracks[unit_offset]._data[data_offset-1].setKey(0, _tracks[unit_offset].getMinData().getKey(0));
                     //}
-                    //std::clog << "<log> leftUnit->_tracks[unit_offset]: " << leftUnit->_tracks[unit_offset] << std::endl;
-                    /*
-                    unsigned rightMostOffset = getParentUnit()->_tracks[unit_offset].getRightMostOffset();
-                    if(data_offset >= 1 && getParentUnit()->_tracks[unit_offset]._data[rightMostOffset].getKey(0) == idx){
-                        getParentUnit()->_tracks[unit_offset]._data[rightMostOffset].setKey(0, leftUnit->_tracks[unit_offset].getMinIndex());
-                    }*/
+                }
+                else{
+                    _tracks[unit_offset].deleteData(idx);  
                 }
 
                 return;
             }
 
             _tracks[unit_offset].deleteData(idx);
-            if(data_offset >= 1 && getParentUnit()->_tracks[unit_offset]._data[data_offset-1].getKey(0) == idx){
-                getParentUnit()->_tracks[unit_offset]._data[data_offset-1].setKey(0, _tracks[unit_offset].getMinData().getKey(0));
-            }
-        } // Delete Leaf End
+        }
         // Else delete at Internal unit
         else
         {
+            //std::clog << "<log> <deleteCurrentData() Internal> test point begin" << std::endl;
             Unit *selfUnit = this;
-            Unit *rightUnit = nullptr;
-            Unit *leftUnit = nullptr;
             bool side = false;
+            Unit *rightUnit = findRightUnit(unit_offset, data_offset, enter_offset, side);
+            Unit *leftUnit = findLeftUnit(unit_offset, data_offset, enter_offset);
             bool dataSide = false;
             mergeFlag = false;
+            //std::clog << "<log> <deleteCurrentData() Internal> test point begin" << std::endl;
 
-            std::clog << "<log> data_offset: " << data_offset << std::endl;
-            std::clog << "<log> enter_offset: " << enter_offset << std::endl;
-
-            if(!_tracks[unit_offset].isLeftMostOffset(enter_offset)){
-                unsigned leftOffset = getParentUnit()->_tracks[unit_offset].getClosestLeftOffset(enter_offset);
-                leftUnit = (Unit *)getParentUnit()->_tracks[unit_offset]._data[leftOffset].getPtr();
-                //std::clog << "<log> leftUnit: " << leftUnit << std::endl;
-            }
-
-            if(data_offset == _options.track_length){
-                //side = true;
-                //rightUnit = getParentUnit()->getSideUnit();
-                //std::clog << "<log> rightUnit Side: " << rightUnit << std::endl;
-            }
-            else if(!getParentUnit()->_tracks[unit_offset].isRightMostOffset(enter_offset)){
-                unsigned rightOffset = getParentUnit()->_tracks[unit_offset].getClosestRightOffset(enter_offset);
-                rightUnit = (Unit *)getParentUnit()->_tracks[unit_offset]._data[rightOffset].getPtr();
-                //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
-            }
-            else{
+            if(data_offset == _options.track_length)
                 side = true;
-                rightUnit = getParentUnit()->getSideUnit();
-            }
 
-            
-            
             std::clog << "<log> selfUnit: " << selfUnit << std::endl;
+            //std::clog << "<log> isHalf(unit_offset): " << isHalf(unit_offset) << std::endl;
             std::clog << "<log> leftUnit: " << leftUnit << std::endl;
             std::clog << "<log> rightUnit: " << rightUnit << std::endl;
             std::clog << "<log> side: " << side << std::endl;
             //std::clog << "<log> dataSide: " << dataSide << std::endl;
 
+            
             if(isHalf(unit_offset)){
-                if(rightUnit != nullptr){
-                    KeyPtrSet borrow = borrowDataFromRight(selfUnit->_tracks[unit_offset], rightUnit->_tracks[0]);
-                    std::clog << "<log> borrow: " << borrow << std::endl;
-                    if(borrow.getKey(0) == 0){
-                        std::clog << "<log> Unit _id: " << _id << std::endl;
-                        //unsigned deleteIndex = rightUnit->_tracks[0].getMinIndex();
-                        mergeNode(selfUnit->_tracks[unit_offset], rightUnit->_tracks[0]);
-                        if(side){
-                            getParentUnit()->connectSideUnit(selfUnit);
-                        }
-                        else{
-                            _tracks[unit_offset]._data[data_offset+1].setPtr(_tracks[unit_offset]._data[data_offset].getPtr());
-                            unsigned cloestRightOffset = getParentUnit()->_tracks[unit_offset].getClosestRightOffset(data_offset);
-                            getParentUnit()->_tracks[unit_offset]._data[cloestRightOffset].setPtr(selfUnit);
-                        }
-                        mergeFlag = true;
-                        
-                    }
-                    else{
-                        getParentUnit()->_tracks[unit_offset]._data[data_offset].setKey(0, rightUnit->_tracks[0].getMinIndex());
-                        //_tracks[unit_offset].insertData(rightUnit->_tracks[0].getMinIndex(), rightUnit->_tracks[0].getMinData().getPtr());
-                    }
-
-                    selfUnit->_tracks[unit_offset].deleteData(idx); 
-                }
-                // For side unit merge
-                else if(leftUnit != nullptr){
-                    KeyPtrSet borrow = borrowDataFromRight(selfUnit->_tracks[0], leftUnit->_tracks[unit_offset]);
+                if(leftUnit != nullptr){
+                    //std::clog << "<log> selfUnit->_tracks[0]: " << selfUnit->_tracks[0] << std::endl;
+                    KeyPtrSet borrow = borrowDataFromLeft(*leftUnit, *selfUnit);
                     //std::clog << "<log> borrow: " << borrow << std::endl;
                     if(borrow.getKey(0) == 0){
-                        std::clog << "<log> Unit _id: " << _id << std::endl;
-                        //unsigned deleteIndex = selfUnit->_tracks[0].getMinIndex();
-                        mergeNode(selfUnit->_tracks[unit_offset], leftUnit->_tracks[0]);
+                        //std::clog << "<log> Unit _id: " << _id << std::endl;
+
+                        unsigned cloestLeftOffset = getParentUnit()->_tracks[0].getClosestLeftOffset(enter_offset);
+                        unsigned idxFromParent = getParentUnit()->_tracks[0]._data[cloestLeftOffset].getKey(0);
+                        //
+                        selfUnit->_tracks[unit_offset].deleteData(idx, side);
+                        leftUnit->_tracks[unit_offset].insertData(idxFromParent, leftUnit->getSideUnit(), false);
+                        
+                        //data_offset = selfUnit->_tracks[unit_offset].getOffsetByIndex(idx);
+                        //selfUnit->_tracks[unit_offset]._data[data_offset].setKey(0, idxFromParent);
+                        mergeNodeFromRight(*leftUnit, *selfUnit);
+                        leftUnit->connectSideUnit(selfUnit->getSideUnit());
                         mergeFlag = true;
+                        
+                        //std::clog << "<log> cloestLeftOffset: " << cloestLeftOffset << std::endl; 
+                        
+                        
+                        //std::clog << "<log> idxFromParent: " << idxFromParent << std::endl; 
+                        std::clog << "<log> getParentUnit()->_tracks[0]: " << getParentUnit()->_tracks[0] << std::endl; 
+                        if(enter_offset == _options.track_length){
+                            //getParentUnit()->_tracks[0]._data[cloestLeftOffset].setKey(0, getParentUnit()->_tracks[0]._data[enter_offset].getKey(0));
+                            getParentUnit()->_tracks[0].connectSideUnit((Unit *)getParentUnit()->_tracks[0]._data[cloestLeftOffset].getPtr());
+                        }
+                        else{
+                            getParentUnit()->_tracks[0]._data[cloestLeftOffset].setKey(0, getParentUnit()->_tracks[0]._data[enter_offset].getKey(0));
+                            getParentUnit()->_tracks[0]._data[enter_offset].setPtr(getParentUnit()->_tracks[0]._data[cloestLeftOffset].getPtr());
+                        }
+                        std::clog << "<log> getParentUnit()->_tracks[0]: " << getParentUnit()->_tracks[0] << std::endl; 
+                        //std::clog << "<log> idxFromParent: " << idxFromParent << std::endl; 
+                        
+                        //std::clog << "<log> leftUnit->_tracks[0]: " << leftUnit->_tracks[0] << std::endl;
+                        //std::clog << "<log> leftUnit->_tracks[0]: " << leftUnit->_tracks[0] << std::endl;
                     }
                     else{
-                        getParentUnit()->_tracks[unit_offset]._data[data_offset].setKey(0, selfUnit->_tracks[0].getMinIndex());
+                        unsigned cloestLeftOffset = getParentUnit()->_tracks[unit_offset].getClosestLeftOffset(enter_offset);
+                        unsigned idxFromParent = getParentUnit()->_tracks[unit_offset]._data[cloestLeftOffset].getKey(0);
+                        getParentUnit()->_tracks[unit_offset]._data[cloestLeftOffset].setKey(0, borrow.getKey(0));
+                        //getParentUnit()->_tracks[unit_offset]._data[data_offset-1].setKey(0, selfUnit->_tracks[0].getMinIndex());
+                        unsigned deleteOffset = _tracks[unit_offset].getOffsetByIndex(idx);
+                        _tracks[unit_offset].deleteData(idx, side); //? side 
+                        {
+                            unsigned cloestLeftOffset = _tracks[unit_offset].getClosestLeftOffset(deleteOffset);
+                            _tracks[unit_offset]._data[cloestLeftOffset].setKey(0, idxFromParent);
+                        }
                         //_tracks[unit_offset].insertData(rightUnit->_tracks[0].getMinIndex(), rightUnit->_tracks[0].getMinData().getPtr());
                     }
-
-                    data_offset = _tracks[unit_offset].getOffsetByIndex(idx);
-                    if(_tracks[unit_offset].isRightMostOffset(data_offset)){
-                        dataSide = true;
-                    }
-
-                    selfUnit->_tracks[unit_offset].deleteData(idx, dataSide); 
                 }
+                else if(rightUnit != nullptr){
+                    KeyPtrSet borrow = borrowDataFromRight(*selfUnit, *rightUnit);
+                    //std::clog << "<log> borrow: " << borrow << std::endl;
+                    if(borrow.getKey(0) == 0){
+                        selfUnit->_tracks[unit_offset].deleteData(idx); 
+                        mergeNodeFromLeft(*selfUnit, *rightUnit);
+                        mergeFlag = true;
+
+                        //unsigned leftMostOffset = getParentUnit()->_tracks[0].getLeftMostOffset();
+                        unsigned idxFromParent = getParentUnit()->_tracks[0]._data[enter_offset].getKey(0);
+                        rightUnit->_tracks[unit_offset].insertData(idxFromParent, selfUnit->getSideUnit(), false);
+                    }
+                    else{
+                        getParentUnit()->_tracks[unit_offset]._data[enter_offset].setKey(0, borrow.getKey(0));
+                        _tracks[unit_offset].deleteData(idx);
+                        //_tracks[unit_offset].insertData(rightUnit->_tracks[0].getMinIndex(), rightUnit->_tracks[0].getMinData().getPtr());
+                    }
+                }
+
+                adjInternalIndex();
+                if(leftUnit != nullptr)
+                    leftUnit->adjInternalIndex();
+                if(rightUnit != nullptr)
+                    rightUnit->adjInternalIndex();
 
                 return;
             }
-
             //if(_tracks[unit_offset].isRightMostOffset(data_offset)){
             //    dataSide = true;
             //}
-            _tracks[unit_offset].deleteData(idx, dataSide);    
+            _tracks[unit_offset].deleteData(idx, side); 
         }
+
+        //std::clog << "<log> <deleteCurrentData()> end" << std::endl;
+        return;
     }
 
-    KeyPtrSet borrowDataFromRight(Node &left, Node& right){
+    KeyPtrSet borrowDataFromRight(Unit &left, Unit& right){
         
-        if(left._isLeaf && !right.isHalf()){
-            KeyPtrSet borrow = right.getMinData();
-            right.deleteData(right.getMinIndex());
-            left.insertData(borrow.getKey(0), borrow.getPtr());
+        if(right.isLeaf() && !right.isHalf(0)){
+            KeyPtrSet borrow = right._tracks[0].getMinData();
+            right._tracks[0].deleteData(right._tracks[0].getMinIndex());
+            left._tracks[0].insertData(borrow.getKey(0), borrow.getPtr());
             //std::clog << "<log> destination: " << destination << std::endl;
 
             return borrow;
         }
-        else if(!left._isLeaf && !right.isHalf()){
-            KeyPtrSet borrow = right.getMinData();
-            right.deleteData(right.getMinIndex());
-            ((Unit *)borrow.getPtr())->connectParentUnit(this);
-            left.insertData(borrow.getKey(0), borrow.getPtr());
+        else if(!right.isLeaf() && !right.isHalf(0)){
+            KeyPtrSet borrow = right._tracks[0].getMinData();
+            right._tracks[0].deleteData(right._tracks[0].getMinIndex());
+            ((Unit *)borrow.getPtr())->connectParentUnit(&left);
+            left._tracks[0].insertData(borrow.getKey(0), borrow.getPtr());
 
             return borrow;
         }
@@ -645,30 +757,35 @@ struct Unit{
         return KeyPtrSet();
     }
 
-    KeyPtrSet borrowDataFromLeft(Node &left, Node& right){
-        
-        if(left._isLeaf && !left.isHalf()){
-            KeyPtrSet borrow = left.getMaxData();
-            left.deleteData(left.getMaxIndex());
-            right.insertData(borrow.getKey(0), borrow.getPtr());
-            //std::clog << "<log> destination: " << destination << std::endl;
+    KeyPtrSet borrowDataFromLeft(Unit &left, Unit& right){
+        // unit_offset = getRightMostUnit
+        if(left.isLeaf() && !left.isHalf(0)){
+            KeyPtrSet borrow = left._tracks[0].getMaxData();
+            left._tracks[0].deleteData(left._tracks[0].getMaxIndex());
+            right._tracks[0].insertData(borrow.getKey(0), borrow.getPtr());
 
             return borrow;
         }
-        else if(!left._isLeaf && !left.isHalf()){
-            KeyPtrSet borrow = left.getMaxData();
-            left.deleteData(left.getMinIndex());
-            ((Unit *)borrow.getPtr())->connectParentUnit(this);
-            right.insertData(borrow.getKey(0), borrow.getPtr());
+        else if(!left.isLeaf() && !left.isHalf(0)){
+            KeyPtrSet borrow = left._tracks[0].getMaxData();
+            borrow.setPtr(left.getSideUnit());
+            ((Unit *)borrow.getPtr())->connectParentUnit(&right);
+            left._tracks[0].deleteData(left._tracks[0].getMaxIndex(), true);
+            right._tracks[0].insertData(borrow.getKey(0), borrow.getPtr(), false);
+
+            return borrow;
         }
 
         return KeyPtrSet();
     }
 
     // Merge right Node to left Node
-    void mergeNode(Node &left, Node &right){
-        std::clog << "<log> <mergeNode()> begin" << std::endl;
-        std::clog << "<log> Merge " << right._id << " to " << left._id << std::endl;
+    void mergeNodeFromRight(Unit &left, Unit &right){
+        // left_unit_offset = 
+        // right_unit_offset = 
+
+        std::clog << "<log> <mergeNodeFromRight()> begin left: " << left._tracks[0] << std::endl;
+        std::clog << "<log> <mergeNodeFromRight()> begin right: " << right._tracks[0] << std::endl;
 
         switch (_options.split_merge_mode)
         {
@@ -683,32 +800,127 @@ struct Unit{
             break;
         }
 
-        copyHalfNode(left, right);
-        std::clog << "<log> <mergeNode()> end" << std::endl;
-    }
-
-    void copyHalfNode(Node &left, Node &right){
-        if(left._isLeaf){
+        if(left.isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
-                if(right._bitmap[i]){
-                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr());
-                    right.deleteMark(i);
+                if(right._tracks[0]._bitmap[i]){
+                    left._tracks[0].insertData(right._tracks[0]._data[i].getKey(0), right._tracks[0]._data[i].getPtr());
+                    right._tracks[0].deleteMark(i);
                 }
             }
-            std::clog << "<log> left: " << left << std::endl;
-            std::clog << "<log> right: " << right << std::endl;
         }
         else{
-            left.connectSideUnit(right._side);
+            Unit *tempSide = left.getSideUnit();
+            left.connectSideUnit(nullptr);
+            bool first = true;
             for(int i = 0; i < _options.track_length; ++i){
-                if(right._bitmap[i]){
-                    ((Unit *)right._data[i].getPtr())->connectParentUnit(this);
-                    left.insertData(((Unit *)right._data[i].getPtr())->_tracks[0].getMinIndex(), right._data[i].getPtr());
-                    right.deleteMark(i);
+                if(right._tracks[0]._bitmap[i]){
+                    ((Unit *)right._tracks[0]._data[i].getPtr())->connectParentUnit(&left);
+                    left._tracks[0].insertData(right._tracks[0]._data[i].getKey(0), right._tracks[0]._data[i].getPtr(), false);
+                    right._tracks[0].deleteMark(i);
                 }
             }
-            std::clog << "<log> left: " << left << std::endl;
-            std::clog << "<log> right: " << right << std::endl;
+            right.getSideUnit()->connectParentUnit(&left);
+            left.connectSideUnit(tempSide);
+        }
+
+        std::clog << "<log> <mergeNodeFromRight()> end left: " << left._tracks[0] << std::endl;
+        std::clog << "<log> <mergeNodeFromRight()> end right: " << right._tracks[0] << std::endl;
+    }
+
+    void mergeNodeFromLeft(Unit &left, Unit &right){
+        //std::clog << "<log> <mergeNodeFromLeft()> begin left: " << left._tracks[0] << std::endl;
+        //std::clog << "<log> <mergeNodeFromLeft()> begin right: " << right._tracks[0] << std::endl;
+        
+        if(left.isLeaf()){
+            for(int i = 0; i < _options.track_length; ++i){
+                if(left._tracks[0]._bitmap[i]){
+                    right._tracks[0].insertData(left._tracks[0]._data[i].getKey(0), left._tracks[0]._data[i].getPtr());
+                    left._tracks[0].deleteMark(i);
+                }
+            }
+            //std::clog << "<log> left: " << left << std::endl;
+            //std::clog << "<log> right: " << right << std::endl;
+        }
+        else{
+            //left.connectSideUnit(right._side);
+            for(int i = 0; i < _options.track_length; ++i){
+                if(left._tracks[0]._bitmap[i]){
+                    ((Unit *)left._tracks[0]._data[i].getPtr())->connectParentUnit(&right);
+                    right._tracks[0].insertData(left._tracks[0]._data[i].getKey(0), left._tracks[0]._data[i].getPtr(), false);
+                    left._tracks[0].deleteMark(i);
+                }
+            }
+            left.getSideUnit()->connectParentUnit(&right);
+            //right._tracks[0].insertData(left.getSideUnit()->_tracks[0].getMinIndex(), left.getSideUnit(), false);
+            //std::clog << "<log> left: " << left << std::endl;
+            //std::clog << "<log> right: " << right << std::endl;
+        }
+
+        //std::clog << "<log> <mergeNodeFromLeft()> end left: " << left._tracks[0] << std::endl;
+        //std::clog << "<log> <mergeNodeFromLeft()> end right: " << right._tracks[0] << std::endl;
+    }
+
+    Unit *findRightUnit(unsigned unit_offset, unsigned data_offset, unsigned enter_offset, bool &side){
+        std::clog << "<log> enter_offset: " << enter_offset << std::endl;
+        std::clog << "<log> data_offset: " << data_offset << std::endl;
+        //!
+        if(_isRoot)
+            return nullptr;
+
+        if(enter_offset == _options.track_length){
+            //side = true;
+            return getParentUnit()->getSideUnit();
+        }
+
+        if(getParentUnit()->_tracks[unit_offset].isRightMostOffset(0)){
+            side = true;
+            return getParentUnit()->getSideUnit();
+        }
+
+        if(data_offset == _options.track_length){
+            side = true;
+            //return getParentUnit()->getSideUnit();
+        }
+        else if(!getParentUnit()->_tracks[unit_offset].isRightMostOffset(enter_offset)){
+            unsigned rightOffset = getParentUnit()->_tracks[unit_offset].getClosestRightOffset(enter_offset);
+            return (Unit *)getParentUnit()->_tracks[unit_offset]._data[rightOffset].getPtr();
+            //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
+        }
+
+        
+
+        return nullptr;
+    }
+
+    Unit *findLeftUnit(unsigned unit_offset, unsigned data_offset, unsigned enter_offset){
+        if(_isRoot)
+            return nullptr;
+        
+        if(!getParentUnit()->_tracks[unit_offset].isLeftMostOffset(enter_offset)){
+            unsigned leftOffset = getParentUnit()->_tracks[unit_offset].getClosestLeftOffset(enter_offset);
+            return (Unit *)getParentUnit()->_tracks[unit_offset]._data[leftOffset].getPtr();
+            //std::clog << "<log> leftUnit: " << leftUnit << std::endl;
+        }
+
+        return nullptr;
+    }
+
+    void adjInternalIndex(){
+        Unit *nextUnit = getSideUnit();
+        int i = 0;
+        if(nextUnit->isLeaf()){
+            for(int k = 0; k < _options.track_length; ++k){
+                if(_tracks[i]._bitmap[k]){
+                    if(_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
+                        _tracks[i]._data[k].setKey(0, getSideUnit()->_tracks[0].getMinIndex());
+                    }
+                    else if(_tracks[i].getRightMostOffset() != -1){
+                        unsigned cloestRightOffset = _tracks[i].getClosestRightOffset(k);
+                        Unit *next = (Unit *)_tracks[i]._data[cloestRightOffset].getPtr();
+                        _tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
+                    }
+                }
+            }
         }
     }
 

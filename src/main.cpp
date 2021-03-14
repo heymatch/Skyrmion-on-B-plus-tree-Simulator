@@ -123,7 +123,7 @@ int main(int argc, char **argv){
                         cout << "Update index " << index << ": " << data << endl;
                         break;
                     case Operation::SKIP:
-                        break;
+                        continue;
                     case Operation::STOP:
                         throw "Debug force stop";
                     case Operation::CHECK:
