@@ -288,7 +288,7 @@ struct Node{
     }
 
     KeyPtrSet getMaxData(){
-        for(int i = _options.track_length; i >= 0; --i){
+        for(int i = _options.track_length-1; i >= 0; --i){
             if(_bitmap[i]){
                 return _data[i];
             }
@@ -296,7 +296,7 @@ struct Node{
     }
 
     unsigned getMaxIndex(){
-        for(int i = _options.track_length; i >= 0; --i){
+        for(int i = _options.track_length-1; i >= 0; --i){
             if(_bitmap[i]){
                 return _data[i].getKey(0);
             }
@@ -322,6 +322,9 @@ struct Node{
     }
 
     bool isRightMostOffset(unsigned offset) const{
+        if(offset == -1)
+            return false;
+
         if(!_bitmap[offset])
             return false;
 
@@ -334,6 +337,8 @@ struct Node{
     }
 
     bool isLeftMostOffset(unsigned offset) const{
+        if(offset == -1)
+            return false;
         //std::clog << "<log> offset: " << offset << std::endl;
         if(!_bitmap[offset])
             return false;

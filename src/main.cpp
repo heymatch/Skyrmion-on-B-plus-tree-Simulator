@@ -74,7 +74,7 @@ int main(int argc, char **argv){
     // traditional operation on single track skyrmion
     {
         const unsigned WORD_LENGTH = 32;
-        const unsigned TRACK_LENGTH = 4; //! odd lead to problem
+        const unsigned TRACK_LENGTH = 16; //! odd lead to problem
         const unsigned UNIT_SIZE = 1;
         const unsigned KP_LENGTH = 2;
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv){
                     default:
                         throw "undefined BPTree operation";
                 }
-                std::clog << "<log main> " << input << " finish" << std::endl;
+                //std::clog << "<log main> " << input << " finish" << std::endl;
             }
             std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
             cout << tree << endl;

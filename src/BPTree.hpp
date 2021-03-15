@@ -39,9 +39,12 @@ public:
 
     void deleteData(unsigned idx){
         bool mergeFlag = false;
-        _root->deleteData(idx, 0, 0, mergeFlag);
+        _root->deleteData(idx, 0, -1, mergeFlag);
         if(!_root->_isRoot){
             _root = _root->getSideUnit();
+        }
+        if(_root != nullptr){
+            _root->adjInternalIndex();
         }
     }
     /*
