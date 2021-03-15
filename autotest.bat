@@ -7,28 +7,30 @@ IF "%1" == "cmp" ( GOTO CMP )
 IF "%1" == "ans" ( GOTO ANS )
 IF "%1" == "" ( GOTO DONE )
 
-Skyrmion.exe test\testcase%1.txt > test\output%1.out 
+Skyrmion.exe test\testcase%1.txt > test\output%1.out 2> test\log%1.log
 REM FC test\answer%1.ans test\output%1.out
 GOTO DONE
 
 :TEST
-FOR /l %%a IN (1 1 10) DO (
+FOR /l %%a IN (1 1 14) DO (
     REM COPY test\output%%a.out test\past%%a.out 
-    Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
+    Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 2> test\log%%a.log
+    IF errorlevel 1 ( ECHO test\testcase%%a.txt wrong )
 )
 GOTO DONE
 
 :CMP
-FOR /l %%a IN (1 1 10) DO (
+FOR /l %%a IN (1 1 15) DO (
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
     FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
-FOR /l %%a IN (1 1 10) DO (
+FOR /l %%a IN (1 1 15) DO (
     @Skyrmion.exe test\testcase%%a.txt > test\answer%%a.ans 
 )
 GOTO DONE
 
 :DONE
+ECHO Finish
