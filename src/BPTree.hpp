@@ -1,7 +1,6 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
-#include "System.hpp"
 #include "Unit.hpp"
 #include <iostream>
 
@@ -13,11 +12,11 @@ public:
     }
 
     unsigned *searchData(unsigned idx){
-        return _root->searchData(idx);
+        return _root->searchData(idx, 0);
     }
 
     void updateData(unsigned idx, unsigned data){
-        unsigned *dataPtr = _root->searchData(idx);
+        unsigned *dataPtr = _root->searchData(idx, 0);
         if(dataPtr != nullptr){
             *dataPtr = data;
         }

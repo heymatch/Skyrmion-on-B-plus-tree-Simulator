@@ -1,71 +1,55 @@
 #ifndef UNIT_H
 #define UNIT_H
 
-#include "Counter.hpp"
-#include "System.hpp"
 #include "Options.hpp"
 #include "KeyPtrSet.hpp"
 #include "Node.hpp"
+#include "Counter.hpp"
 #include <ostream>
 
 struct Unit{
     Unit(Options options) : _options(options){
+        // init tracks
         _tracks = new Node[_options.unit_size];
         for(int i = 0; i < _options.unit_size; ++i){
             _tracks[i] = Node(_options, false);
         }
+
+        // assume new unit is root
         _isRoot = true;
+
+        // get unit id
         _id = UnitId++;
     }
 
     ~Unit(){
-        delete[] _tracks;
+
     }
 
-    KeyPtrSet *readData(unsigned offset){
-        return _tracks[offset].readData(0, _options.track_length);
+    KeyPtrSet *readData(unsigned unit_offset){
+        return _tracks[unit_offset].readData(0, _options.track_length);
     }
 
     // Return data pointer
-    unsigned *searchData(unsigned idx){
+    unsigned *searchData(unsigned idx, unsigned unit_offset){
         unsigned *dataPtr = nullptr;
         if(isLeaf()){
-            switch (_options.search_mode){
-            case Options::search_function::SEQUENTIAL:
-                for(int i = 0; i < _options.unit_size; ++i){
-                    try{
-                        dataPtr = (unsigned *)_tracks[i].searchData(idx);
-                    }
-                    catch(int e){
-                        if(e != -1)
-                            throw "search error";
-                    }
-                }
-                break;
-            case Options::search_function::TRAD_BINARY_SEARCH:
-                /* code */
-                break;
-            case Options::search_function::BIT_BINARY_SEARCH:
-                /* code */
-                break;
-            default:
-                throw "undefined search operation";
-                break;
+            try{
+                dataPtr = (unsigned *)_tracks[unit_offset].searchData(idx, unit_offset);
+            }
+            catch(int e){
+                if(e != -1) throw "search error";
             }
         }
         else{
             Unit *nextPtr = nullptr;
-            for(int i = 0; i < _options.unit_size; ++i){
-                if(nextPtr != nullptr)break;
-                try{
-                    nextPtr = (Unit *)_tracks[i].searchData(idx);
-                }
-                catch(int e){
-                    if(e != -1)
-                        throw "search error";
-                }
+            try{
+                nextPtr = (Unit *)_tracks[unit_offset].searchData(idx, unit_offset);
             }
-            dataPtr = nextPtr->searchData(idx);
+            catch(int e){
+                if(e != -1) throw "search error";
+            }
+            dataPtr = nextPtr->searchData(idx, unit_offset);
         }
         
         return dataPtr;
@@ -862,7 +846,6 @@ struct Unit{
         //std::clog << "<log> <mergeNodeFromLeft()> end right: " << right._tracks[0] << std::endl;
     }
 
-    //!
     Unit *findRightUnit(unsigned unit_offset, unsigned data_offset, unsigned enter_offset){
         //std::clog << "<log> enter_offset: " << enter_offset << std::endl;
         //std::clog << "<log> data_offset: " << data_offset << std::endl;
@@ -887,7 +870,6 @@ struct Unit{
         return nullptr;
     }
 
-    //!
     Unit *findLeftUnit(unsigned unit_offset, unsigned data_offset, unsigned enter_offset){
         if(_isRoot)
             return nullptr;
@@ -902,23 +884,6 @@ struct Unit{
     }
 
     void adjInternalIndex(){
-        /*
-        Unit *nextUnit = getSideUnit();
-        int i = 0;
-        if(nextUnit->isLeaf()){
-            for(int k = 0; k < _options.track_length; ++k){
-                if(_tracks[i]._bitmap[k]){
-                    if(_tracks[i].isRightMostOffset(k) || k == _options.track_length-1){
-                        _tracks[i]._data[k].setKey(0, getSideUnit()->_tracks[0].getMinIndex());
-                    }
-                    else if(_tracks[i].getRightMostOffset() != -1){
-                        unsigned cloestRightOffset = _tracks[i].getClosestRightOffset(k);
-                        Unit *next = (Unit *)_tracks[i]._data[cloestRightOffset].getPtr();
-                        _tracks[i]._data[k].setKey(0, next->_tracks[0].getMinIndex());
-                    }
-                }
-            }
-        }*/
 
         if(!isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
@@ -1017,23 +982,55 @@ struct Unit{
     unsigned _id;
 };
 
+#include<unordered_map>
+namespace System{
+    // store unit pointer
+    // store how many the tracks of the unit is using
+
+    std::unordered_map<Unit *, unsigned> unitPool;
+    
+    Unit *allocUnit(Options options){
+        switch (options.split_merge_mode)
+        {
+        case Options::split_merge_function::TRAD:
+            // return unit, which is not all using (empty or partial)
+            // for traditional algorithm on multiple tracks
+
+            break;
+        case Options::split_merge_function::UNIT:
+            // return unused unit (all tracks are not using)
+
+            break;
+        default:
+            break;
+        }
+        
+        // allocate new unit
+        return new Unit(options);
+    }
+}
+
 std::ostream &operator<<(std::ostream &out, const Unit &right){
     //std::clog << "<log> Unit " << right._id << " Print" << std::endl;
-    out << "\t[\t";
-    /// status
+    out << "\t[\t\n";
+    //* status
+    out << "\t\t";
     if(right.isLeaf()) out << "Leaf Unit";
     else out << "Internal Unit";
     out << " " << right._id;
-    out << " " << &right;
-    out << " Parent: " << right.getParentUnit();
-    if(right._isRoot) out << " Root";
-    ///
-    out << ":\n";
+    out << "\n";
+
+    //out << " " << &right;
+    //out << " Parent: " << right.getParentUnit();
+    out << "\t\t";
+    if(right._isRoot) out << "Root";
+    out << "\n";
+
     bool first = true;
     for(int i = 0; i < right._options.unit_size; ++i){
         if(first)first = false;
         else out << ", \n";
-        out << "\t\t" << right._tracks[i];
+        out << right._tracks[i];
     }
     out << "\n\t]\n";
     if(!right.isLeaf()){

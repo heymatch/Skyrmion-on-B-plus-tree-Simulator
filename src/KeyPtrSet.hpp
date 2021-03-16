@@ -44,6 +44,26 @@ struct KeyPtrSet{
     bool _dataPtr;
 };
 
+#include <vector>
+#include <algorithm>
+namespace System{
+    unsigned getMid(KeyPtrSet *arr, unsigned len, unsigned insert){
+        unsigned t_len = (arr[0]._capacity - 1) * len + 1;
+        std::vector<unsigned> V(t_len);
+
+        int it = 0;
+        for(int i = 0; i < len; ++i){
+            for(int j = 0; j < arr[i]._capacity-1; ++j, ++it){
+                V[it] = arr[i].getKey(j);
+            }
+        }
+        V[it++] = insert;
+
+        std::sort(V.begin(), V.end());
+        return V[t_len / 2];
+    }
+}
+
 std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
     out << "<";
     if(right._dataPtr)

@@ -2,12 +2,26 @@
 #define OPTIONS_H
 
 struct Options{
+    // e.g., 32, 64
     unsigned word_length;
-    unsigned track_length; // number of words
-    unsigned unit_size; // e.g., single track, double tracks
 
-    unsigned kp_length; // key pointer length
-    unsigned ap_sharing; // access port sharing
+    // number of words in a track
+    //! odd number leads to problem
+    // e.g., 4, 8, 16
+    unsigned track_length;
+
+    // e.g., 1 = single track, 2 = double tracks
+    unsigned unit_size; 
+
+    // key pointer length
+    // at least 2
+    // 1 pointer + n keys
+    // e.g., 2, 3
+    unsigned kp_length; 
+
+    // access port sharing
+    //? not use
+    unsigned ap_sharing; 
 
     enum struct ordering : unsigned{
         None,
@@ -39,8 +53,8 @@ struct Options{
         None,
         OVERWRITE,
         PERMUTATION_WRITE,
-        PERMUTE_WORD_COUNTER,
-        PERMUTE_FEW_COUNTER
+        PERMUTE_WORD_COUNTER, //?
+        PERMUTE_WITHOUT_COUNTER
     };
     update_function update_mode;
 

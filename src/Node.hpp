@@ -6,9 +6,10 @@
 #ifndef NODE_H
 #define NODE_H
 
-#include "Counter.hpp"
 #include "Options.hpp"
+#include "KeyPtrSet.hpp"
 #include "Unit.hpp"
+#include "Counter.hpp"
 #include <ostream>
 
 struct Unit;
@@ -31,8 +32,9 @@ struct Node{
         }
     }
 
-    // Return array of KeyPtrSet
-    // 0 index
+    /* Major Functions */
+
+    //* Return array of KeyPtrSet
     KeyPtrSet *readData(unsigned lower, unsigned upper){
         if(upper < lower)
             throw "invalid read bound";
@@ -58,23 +60,26 @@ struct Node{
         return arr; 
     }
 
-    // Return data pointer
-    void *searchData(unsigned idx){
+    //* Return data pointer
+    void *searchData(unsigned idx, unsigned &next_unit_offset){
         if(_isLeaf){
             switch (_options.search_mode)
             {
             case Options::search_function::SEQUENTIAL:
                 for(int i = 0; i < _options.track_length; ++i){
+                    //* evaluation
+                    _shiftCounter.count(2 * _options.word_length);
+
                     if(_bitmap[i] && _data[i].getKey(0) == idx){
                         return _data[i].getPtr();
                     }
                 }
                 throw -1;
             case Options::search_function::TRAD_BINARY_SEARCH:
-                /* code */
+                //TODO evaluation 
                 break;
             case Options::search_function::BIT_BINARY_SEARCH:
-                /* code */
+                //TODO evaluation 
                 break;
             default:
                 throw "undefined search operation";
@@ -82,16 +87,32 @@ struct Node{
             }
         }
         else{
-            for(int i = 0; i < _options.track_length; ++i){
-                if(_bitmap[i] && idx < _data[i].getKey(0)){
-                    return _data[i].getPtr();
+            switch (_options.search_mode)
+            {
+            case Options::search_function::SEQUENTIAL:
+                for(int i = 0; i < _options.track_length; ++i){
+                    for(int j = 0; j < _options.unit_size; ++j){
+                        if(_bitmap[i] && idx < _data[i].getKey(j)){
+                            next_unit_offset = j;
+                            return _data[i].getPtr();
+                        }
+                    } 
                 }
+                return _side;
+            case Options::search_function::TRAD_BINARY_SEARCH:
+                //TODO evaluation 
+                break;
+            case Options::search_function::BIT_BINARY_SEARCH:
+                //TODO evaluation 
+                break;
+            default:
+                throw "undefined search operation";
+                break;
             }
-            return _side;
         }
     }
     
-
+    //?
     void updateData(unsigned idx, unsigned data){
         switch (_options.update_mode)
         {
@@ -104,7 +125,7 @@ struct Node{
         case Options::update_function::PERMUTE_WORD_COUNTER:
             /* code */
             break;
-        case Options::update_function::PERMUTE_FEW_COUNTER:
+        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
             /* code */
             break;
         default:
@@ -117,7 +138,7 @@ struct Node{
         _data[offset].setKey(0, idx);
     }
 
-    // Insert KeyPtrSet
+    //* Insert KeyPtrSet
     void insertData(unsigned idx, void *data, bool split = true){
         // read node(metadata, bitmap and data)
         if(_isLeaf){
@@ -215,15 +236,6 @@ struct Node{
         }
     }
 
-    void connectSideUnit(Unit *unit){
-        _side = unit;
-        _sideBitmap = true;
-    }
-
-    void connectParentNode(Unit *unit){
-        _parent = unit;
-    }
-
     void deleteData(unsigned idx, bool side = false){
         switch (_options.delete_mode)
         {
@@ -250,6 +262,17 @@ struct Node{
         }
 
         throw "delete not found";
+    }
+
+    /* Minor Functions */
+
+    void connectSideUnit(Unit *unit){
+        _side = unit;
+        _sideBitmap = true;
+    }
+
+    void connectParentNode(Unit *unit){
+        _parent = unit;
     }
 
     void deleteMark(unsigned *arr, unsigned arrSize){
@@ -479,8 +502,6 @@ struct Node{
     }
 
     KeyPtrSet *_data;
-    //unsigned *_index;
-    //void **_ptr;
 
     // Metadata
     bool *_bitmap;
@@ -488,23 +509,25 @@ struct Node{
     Unit *_side;
     bool _sideBitmap;
     Unit *_parent;
-    //bool _isValid;
-    ////
+
+    // System
     Options _options;
     unsigned _id;
+
+    Counter _shiftCounter;
+    Counter _generateCounter;
+    Counter _insertCounter;
+    Counter _removeCounter;
 };
 
 std::ostream &operator<<(std::ostream &out, const Node &right){
     //std::clog << "<log> Node Print" << std::endl;
-    /// status
-    out << "(";
-    out << "Node";
-    if(right._isLeaf) out << " Leaf";
-    else out << " Internal";
-    out << " " << right._id;
-    out << " " << &right;
-    out << "\t";
-    ///
+    out << "\t\t(\n";
+
+    //* status
+    out << "\t\t\t" << right._shiftCounter << "\n";
+
+    out << "\t\t\t";
     bool first = true;
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
@@ -513,7 +536,9 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
         if(!right._bitmap[i]) out << "*";
     }
     out << " _side: " << right._side;
-    out << ")";
+
+    out << "\n\t\t)";
+
     return out;
 }
 
