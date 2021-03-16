@@ -12,7 +12,7 @@ REM FC test\answer%1.ans test\output%1.out
 GOTO DONE
 
 :TEST
-FOR /l %%a IN (1 1 14) DO (
+FOR /l %%a IN (1 1 15) DO (
     REM COPY test\output%%a.out test\past%%a.out 
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 2> test\log%%a.log
     IF errorlevel 1 ( ECHO test\testcase%%a.txt wrong )
