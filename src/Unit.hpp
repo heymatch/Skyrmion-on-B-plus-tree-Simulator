@@ -7,6 +7,10 @@
 #include "Counter.hpp"
 #include <ostream>
 
+namespace System{
+    Unit *allocUnit(Options options);
+}
+
 struct Unit{
     Unit(Options options) : _options(options){
         // init tracks
@@ -26,13 +30,19 @@ struct Unit{
 
     }
 
+    /* Major Functions */
+
     KeyPtrSet *readData(unsigned unit_offset){
         return _tracks[unit_offset].readData(0, _options.track_length);
     }
 
-    // Return data pointer
+    /**
+     * * Return data pointer
+     * * DONE
+     */
     unsigned *searchData(unsigned idx, unsigned unit_offset){
         unsigned *dataPtr = nullptr;
+
         if(isLeaf()){
             try{
                 dataPtr = (unsigned *)_tracks[unit_offset].searchData(idx, unit_offset);
@@ -42,14 +52,12 @@ struct Unit{
             }
         }
         else{
-            Unit *nextPtr = nullptr;
             try{
-                nextPtr = (Unit *)_tracks[unit_offset].searchData(idx, unit_offset);
+                dataPtr = (unsigned *)((Unit *)_tracks[unit_offset].searchData(idx, unit_offset))->searchData(idx, unit_offset);
             }
             catch(int e){
                 if(e != -1) throw "search error";
             }
-            dataPtr = nextPtr->searchData(idx, unit_offset);
         }
         
         return dataPtr;
@@ -59,57 +67,74 @@ struct Unit{
 
     }
 
-    void insertData(unsigned idx, unsigned data, unsigned offset){
+    /**
+     * * Controller of insertion
+     * TODO evaluation
+     */
+    void insertData(unsigned idx, unsigned data, unsigned unit_offset){
         if(isLeaf()){
             switch (_options.insert_mode)
             {
             case Options::insert_function::SEQUENTIAL:
-                /* EVALUATION */
+                //TODO evaluation 
                 break;
             case Options::insert_function::BIT_BINARY_INSERT:
-                /* EVALUATION */
+                //TODO evaluation 
                 break;
             default:
                 throw "undefined insert operation";
             }
 
-            insertCurrentData(idx, data, offset);
+            insertCurrentData(idx, data, unit_offset);
         }
         else{
             switch (_options.insert_mode)
             {
             case Options::insert_function::SEQUENTIAL:
-                /* EVALUATION */
+                //TODO evaluation 
                 break;
             case Options::insert_function::BIT_BINARY_INSERT:
-                /* EVALUATION */
+                //TODO evaluation 
                 break;
             default:
                 throw "undefined insert operation";
             }
 
-            for(int i = 0; i < _options.unit_size; ++i){
-                for(int j = 0; j < _options.track_length; ++j){
-                    if(_tracks[i]._bitmap[j] && _tracks[i]._data[j].getPtr() != nullptr && idx < _tracks[i]._data[j].getKey(0)){
-                        ((Unit *)_tracks[i]._data[j].getPtr())->insertData(idx, data, offset);
+            for(int i = 0; i < _options.track_length; ++i){
+                for(int j = 0; j < _options.unit_size; ++j){
+                    if(
+                        _tracks[unit_offset]._bitmap[i+j] &&
+                        _tracks[unit_offset]._data[i].getPtr() != nullptr &&
+                        idx < _tracks[unit_offset]._data[i].getKey(j)
+                    ){
+                        ((Unit *)_tracks[unit_offset]._data[i].getPtr())->insertData(idx, data, j);
                         return;
                     }
                 }
-                if(_tracks[i]._side != nullptr){
-                    ((Unit *)_tracks[i]._side)->insertData(idx, data, offset);
-                    return;
-                }
+            }
+            //! Assume side unit only has one track availiable
+            if(_tracks[unit_offset]._side != nullptr){
+                ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, 0);
+                return;
             }
         }
     }
 
-    void insertCurrentData(unsigned idx, unsigned data, unsigned offset){
+    /**
+     * * Insert data to current node
+     * ! for leaf node
+     * TODO evaluation
+     * TODO check unit full, and then split to a new unit
+     * TODO check one node of unit, and then split in unit
+     * ? can merge with insertCurrentPoint()?
+     */
+    void insertCurrentData(unsigned idx, unsigned data, unsigned unit_offset){
         if(!isLeaf())
             throw "This function is for Leaf node";
 
-        if(isFull(offset)){
+        if(isFull(unit_offset)){
             // std::clog << "<log> test point begin 1" << std::endl;
-            KeyPtrSet promote = splitNode(idx, offset);
+            KeyPtrSet promote = splitNode(idx, unit_offset);
             if(_isRoot){
                 setRoot(false);
 
@@ -123,23 +148,24 @@ struct Unit{
                 ((Unit *)promote.ptr)->connectParentUnit(newRoot);
 
                 connectSideUnit((Unit *)promote.ptr);
-                if(idx < promote.getKey(0))
-                    insertCurrentData(idx, data, offset);
+                if(idx < promote.getKey(unit_offset))
+                    insertCurrentData(idx, data, unit_offset);
                 else
                     getSideUnit()->insertCurrentData(idx, data, 0);
 
                 return;
             }
             //std::clog << "<log> this->_tracks[0]._parent: " << this->_tracks[0]._parent << std::endl;
-            this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
-            if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
-                ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
+            //! Need unit_enter_offset
+            this->_tracks[unit_offset]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
+            ////if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
+                ////((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
 
             getRoot()->insertData(idx, data, 0);
             return;
         }
 
-        _tracks[offset].insertData(idx, new unsigned(data));
+        _tracks[unit_offset].insertData(idx, new unsigned(data));
     }
 
     void insertCurrentPointer(unsigned idx, Unit *unit, unsigned offset){
@@ -181,11 +207,8 @@ struct Unit{
             //insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
             //((Unit *)promote.ptr)->connectParentUnit(this, 0);
             this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
-            if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
-                ((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
-
-
-            //Unit *rightUnit = getParentRightUnit(idx);
+            ////if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
+                ////((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
             Unit *rightUnit = (Unit *)promote.ptr;
             if(idx < promote.getKey(0)){
                 insertCurrentPointer(idx, unit, offset);
@@ -236,9 +259,7 @@ struct Unit{
         }
         return _tracks[0]._parent->getSideUnit();
     }
-
     
-
     // Return KeyPtrSet
     KeyPtrSet splitNode(unsigned wait_insert_idx, unsigned offset){
         KeyPtrSet promote(2);
@@ -247,7 +268,7 @@ struct Unit{
         {
         case Options::split_merge_function::TRAD:
         {
-            Unit *newUnit = new Unit(_options);
+            Unit *newUnit = System::allocUnit(_options);
             newUnit->setRoot(false);
             if(!isLeaf()) newUnit->deLeaf();
 
@@ -259,14 +280,14 @@ struct Unit{
             if(!isLeaf()){
                 getSideUnit()->connectParentUnit(this);
                 newUnit->getSideUnit()->connectParentUnit(newUnit);
-
             }
-            /* delete allocation memory */
             break;
         }
         case Options::split_merge_function::UNIT:
-            /* code */
-            throw "Developing merge unit";
+            //* In-Unit Split
+            //* Unit-Unit Split
+            
+            throw "Developing split unit";
         default:
             throw "undefined operation";
         }
@@ -846,6 +867,16 @@ struct Unit{
         //std::clog << "<log> <mergeNodeFromLeft()> end right: " << right._tracks[0] << std::endl;
     }
 
+    /**
+     * * for double tracks
+     * @param 
+    */
+    void balanceData(Node &left, Node &right){
+
+    }
+
+    /* Minor Functions */
+
     Unit *findRightUnit(unsigned unit_offset, unsigned data_offset, unsigned enter_offset){
         //std::clog << "<log> enter_offset: " << enter_offset << std::endl;
         //std::clog << "<log> data_offset: " << data_offset << std::endl;
@@ -921,8 +952,9 @@ struct Unit{
             }
             getSideUnit()->adjInternalIndex();
         }
-
     }
+
+    /* Supported Functions */
 
     bool isFull(unsigned offset) const{
         for(int i = 0; i < _options.track_length; ++i){
@@ -931,6 +963,10 @@ struct Unit{
             }
         }
         return true;
+    }
+
+    bool isFullUnit() const{
+
     }
 
     // For root unit to check empty
@@ -986,15 +1022,24 @@ struct Unit{
 namespace System{
     // store unit pointer
     // store how many the tracks of the unit is using
-
     std::unordered_map<Unit *, unsigned> unitPool;
     
     Unit *allocUnit(Options options){
+        Unit *newUnit = nullptr;
+
         switch (options.split_merge_mode)
         {
         case Options::split_merge_function::TRAD:
             // return unit, which is not all using (empty or partial)
             // for traditional algorithm on multiple tracks
+            /*
+            for(auto &it: unitPool){
+                if(it.second < options.unit_size){
+                    newUnit = it.first;
+                    unitPool[newUnit] += 1;
+                    break;
+                }
+            }*/
 
             break;
         case Options::split_merge_function::UNIT:
@@ -1004,9 +1049,14 @@ namespace System{
         default:
             break;
         }
-        
+
         // allocate new unit
-        return new Unit(options);
+        if(newUnit == nullptr){
+            newUnit = new Unit(options);
+            unitPool[newUnit] = 1;
+        }
+        
+        return newUnit;
     }
 }
 
@@ -1017,10 +1067,7 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     out << "\t\t";
     if(right.isLeaf()) out << "Leaf Unit";
     else out << "Internal Unit";
-    out << " " << right._id;
-    out << "\n";
-
-    //out << " " << &right;
+    out << " " << right._id << " " << &right << "\n";
     //out << " Parent: " << right.getParentUnit();
     out << "\t\t";
     if(right._isRoot) out << "Root";

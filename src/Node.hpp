@@ -67,11 +67,14 @@ struct Node{
             {
             case Options::search_function::SEQUENTIAL:
                 for(int i = 0; i < _options.track_length; ++i){
-                    //* evaluation
-                    _shiftCounter.count(2 * _options.word_length);
+                    for(int j = 0; j < _options.unit_size; ++j){
+                        _shiftCounter.count(2 * _options.word_length); //* evaluation key shifting
 
-                    if(_bitmap[i] && _data[i].getKey(0) == idx){
-                        return _data[i].getPtr();
+                        if(_bitmap[i] && _data[i].getKey(0) == idx){
+                            _shiftCounter.count(2 * _options.word_length); //* evaluation pointer shifting
+
+                            return _data[i].getPtr();
+                        }
                     }
                 }
                 throw -1;
@@ -83,7 +86,6 @@ struct Node{
                 break;
             default:
                 throw "undefined search operation";
-                break;
             }
         }
         else{
@@ -92,7 +94,11 @@ struct Node{
             case Options::search_function::SEQUENTIAL:
                 for(int i = 0; i < _options.track_length; ++i){
                     for(int j = 0; j < _options.unit_size; ++j){
+                        _shiftCounter.count(2 * _options.word_length); //* evaluation key shifting
+
                         if(_bitmap[i] && idx < _data[i].getKey(j)){
+                            _shiftCounter.count(2 * _options.word_length); //* evaluation pointer shifting
+
                             next_unit_offset = j;
                             return _data[i].getPtr();
                         }
@@ -107,7 +113,6 @@ struct Node{
                 break;
             default:
                 throw "undefined search operation";
-                break;
             }
         }
     }
@@ -514,7 +519,7 @@ struct Node{
     Options _options;
     unsigned _id;
 
-    Counter _shiftCounter;
+    Counter _shiftCounter = Counter("Shift");
     Counter _generateCounter;
     Counter _insertCounter;
     Counter _removeCounter;

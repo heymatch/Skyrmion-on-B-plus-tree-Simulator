@@ -46,14 +46,13 @@ public:
             _root->adjInternalIndex();
         }
     }
-    /*
-    Node *findParent(Unit *child){
-        
-    }*/
+
+    ////Node *findParent(Unit *child);
     
 private:
     Unit *_root;
-    ////
+
+    /* System */
     Options _options;
 };
 

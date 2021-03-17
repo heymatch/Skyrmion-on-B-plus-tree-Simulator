@@ -8,6 +8,7 @@ struct KeyPtrSet{
     KeyPtrSet(unsigned capacity = 2, bool dataPtr = true){
         ptr = new void *();
         key = new unsigned[capacity - 1]();
+        bitmap = new bool[capacity-1]();
 
         _size = 0;
         _capacity = capacity;
@@ -38,6 +39,7 @@ struct KeyPtrSet{
 
     unsigned *key;
     void *ptr;
+    bool *bitmap;
     ////
     unsigned _size;
     unsigned _capacity;
