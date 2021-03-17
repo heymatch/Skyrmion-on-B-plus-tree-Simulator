@@ -43,10 +43,10 @@ struct Node{
         switch (_options.read_mode)
         {
         case Options::read_function::SEQUENTIAL:
-            /* code */
+            //TODO evaluation 
             break;
         case Options::read_function::RANGE_READ:
-            /* code */
+            //TODO evaluation 
             break;
         default:
             throw "undefined read operation";
@@ -143,9 +143,46 @@ struct Node{
         _data[offset].setKey(0, idx);
     }
 
-    //* Insert KeyPtrSet
+    /**
+     * * Insert KeyPtrSet
+     * TODO evaluation
+     * TODO insert into the same pointer, just add the index to the key-point set
+     * @param split if false, data will direct insert
+     */
     void insertData(unsigned idx, void *data, bool split = true){
-        // read node(metadata, bitmap and data)
+        // evaluate for find a insert position
+        switch (_options.insert_mode)
+        {
+        case Options::insert_function::SEQUENTIAL:
+            //TODO evaluation 
+            break;
+        case Options::insert_function::BIT_BINARY_INSERT:
+            //TODO evaluation 
+            break;
+        default:
+            throw "undefined insert operation";
+        }
+
+        // evaluate for insert a data
+        switch (_options.update_mode)
+        {
+        case Options::update_function::OVERWRITE:
+            //TODO evaluation 
+            break;
+        case Options::update_function::PERMUTATION_WRITE:
+            //TODO evaluation 
+            break;
+        case Options::update_function::PERMUTE_WORD_COUNTER:
+            //TODO evaluation 
+            break;
+        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+            //TODO evaluation 
+            break;
+        default:
+            throw "undefined update operation";
+            break;
+        }
+
         if(_isLeaf){
             KeyPtrSet newData(2);
             newData.setPtr(data);
@@ -190,6 +227,8 @@ struct Node{
             }
         }
         else{
+            //TODO insert into the same pointer, just add the index to the key-point set
+
             KeyPtrSet newData(_options.kp_length, false);
             newData.setPtr(data);
             newData.addKey(idx);
@@ -241,24 +280,43 @@ struct Node{
         }
     }
 
+    /**
+     * * Find and delete index
+     * TODO evaluation
+     * TODO general unit parameter
+     * @param side for internal, if true, and try to delete the right most index, that will delete the side unit
+     */
     void deleteData(unsigned idx, bool side = false){
+        switch (_options.search_mode)
+        {
+        case Options::search_function::SEQUENTIAL:
+            //TODO evaluation 
+            break;
+        case Options::search_function::TRAD_BINARY_SEARCH:
+            //TODO evaluation 
+            break;
+        case Options::search_function::BIT_BINARY_SEARCH:
+            //TODO evaluation 
+            break;
+        default:
+            throw "undefined search operation";
+        }
+
+        /*
         switch (_options.delete_mode)
         {
         case Options::delete_function::SEQUENTIAL:
-            /* code */
             break;
         case Options::delete_function::BALANCE:
-            /* code */
             break;
         default:
             throw "undefined operation";
-        }
+        }*/
 
         for(int i = 0; i < _options.track_length; ++i){
             if(_bitmap[i] && idx == _data[i].getKey(0)){
                 // delete side unit
                 if(!_isLeaf && isRightMostOffset(i) && side){
-                    //std::clog << "<log> delete side" << std::endl;
                     connectSideUnit((Unit *)_data[i].getPtr());
                 }
                 deleteMark(i);
@@ -367,7 +425,7 @@ struct Node{
     bool isLeftMostOffset(unsigned offset) const{
         if(offset == -1)
             return false;
-        //std::clog << "<log> offset: " << offset << std::endl;
+
         if(!_bitmap[offset])
             return false;
 
@@ -401,12 +459,11 @@ struct Node{
     
     // Return insert position
     unsigned getInsertPosition(unsigned wait_insert_idx, bool &insertSide){
-        if(_isLeaf){ // Check Leaf or Internal
+        if(_isLeaf){
             switch (_options.insert_mode){
             case Options::insert_function::SEQUENTIAL:
                 switch (_options.node_ordering){
                 case Options::ordering::SORTED:
-                    /* EVALUATE READ AND SHIFT */
                 {
                     unsigned last = 0;
                     for(int i = 0; i < _options.track_length; ++i){
@@ -428,7 +485,6 @@ struct Node{
                     return last == _options.track_length ? last - 1 : last;
                 }
                 case Options::ordering::UNSORTED:
-                    /* EVALUATE READ AND SHIFT */
                     for(int i = 0; i < _options.track_length; ++i){
                         if(!_bitmap[i]){
                             return i;
@@ -447,18 +503,6 @@ struct Node{
             }
         }
         else{
-            switch (_options.insert_mode)
-            {
-            case Options::insert_function::SEQUENTIAL:
-                /* EVALUATE READ AND SHIFT */
-                break;
-            case Options::insert_function::BIT_BINARY_INSERT:
-                /* EVALUATE READ AND SHIFT */
-                break;
-            default:
-                throw "undefined insert operation";
-            }
-
             unsigned last = 0;
             for(int i = 0; i < _options.track_length; ++i){
                 if(_bitmap[i]){

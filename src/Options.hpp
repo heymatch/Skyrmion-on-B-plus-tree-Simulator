@@ -25,7 +25,7 @@ struct Options{
 
     enum struct ordering : unsigned{
         None,
-        UNSORTED,
+        UNSORTED, //! skip
         SORTED
     };
     ordering node_ordering;
@@ -53,7 +53,7 @@ struct Options{
         None,
         OVERWRITE,
         PERMUTATION_WRITE,
-        PERMUTE_WORD_COUNTER, //?
+        PERMUTE_WORD_COUNTER, //! skip
         PERMUTE_WITHOUT_COUNTER
     };
     update_function update_mode;

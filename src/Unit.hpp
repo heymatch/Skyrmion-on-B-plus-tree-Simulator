@@ -72,34 +72,25 @@ struct Unit{
      * TODO evaluation
      */
     void insertData(unsigned idx, unsigned data, unsigned unit_offset){
-        if(isLeaf()){
-            switch (_options.insert_mode)
-            {
-            case Options::insert_function::SEQUENTIAL:
-                //TODO evaluation 
-                break;
-            case Options::insert_function::BIT_BINARY_INSERT:
-                //TODO evaluation 
-                break;
-            default:
-                throw "undefined insert operation";
-            }
+        switch (_options.search_mode)
+        {
+        case Options::search_function::SEQUENTIAL:
+            //TODO evaluation 
+            break;
+        case Options::search_function::TRAD_BINARY_SEARCH:
+            //TODO evaluation 
+            break;
+        case Options::search_function::BIT_BINARY_SEARCH:
+            //TODO evaluation 
+            break;
+        default:
+            throw "undefined search operation";
+        }
 
+        if(isLeaf()){
             insertCurrentData(idx, data, unit_offset);
         }
         else{
-            switch (_options.insert_mode)
-            {
-            case Options::insert_function::SEQUENTIAL:
-                //TODO evaluation 
-                break;
-            case Options::insert_function::BIT_BINARY_INSERT:
-                //TODO evaluation 
-                break;
-            default:
-                throw "undefined insert operation";
-            }
-
             for(int i = 0; i < _options.track_length; ++i){
                 for(int j = 0; j < _options.unit_size; ++j){
                     if(
@@ -126,6 +117,7 @@ struct Unit{
      * TODO evaluation
      * TODO check unit full, and then split to a new unit
      * TODO check one node of unit, and then split in unit
+     * TODO in double tracks, probabaly balance operation
      * ? can merge with insertCurrentPoint()?
      */
     void insertCurrentData(unsigned idx, unsigned data, unsigned unit_offset){
@@ -184,9 +176,10 @@ struct Unit{
     void insertCurrentPointer(unsigned idx, Unit *unit, unsigned offset){
         if(isLeaf())
             throw "This function is for Internal node";
+
         if(isFull(offset)){
-            //std::clog << "<log> test point begin 2" << std::endl;
             KeyPtrSet promote = splitNode(idx, offset);
+
             if(_isRoot){
                 setRoot(false);
 
@@ -238,7 +231,6 @@ struct Unit{
                 unit->connectParentUnit(rightUnit);
                 //std::clog << "<log> rightUnit->_tracks[0]._data[0].getPtr(): " << rightUnit->_tracks[0]._data[0].getPtr() << std::endl;
                 //std::clog << "<log> rightUnit: " << rightUnit << std::endl;
-                //((Unit *)promote.getPtr())->connectParentUnit(getParentRightUnit());
             }
 
             return;
@@ -264,6 +256,7 @@ struct Unit{
         return _tracks[0]._parent;
     }
 
+    //? no use
     Unit *getParentRightUnit(unsigned idx) const{
         for(int i = 0; i < _options.track_length-1; ++i){
             if(getParentUnit()->_tracks[0]._bitmap[i+1] && idx < getParentUnit()->_tracks[0]._data[i+1].getKey(0)){
@@ -273,8 +266,16 @@ struct Unit{
         return _tracks[0]._parent->getSideUnit();
     }
     
-    // Return KeyPtrSet
-    KeyPtrSet splitNode(unsigned wait_insert_idx, unsigned offset){
+    /**
+     * * Split half number of indices to a new unit
+     * * In double tracks, in-unit split is balance operation
+     * ? rename to splitUnit()
+     * TODO UNIT: in-unit split
+     * TODO UNIT: unit-to-unit split
+     * TODO TRAD: in double tracks, new node may be allocated to the same unit
+     * ! in UNIT method, unit_offset should be the right most (for easy implement)
+     */
+    KeyPtrSet splitNode(unsigned wait_insert_idx, unsigned unit_offset){
         KeyPtrSet promote(2);
 
         switch (_options.split_merge_mode)
@@ -282,18 +283,29 @@ struct Unit{
         case Options::split_merge_function::TRAD:
         {
             Unit *newUnit = System::allocUnit(_options);
-            newUnit->setRoot(false);
-            if(!isLeaf()) newUnit->deLeaf();
 
-            unsigned promoteKey = System::getMid(_tracks[offset]._data, _options.track_length, wait_insert_idx);
+            // it is never root
+            newUnit->setRoot(false);
+
+            // split operation will generate same level unit/node
+            if(!isLeaf()) newUnit->setLeaf(false);
+
+            // find the middle index
+            unsigned promoteKey = System::getMid(_tracks[unit_offset]._data, _options.track_length, wait_insert_idx);
+            
+            // combine as a key-point set
             promote.setPtr(newUnit);
             promote.addKey(promoteKey);
             
-            copyHalfNode(_tracks[offset], newUnit->_tracks[0], promote, wait_insert_idx);
+            // copying data
+            copyHalfNode(_tracks[unit_offset], newUnit->_tracks[0], promote, wait_insert_idx);
+
+            // sure to have correct parent pointers
             if(!isLeaf()){
                 getSideUnit()->connectParentUnit(this);
                 newUnit->getSideUnit()->connectParentUnit(newUnit);
             }
+
             break;
         }
         case Options::split_merge_function::UNIT:
@@ -308,6 +320,9 @@ struct Unit{
         return promote;
     }
 
+    /**
+     * * Copy half data from source to destination
+     */
     void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote, unsigned wait_insert_idx){
         if(isLeaf()){
             switch(_options.node_ordering){
@@ -330,7 +345,7 @@ struct Unit{
                     }
                     break;
                 case Options::ordering::UNSORTED:
-                    break;
+                    throw "unsorted split developing";
                 default:
                     throw "undefined ordering";
             }
@@ -382,28 +397,32 @@ struct Unit{
             }
         }
     }
-
+    
+    /**
+     * * control data deletion
+     * TODO evaluation 
+     * TODO general unit parameter
+     */
     void deleteData(unsigned idx, unsigned unit_offset, unsigned enter_offset, bool &mergeFlag){
         //std::clog << "<log> <deleteData()> begin" << std::endl;
         //std::clog << "<log> <deleteData()> _id: " << _id << std::endl;
-
-        switch (_options.delete_mode)
+        switch (_options.search_mode)
         {
-        case Options::delete_function::SEQUENTIAL:
-            /* code */
+        case Options::search_function::SEQUENTIAL:
+            //TODO evaluation 
             break;
-        case Options::delete_function::BALANCE:
-            /* code */
+        case Options::search_function::TRAD_BINARY_SEARCH:
+            //TODO evaluation 
+            break;
+        case Options::search_function::BIT_BINARY_SEARCH:
+            //TODO evaluation 
             break;
         default:
-            throw "undefined operation";
-            break;
+            throw "undefined search operation";
         }
 
         if(isLeaf()){
             deleteCurrentData(idx, unit_offset, enter_offset, enter_offset, mergeFlag);
-            //std::clog << "<log> <deleteData()> mergeFlag: " << mergeFlag << std::endl;
-            //std::clog << "<log> <deleteData()> end" << std::endl;
         }
         else{
             for(int i = 0; i < _options.unit_size; ++i){
@@ -415,15 +434,10 @@ struct Unit{
                         //std::clog << "<log> <deleteData()> mergeFlag: " << mergeFlag << std::endl;
                         //std::clog << "<log> <deleteData()> nextUnit->_tracks[0]: " << nextUnit->_tracks[0] << std::endl;
                         if(mergeFlag){
-                            
                             unsigned deleteIndex = _tracks[i]._data[j].getKey(0);
                             //std::clog << "<log> <deleteData()> deleteIndex: " << deleteIndex << std::endl;
                             //std::clog << "<log> <deleteData()> idx: " << idx << std::endl;
                             deleteCurrentData(deleteIndex, unit_offset, j, enter_offset, mergeFlag);
-
-                            //std::clog << "<log> <deleteData()> test point begin" << std::endl;
-                            //std::clog << "<log> <deleteData()> test point end" << std::endl;
-                            
                         }
                         //adjInternalIndex();
                         return;
@@ -433,8 +447,6 @@ struct Unit{
                 Unit *nextUnit = getSideUnit();
                 nextUnit->deleteData(idx, unit_offset, _options.track_length, mergeFlag);
                 //std::clog << "<log> <deleteData()> side mergeFlag: " << mergeFlag << std::endl;
-                
-                        
                 //std::clog << "<log> <deleteData()> _tracks[unit_offset]._data[_options.track_length-1].getKey(0): " << _tracks[unit_offset]._data[_options.track_length-1].getKey(0) << std::endl;
                 //std::clog << "<log> <deleteData()> idx: " << idx << std::endl;
 
@@ -456,6 +468,11 @@ struct Unit{
         }
     }
 
+    /**
+     * * Delete data at current unit
+     * TODO general unit parameter
+     * TODO in double tracks, probabaly balance operation
+     */
     void deleteCurrentData(unsigned idx, unsigned unit_offset, unsigned data_offset, unsigned enter_offset, bool &mergeFlag){
         //std::clog << "<log> <deleteCurrentData()> idx: " << idx << std::endl;
         //std::clog << "<log> <deleteCurrentData()> _id: " << _id << std::endl;
@@ -557,7 +574,6 @@ struct Unit{
             //std::clog << "<log> Internal rightUnit: " << rightUnit << std::endl;
             //std::clog << "<log> side: " << side << std::endl;
             //std::clog << "<log> dataSide: " << dataSide << std::endl;
-
             
             if(isHalf(unit_offset)){
                 if(leftUnit != nullptr){
@@ -655,6 +671,8 @@ struct Unit{
     }
 
     KeyPtrSet borrowDataFromRight(Unit &left, Unit& right){
+        //! left_unit_offset = 
+        //! right_unit_offset = 
         
         if(right.isLeaf() && !right.isHalf(0)){
             KeyPtrSet borrow = right._tracks[0].getMinData();
@@ -677,7 +695,9 @@ struct Unit{
     }
 
     KeyPtrSet borrowDataFromLeft(Unit &left, Unit& right){
-        // unit_offset = getRightMostUnit
+        //! left_unit_offset = 
+        //! right_unit_offset = 
+
         if(left.isLeaf() && !left.isHalf(0)){
             KeyPtrSet borrow = left._tracks[0].getMaxData();
             left._tracks[0].deleteData(left._tracks[0].getMaxIndex());
@@ -699,8 +719,8 @@ struct Unit{
 
     // Merge right Node to left Node
     void mergeNodeFromRight(Unit &left, Unit &right){
-        // left_unit_offset = 
-        // right_unit_offset = 
+        //! left_unit_offset = 
+        //! right_unit_offset = 
 
         //std::clog << "<log> <mergeNodeFromRight()> begin left: " << left._tracks[0] << std::endl;
         //std::clog << "<log> <mergeNodeFromRight()> begin right: " << right._tracks[0] << std::endl;
@@ -746,6 +766,8 @@ struct Unit{
     }
 
     void mergeNodeFromLeft(Unit &left, Unit &right){
+        //! left_unit_offset = 
+        //! right_unit_offset = 
         //std::clog << "<log> <mergeNodeFromLeft()> begin left: " << left._tracks[0] << std::endl;
         //std::clog << "<log> <mergeNodeFromLeft()> begin right: " << right._tracks[0] << std::endl;
         
@@ -825,7 +847,13 @@ struct Unit{
         return nullptr;
     }
 
-    void adjInternalIndex(){
+    /**
+     * * adjust internal unit index
+     * ! most inefficient
+     * TODO general unit parameter
+     * TODO make it just checking current unit/node
+    */
+    void adjInternalIndex(unsigned unit_offset = 0){
 
         if(!isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
