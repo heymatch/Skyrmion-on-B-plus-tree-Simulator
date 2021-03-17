@@ -74,8 +74,13 @@ int main(int argc, char **argv){
             int r = rand() % 3;
             int idx = rand() % numberOfTestcases + 1;
             if(r == 0){
-                fout << "insert " << index[idx] << endl;
-                S.insert(index[idx]);
+                if(!S.count(index[idx])){
+                    fout << "insert " << index[idx] << endl;
+                    S.insert(index[idx]);
+                }
+                else{
+                    --i;
+                }
             }
             else if(r == 1){
                 if(S.count(index[idx])){

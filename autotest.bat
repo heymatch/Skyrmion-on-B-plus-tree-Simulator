@@ -14,20 +14,22 @@ GOTO DONE
 :TEST
 FOR /l %%a IN (1 1 15) DO (
     REM COPY test\output%%a.out test\past%%a.out 
+    ECHO Test test\testcase%%a.txt ...
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 2> test\log%%a.log
+    ECHO Finish test\testcase%%a.txt
     IF errorlevel 1 ( ECHO test\testcase%%a.txt wrong )
 )
 GOTO DONE
 
 :CMP
-FOR /l %%a IN (1 1 15) DO (
+FOR /l %%a IN (1 1 17) DO (
     Skyrmion.exe test\testcase%%a.txt > test\output%%a.out 
     FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
-FOR /l %%a IN (1 1 15) DO (
+FOR /l %%a IN (1 1 17) DO (
     @Skyrmion.exe test\testcase%%a.txt > test\answer%%a.ans 
 )
 GOTO DONE
