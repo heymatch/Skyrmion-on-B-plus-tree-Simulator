@@ -74,9 +74,9 @@ int main(int argc, char **argv){
     // traditional operation on single track skyrmion
     {
         const unsigned WORD_LENGTH = 32;
-        const unsigned TRACK_LENGTH = 4; 
-        const unsigned UNIT_SIZE = 1;
-        const unsigned KP_LENGTH = 2;
+        const unsigned TRACK_LENGTH = 8; 
+        const unsigned UNIT_SIZE = 2;
+        const unsigned KP_LENGTH = 3;
 
         Options options_traditional(
             WORD_LENGTH,
@@ -89,11 +89,12 @@ int main(int argc, char **argv){
             Options::update_function::OVERWRITE,
             Options::insert_function::SEQUENTIAL,
             Options::delete_function::SEQUENTIAL,
-            Options::split_merge_function::TRAD
+            Options::split_merge_function::UNIT
         );
         
         BPTree tree(options_traditional);
         string input;
+        
         try{
             while(getline(fin, input)){
                 unsigned index = 0, data = 0;

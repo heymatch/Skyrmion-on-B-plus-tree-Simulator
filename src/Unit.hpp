@@ -26,8 +26,17 @@ struct Unit{
         _id = UnitId++;
     }
 
-    ~Unit(){
+    Unit(const Unit &right){
+        _tracks = new Node[_options.unit_size];
+        for(int i = 0; i < _options.unit_size; ++i){
+            _tracks[i] = right._tracks[i];
+        }
 
+        // assume new unit is root
+        _isRoot = right._isRoot;
+
+        // get unit id
+        _id = right._id;
     }
 
     /* Major Functions */
@@ -94,7 +103,7 @@ struct Unit{
             for(int i = 0; i < _options.track_length; ++i){
                 for(int j = 0; j < _options.unit_size; ++j){
                     if(
-                        _tracks[unit_offset]._bitmap[i+j] &&
+                        _tracks[unit_offset]._data[i].getBitmap(j) &&
                         _tracks[unit_offset]._data[i].getPtr() != nullptr &&
                         idx < _tracks[unit_offset]._data[i].getKey(j)
                     ){
@@ -257,6 +266,7 @@ struct Unit{
     }
 
     //? no use
+    /*
     Unit *getParentRightUnit(unsigned idx) const{
         for(int i = 0; i < _options.track_length-1; ++i){
             if(getParentUnit()->_tracks[0]._bitmap[i+1] && idx < getParentUnit()->_tracks[0]._data[i+1].getKey(0)){
@@ -264,7 +274,7 @@ struct Unit{
             }
         }
         return _tracks[0]._parent->getSideUnit();
-    }
+    }*/
     
     /**
      * * Split half number of indices to a new unit
@@ -299,6 +309,7 @@ struct Unit{
             
             // copying data
             copyHalfNode(_tracks[unit_offset], newUnit->_tracks[0], promote, wait_insert_idx);
+            //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
 
             // sure to have correct parent pointers
             if(!isLeaf()){
@@ -314,7 +325,7 @@ struct Unit{
             
             throw "Developing split unit";
         default:
-            throw "undefined operation";
+            throw "undefined split operation";
         }
 
         return promote;
@@ -322,6 +333,7 @@ struct Unit{
 
     /**
      * * Copy half data from source to destination
+     * TODO evaluation
      */
     void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote, unsigned wait_insert_idx){
         if(isLeaf()){
@@ -331,16 +343,18 @@ struct Unit{
                         for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
                             destination._data[j] = source._data[i];
 
-                            destination._bitmap[j] = true;
-                            source._bitmap[i] = false;
+                            //destination._bitmap[j] = true;
+                            //source._bitmap[i] = false;
+                            source._data[i].delAll();
                         }
                     }
                     else{
                         for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
                             destination._data[j] = source._data[i];
 
-                            destination._bitmap[j] = true;
-                            source._bitmap[i] = false;
+                            //destination._bitmap[j] = true;
+                            //source._bitmap[i] = false;
+                            source._data[i].delAll();
                         }
                     }
                     break;
@@ -356,8 +370,9 @@ struct Unit{
                 for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
                     destination._data[j] = source._data[i];
 
-                    destination._bitmap[j] = true;
-                    source._bitmap[i] = false;
+                    //destination._bitmap[j] = true;
+                    //source._bitmap[i] = false;
+                    source._data[i].delAll();
 
                     ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
                 }
@@ -366,8 +381,9 @@ struct Unit{
                 for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
                     destination._data[j] = source._data[i];
 
-                    destination._bitmap[j] = true;
-                    source._bitmap[i] = false;
+                    //destination._bitmap[j] = true;
+                    //source._bitmap[i] = false;
+                    source._data[i].delAll();
 
                     ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
                 }
@@ -429,7 +445,8 @@ struct Unit{
                 for(int j = 0; j < _options.track_length; ++j){
                     Unit *nextUnit = (Unit *)_tracks[i]._data[j].getPtr();
 
-                    if(_tracks[i]._bitmap[j] && nextUnit != nullptr && idx < _tracks[i]._data[j].getKey(0)){
+                    //TODO
+                    if(_tracks[i]._data[j].getBitmap(0) && nextUnit != nullptr && idx < _tracks[i]._data[j].getKey(0)){
                         nextUnit->deleteData(idx, unit_offset, j, mergeFlag);
                         //std::clog << "<log> <deleteData()> mergeFlag: " << mergeFlag << std::endl;
                         //std::clog << "<log> <deleteData()> nextUnit->_tracks[0]: " << nextUnit->_tracks[0] << std::endl;
@@ -501,7 +518,7 @@ struct Unit{
             bool side = false;
             Unit *rightUnit = findRightUnit(unit_offset, data_offset, enter_offset);
             Unit *leftUnit = findLeftUnit(unit_offset, data_offset, enter_offset);
-
+            
             //std::clog << "<log> Leaf selfUnit: " << selfUnit << std::endl;
             //std::clog << "<log> Leaf leftUnit: " << leftUnit << std::endl;
             //std::clog << "<log> Leaf rightUnit: " << rightUnit << std::endl;
@@ -550,7 +567,7 @@ struct Unit{
 
                 return;
             }
-
+            
             _tracks[unit_offset].deleteData(idx);
         }
         // Else delete at Internal unit
@@ -694,7 +711,7 @@ struct Unit{
         return KeyPtrSet();
     }
 
-    KeyPtrSet borrowDataFromLeft(Unit &left, Unit& right){
+    KeyPtrSet borrowDataFromLeft(Unit &left, Unit &right){
         //! left_unit_offset = 
         //! right_unit_offset = 
 
@@ -734,13 +751,13 @@ struct Unit{
             /* code */
             break;
         default:
-            throw "undefined operation";
+            throw "undefined merge operation";
             break;
         }
 
         if(left.isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
-                if(right._tracks[0]._bitmap[i]){
+                if(right._tracks[0]._data[i].getBitmap(0)){ //TODO
                     left._tracks[0].insertData(right._tracks[0]._data[i].getKey(0), right._tracks[0]._data[i].getPtr());
                     right._tracks[0].deleteMark(i);
                 }
@@ -751,7 +768,7 @@ struct Unit{
             left.connectSideUnit(nullptr);
             bool first = true;
             for(int i = 0; i < _options.track_length; ++i){
-                if(right._tracks[0]._bitmap[i]){
+                if(right._tracks[0]._data[i].getBitmap(0)){ //TODO
                     ((Unit *)right._tracks[0]._data[i].getPtr())->connectParentUnit(&left);
                     left._tracks[0].insertData(right._tracks[0]._data[i].getKey(0), right._tracks[0]._data[i].getPtr(), false);
                     right._tracks[0].deleteMark(i);
@@ -773,7 +790,7 @@ struct Unit{
         
         if(left.isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
-                if(left._tracks[0]._bitmap[i]){
+                if(left._tracks[0]._data[i].getBitmap(0)){ //TODO
                     right._tracks[0].insertData(left._tracks[0]._data[i].getKey(0), left._tracks[0]._data[i].getPtr());
                     left._tracks[0].deleteMark(i);
                 }
@@ -784,7 +801,7 @@ struct Unit{
         else{
             //left.connectSideUnit(right._side);
             for(int i = 0; i < _options.track_length; ++i){
-                if(left._tracks[0]._bitmap[i]){
+                if(left._tracks[0]._data[i].getBitmap(0)){ //TODO
                     ((Unit *)left._tracks[0]._data[i].getPtr())->connectParentUnit(&right);
                     right._tracks[0].insertData(left._tracks[0]._data[i].getKey(0), left._tracks[0]._data[i].getPtr(), false);
                     left._tracks[0].deleteMark(i);
@@ -802,10 +819,19 @@ struct Unit{
 
     /**
      * * for double tracks
-     * @param 
+     * @param left is full node
+     * @param right is non-full node
     */
     void balanceData(Node &left, Node &right){
+        if(isLeaf()){
+            for(int i = 0; i < _options.track_length / 2; ++i){
+                right.insertData(left._data[i].getKey(0), left._data[i].getPtr());
+                left.deleteData(left._data[i].getKey(0));
+            }
+        }
+        else{
 
+        }
     }
 
     /* Minor Functions */
@@ -857,7 +883,7 @@ struct Unit{
 
         if(!isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
-                if(_tracks[0]._bitmap[i]){
+                if(_tracks[0]._data[i].getBitmap(0)){ //TODO
                     ((Unit *)_tracks[0]._data[i].getPtr())->adjInternalIndex();
                     Unit *nextUnit = nullptr;
 
@@ -897,7 +923,7 @@ struct Unit{
 
     bool isFull(unsigned offset) const{
         for(int i = 0; i < _options.track_length; ++i){
-            if(!_tracks[offset]._bitmap[i]){
+            if(!_tracks[offset]._data[i].getBitmap(0)){ //TODO
                 return false;
             }
         }
@@ -905,13 +931,19 @@ struct Unit{
     }
 
     bool isFullUnit() const{
+        for(int i = 0; i < _options.unit_size; ++i){
+            if(!isFull(i)){
+                return false;
+            }
+        }
 
+        return true;
     }
 
     // For root unit to check empty
     bool isEmpty(unsigned offset){
         for(int i = 0; i < _options.track_length; ++i){
-            if(_tracks[offset]._bitmap[i]){
+            if(_tracks[offset]._data[i].getBitmap(0)){ //TODO
                 return false;
             }
         }
@@ -946,10 +978,12 @@ struct Unit{
         return unit;
     }
 
+    /* Data Member */
+
     Node *_tracks;
-    //
-    //
-    //
+    
+    /* System */
+
     void setRoot(bool status){
         _isRoot = status;
     }
@@ -957,6 +991,12 @@ struct Unit{
     bool _isRoot;
     Options _options;
     unsigned _id;
+
+    Counter _readCounter = Counter("Read");
+    Counter _shiftCounter = Counter("Shift");
+    Counter _insertCounter = Counter("Insert");
+    Counter _removeCounter = Counter("Remove");
+    Counter _migrateCounter = Counter("Migrate");
 };
 
 #include<unordered_map>
@@ -1024,7 +1064,7 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     if(!right.isLeaf()){
         for(int i = 0; i < right._options.unit_size; ++i){
             for(int j = 0; j < right._options.track_length; ++j){
-                if(right._tracks[i]._bitmap[j] && right._tracks[i]._data[j].getPtr() != nullptr){
+                if(right._tracks[i]._data[j].getBitmap(0) && right._tracks[i]._data[j].getPtr() != nullptr){ //TODO
                     out << *(Unit *)right._tracks[i]._data[j].getPtr();
                 }
             }
