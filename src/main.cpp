@@ -18,7 +18,7 @@ enum Operation{
     CHECK
 };
 
-unsigned parser(string str, unsigned &idx, unsigned &data){
+unsigned inputParser(string str, unsigned &idx, unsigned &data){
     stringstream ss(str);
     string op;
     ss >> op;
@@ -54,51 +54,64 @@ unsigned parser(string str, unsigned &idx, unsigned &data){
     }
 }
 
+/**
+ * TODO setting file
+*/
+Options settingParser(ifstream &fin){
+    unsigned WORD_LENGTH = 32;
+    unsigned TRACK_LENGTH = 4; 
+    unsigned UNIT_SIZE = 2;
+    unsigned KP_LENGTH = 3;
+
+    Options options(
+        WORD_LENGTH,
+        TRACK_LENGTH,
+        UNIT_SIZE,
+        KP_LENGTH,
+        Options::ordering::SORTED,
+        Options::read_function::SEQUENTIAL,
+        Options::search_function::SEQUENTIAL,
+        Options::update_function::OVERWRITE,
+        Options::insert_function::SEQUENTIAL,
+        Options::delete_function::SEQUENTIAL,
+        Options::split_merge_function::UNIT
+    );
+
+    return options;
+}
+
 int main(int argc, char **argv){
     // argument
-	// argument1 = dataname
-    if(argc != 2)
+	// * argument1 = data filename
+    // * argument2 = setting filename
+    if(argc != 3)
         return EXIT_FAILURE;
     
-    // load data
+    // * load data
     ifstream fin(argv[1]);
     if(fin.fail()){
         cerr << "file: '" << argv[1] << "' open error" << endl;
+        return EXIT_FAILURE;
+    }
 
+    // * load setting
+    ifstream setting(argv[2]);
+    if(setting.fail()){
+        cerr << "file: '" << argv[2] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
     // initial
     srand(0);
 
-    // traditional operation on single track skyrmion
     {
-        const unsigned WORD_LENGTH = 32;
-        const unsigned TRACK_LENGTH = 8; 
-        const unsigned UNIT_SIZE = 2;
-        const unsigned KP_LENGTH = 3;
-
-        Options options_traditional(
-            WORD_LENGTH,
-            TRACK_LENGTH,
-            UNIT_SIZE,
-            KP_LENGTH,
-            Options::ordering::SORTED,
-            Options::read_function::SEQUENTIAL,
-            Options::search_function::SEQUENTIAL,
-            Options::update_function::OVERWRITE,
-            Options::insert_function::SEQUENTIAL,
-            Options::delete_function::SEQUENTIAL,
-            Options::split_merge_function::UNIT
-        );
-        
-        BPTree tree(options_traditional);
+        BPTree tree(settingParser(setting));
         string input;
         
         try{
             while(getline(fin, input)){
                 unsigned index = 0, data = 0;
-                switch(parser(input, index, data)){
+                switch(inputParser(input, index, data)){
                     case Operation::SEARCH:
                         try{
                             unsigned *dataPtr = tree.searchData(index);

@@ -14,9 +14,10 @@ namespace System{
 struct Unit{
     Unit(Options options) : _options(options){
         // init tracks
-        _tracks = new Node[_options.unit_size];
+        _tracks = new Node[_options.unit_size]();
         for(int i = 0; i < _options.unit_size; ++i){
             _tracks[i] = Node(_options, false);
+            //std::clog << "<log> _tracks[i]: " << _tracks[i] << std::endl;
         }
 
         // assume new unit is root
@@ -27,6 +28,8 @@ struct Unit{
     }
 
     Unit(const Unit &right){
+        _options = right._options;
+
         _tracks = new Node[_options.unit_size];
         for(int i = 0; i < _options.unit_size; ++i){
             _tracks[i] = right._tracks[i];
@@ -37,6 +40,23 @@ struct Unit{
 
         // get unit id
         _id = right._id;
+    }
+
+    Unit &operator=(const Unit &right){
+        _options = right._options;
+
+        _tracks = new Node[_options.unit_size];
+        for(int i = 0; i < _options.unit_size; ++i){
+            _tracks[i] = right._tracks[i];
+        }
+
+        // assume new unit is root
+        _isRoot = right._isRoot;
+
+        // get unit id
+        _id = right._id;
+
+        return *this;
     }
 
     /* Major Functions */
@@ -112,11 +132,30 @@ struct Unit{
                     }
                 }
             }
-            //! Assume side unit only has one track availiable
-            if(_tracks[unit_offset]._side != nullptr){
-                ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, 0);
-                return;
+            
+            if(_tracks[unit_offset]._side == nullptr){
+                throw "insert side error";
             }
+
+            //! Assume side unit only has one track availiable
+            ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, 0);
+
+            /*
+            if(_options.split_merge_mode == Options::split_merge_function::TRAD){
+                ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, 0);
+            }
+            else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                KeyPtrSet last = _tracks[unit_offset].getMaxData();
+                if(last.getSize() == 1){
+                    ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, _options.unit_size-1);
+                }
+                else{
+                    ((Unit *)_tracks[unit_offset]._side)->insertData(idx, data, 0);
+                }
+            }
+            */
+
+            return;
         }
     }
 
@@ -130,6 +169,8 @@ struct Unit{
      * ? can merge with insertCurrentPoint()?
      */
     void insertCurrentData(unsigned idx, unsigned data, unsigned unit_offset){
+        std::clog << "<log> <insertCurrentData()> idx: " << idx << std::endl;
+
         if(!isLeaf())
             throw "This function is for Leaf node";
 
@@ -161,7 +202,7 @@ struct Unit{
                 if(idx < promote.getKey(unit_offset))
                     insertCurrentData(idx, data, unit_offset);
                 else
-                    getSideUnit()->insertCurrentData(idx, data, 0);
+                    getSideUnit()->insertCurrentData(idx, data, _options.unit_size-1);
 
                 return;
             }
@@ -173,8 +214,8 @@ struct Unit{
 
             // insert new index from root
             //? or from its parent
+            
             getRoot()->insertData(idx, data, 0);
-
             return;
         }
 
@@ -183,11 +224,16 @@ struct Unit{
     }
 
     void insertCurrentPointer(unsigned idx, Unit *unit, unsigned offset){
+        std::clog << "<log> <insertCurrentPointer()> idx: " << idx << std::endl;    
+
         if(isLeaf())
             throw "This function is for Internal node";
-
+        
         if(isFull(offset)){
             KeyPtrSet promote = splitNode(idx, offset);
+
+            if(promote.getKey(0) == 0)
+                return;
 
             if(_isRoot){
                 setRoot(false);
@@ -221,7 +267,9 @@ struct Unit{
             }
             //insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
             //((Unit *)promote.ptr)->connectParentUnit(this, 0);
+            
             this->_tracks[0]._parent->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, 0);
+            
             ////if(((Unit *)promote.ptr)->getParentUnit() == nullptr)
                 ////((Unit *)promote.ptr)->connectParentUnit(getParentUnit());
             Unit *rightUnit = (Unit *)promote.ptr;
@@ -244,7 +292,7 @@ struct Unit{
 
             return;
         }
-
+        
         _tracks[offset].insertData(idx, unit);
         unit->connectParentUnit(this);
     }
@@ -257,8 +305,12 @@ struct Unit{
         return _tracks[0]._side;
     }
 
+    /**
+     * * DONE
+    */
     void connectParentUnit(Unit *unit){
-        _tracks[0].connectParentNode(unit);
+        for(int i = 0; i < _options.unit_size; ++i)
+            _tracks[i].connectParentNode(unit);
     }
 
     Unit *getParentUnit() const{
@@ -288,10 +340,7 @@ struct Unit{
     KeyPtrSet splitNode(unsigned wait_insert_idx, unsigned unit_offset){
         KeyPtrSet promote(2);
 
-        switch (_options.split_merge_mode)
-        {
-        case Options::split_merge_function::TRAD:
-        {
+        if(_options.split_merge_mode == Options::split_merge_function::TRAD){
             Unit *newUnit = System::allocUnit(_options);
 
             // it is never root
@@ -316,15 +365,47 @@ struct Unit{
                 getSideUnit()->connectParentUnit(this);
                 newUnit->getSideUnit()->connectParentUnit(newUnit);
             }
-
-            break;
         }
-        case Options::split_merge_function::UNIT:
+        else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+            bool side = false;
+            if(!isRoot()){
+                if(getParentUnit()->getSideUnit() == this){
+                    side = true;
+                }
+            }
+
+            // find the middle index
+            unsigned promoteKey = System::getMid(_tracks[unit_offset]._data, _options.track_length, wait_insert_idx);
+
             //* In-Unit Split
+            if(!isFullUnit() && !side){
+                // combine as a key-point set
+                promote.setPtr(this);
+                promote.addKey(promoteKey);
+
+                balanceData(_tracks[unit_offset], _tracks[(unit_offset+1) % 2]);
+            }
             //* Unit-Unit Split
-            
-            throw "Developing split unit";
-        default:
+            else{
+                Unit *newUnit = System::allocUnit(_options);
+
+                // combine as a key-point set
+                promote.setPtr(newUnit);
+                promote.addKey(promoteKey);
+
+                // it is never root
+                newUnit->setRoot(false);
+
+                // split operation will generate same level unit/node
+                if(!isLeaf()) newUnit->setLeaf(false);
+
+                // copying data
+                copyHalfNode(_tracks[unit_offset], newUnit->_tracks[0], promote, wait_insert_idx);
+
+                //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
+            }
+        }
+        else{
             throw "undefined split operation";
         }
 
@@ -824,7 +905,7 @@ struct Unit{
     */
     void balanceData(Node &left, Node &right){
         if(isLeaf()){
-            for(int i = 0; i < _options.track_length / 2; ++i){
+            for(int i = (left.getSize() + right.getSize()) / 2; i < _options.track_length; ++i){
                 right.insertData(left._data[i].getKey(0), left._data[i].getPtr());
                 left.deleteData(left._data[i].getKey(0));
             }
@@ -922,6 +1003,8 @@ struct Unit{
     /* Supported Functions */
 
     bool isFull(unsigned offset) const{
+        //std::clog << "<log> <isFull()> offset: " << offset << std::endl;
+
         for(int i = 0; i < _options.track_length; ++i){
             if(!_tracks[offset]._data[i].getBitmap(0)){ //TODO
                 return false;
@@ -958,15 +1041,29 @@ struct Unit{
         return _tracks[0]._isLeaf;
     }
 
-    //?
     bool isValid(unsigned offset) const{
 
+    }
+
+    bool isRoot() const{
+        return _isRoot;
     }
 
     void setLeaf(bool isLeaf){
         for(int i = 0; i < _options.unit_size; ++i){
             _tracks[i]._isLeaf = isLeaf;
         }
+    }
+
+    unsigned getSize() const{
+        unsigned counter = 0;
+        for(int i = 0; i < _options.unit_size; ++i){
+            if(_tracks[i]._isValid){
+                ++counter;
+            }
+        }
+
+        return counter;
     }
 
     Unit *getRoot(){
@@ -1049,7 +1146,7 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     if(right.isLeaf()) out << "Leaf Unit";
     else out << "Internal Unit";
     out << " " << right._id << " " << &right << "\n";
-    //out << " Parent: " << right.getParentUnit();
+    out << "\t\t" << "Parent: " << right.getParentUnit() << "\n";
     out << "\t\t";
     if(right._isRoot) out << "Root";
     out << "\n";

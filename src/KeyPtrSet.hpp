@@ -53,6 +53,8 @@ struct KeyPtrSet{
 
     void setKey(unsigned offset, unsigned val){
         key[offset] = val;
+        if(!bitmap[offset])
+            ++_size;
         bitmap[offset] = true;
     }
 
@@ -88,6 +90,10 @@ struct KeyPtrSet{
 
     void *getPtr() const{
         return ptr;
+    }
+
+    unsigned getSize() const{
+        return _size;
     }
 
     bool isFull() const{

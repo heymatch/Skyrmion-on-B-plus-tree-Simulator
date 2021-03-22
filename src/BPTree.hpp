@@ -26,22 +26,27 @@ public:
         if(_root == nullptr){
             _root = new Unit(_options);
         }
+
         _root->insertData(idx, data, 0);
         
-        if(_root->_tracks[0]._parent != nullptr){
-            _root = _root->_tracks[0]._parent;
-            //std::clog << "<log> _root: " << _root->_tracks[0] << std::endl;
-            //std::clog << "<log> _root->_tracks[0]._parent: " << _root->_tracks[0]._parent << std::endl;
+        if(_root->getParentUnit() != nullptr){
+            _root = _root->getParentUnit();
         }
             
     }
 
     void deleteData(unsigned idx){
+        if(_root == nullptr){
+            return;
+        }
+
         bool mergeFlag = false;
         _root->deleteData(idx, 0, -1, mergeFlag);
+
         if(!_root->_isRoot){
             _root = _root->getSideUnit();
         }
+
         if(_root != nullptr){
             _root->adjInternalIndex();
         }

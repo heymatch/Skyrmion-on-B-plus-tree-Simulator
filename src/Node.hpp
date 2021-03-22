@@ -19,6 +19,7 @@ struct Node{
             _parent = nullptr;
             _id = NodeId++;
             _sideBitmap = false;
+            _isValid = true;
             if(!isLeaf){
                 for(int i = 0; i < _options.track_length; ++i){
                     _data[i] = KeyPtrSet(_options.kp_length);
@@ -28,6 +29,8 @@ struct Node{
     }
 
     Node(const Node &right){
+        _options = right._options;
+
         _data = new KeyPtrSet[_options.track_length]();
 
         _isLeaf = right._isLeaf;
@@ -35,10 +38,32 @@ struct Node{
         _parent = right._parent;
         _id = right._id;
         _sideBitmap = right._sideBitmap;
+        _isValid = right._isValid;
 
         for(int i = 0; i < _options.track_length; ++i){
             _data[i] = right._data[i];
         }
+    }
+
+    Node &operator=(const Node &right){
+        _options = right._options;
+
+        _data = new KeyPtrSet[_options.track_length]();
+
+        _isLeaf = right._isLeaf;
+        _side = right._side;
+        _parent = right._parent;
+        _id = right._id;
+        _sideBitmap = right._sideBitmap;
+        _isValid = right._isValid;
+
+        //_shiftCounter = right._shiftCounter;
+
+        for(int i = 0; i < _options.track_length; ++i){
+            _data[i] = right._data[i];
+        }
+
+        return *this;
     }
 
     /* Major Functions */
@@ -69,7 +94,9 @@ struct Node{
         return arr; 
     }
 
-    //* Return data pointer
+    /**
+     * TODO evaluation
+     */
     void *searchData(unsigned idx, unsigned &next_unit_offset){
         switch (_options.search_mode)
         {
@@ -109,7 +136,23 @@ struct Node{
                     }
                 } 
             }
-            return _side;
+
+            if(_options.split_merge_mode == Options::split_merge_function::TRAD){
+                return _side;
+            }
+            else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                KeyPtrSet last = getMaxData();
+                if(last.getSize() == 1){
+                    next_unit_offset = 0;
+                    return _side;
+                }
+                else{
+                    
+                    next_unit_offset = 0;
+                    return _side;
+                }
+            }
+            
         }
     }
     
@@ -218,6 +261,31 @@ struct Node{
         }
         else{
             //TODO insert into the same pointer, just add the index to the key-point set
+            for(int i = 0; i < _options.track_length; ++i){
+                std::clog << "<log> _data[i]._size: " << _data[i]._size << std::endl;
+                std::clog << "<log> _data[i].getPtr(): " << _data[i].getPtr() << std::endl;
+                std::clog << "<log> _side: " << _side << std::endl;
+                std::clog << "<log> data: " << data << std::endl;
+
+                if(_data[i].getPtr() == _side){
+                    _side = (Unit *)data;
+
+                    return;
+                }
+
+                if(data == _side){
+                    unsigned rightMostOffset = getRightMostOffset();
+                    _data[rightMostOffset].addKey(idx);
+
+                    return;
+                }
+
+                if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
+                    _data[i].addKey(idx);
+
+                    return;
+                }
+            }
 
             KeyPtrSet newData(_options.kp_length, false);
             newData.setPtr(data);
@@ -265,10 +333,10 @@ struct Node{
     }
 
     /**
-     * * Find and delete index
-     * TODO evaluation
-     * TODO general unit parameter
-     * TODO redesign as deleteData(offset, side) to direct delete (still need to check right most)
+     * * Find and delete index 
+     * TODO evaluation 
+     * TODO general unit parameter 
+     * TODO redesign as deleteData(offset, side) to direct delete (still need to check right most) 
      * @param side for internal, if true, and try to delete the right most index, that will delete the side unit
      */
     void deleteData(unsigned idx, bool side = false){
@@ -324,7 +392,12 @@ struct Node{
     }
 
     void deleteMark(unsigned offset, bool side = false){
-        _data[offset / _options.unit_size].delKey(offset % _options.unit_size);
+        if(_isLeaf){
+            _data[offset].delKey(0);
+        }
+        else{
+            _data[offset / _options.unit_size].delKey(offset % _options.unit_size);
+        }
     }
 
     unsigned getOffsetByIndex(unsigned idx){
@@ -487,10 +560,10 @@ struct Node{
                    
                    //TODO
                     for(int i = 0; i < last; ++i){
-                        if(!_data[i].getBitmap(0) && _data[i+1].getBitmap(0) && wait_insert_idx < _data[i+1].getKey(i % _options.unit_size)){
+                        if(!_data[i].getBitmap(0) && _data[i+1].getBitmap(0) && wait_insert_idx < _data[i+1].getKey(0)){
                             return i;
                         }
-                        else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(i % _options.unit_size)){
+                        else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(0)){
                             return i;
                         }
                     }
@@ -565,6 +638,17 @@ struct Node{
         return counter == _options.track_length / 2;
     }
 
+    unsigned getSize(){
+        unsigned counter = 0;
+        for(int i = 0; i < _options.track_length; ++i){
+            if(_data[i].getBitmap(0)){ //TODO
+                counter++;
+            }
+        }
+
+        return counter;
+    }
+
     /* Data Member (Data) */
     KeyPtrSet *_data;
 
@@ -574,6 +658,7 @@ struct Node{
     Unit *_side;
     bool _sideBitmap;
     Unit *_parent;
+    bool _isValid;
 
     /* System */
     Options _options;
