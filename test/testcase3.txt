@@ -15,7 +15,10 @@ search 31
 insert 1000
 search 245
 insert 81
+@@@
 insert 85
+@@@
 insert 500
+@@@
 insert 700
 search 1000
