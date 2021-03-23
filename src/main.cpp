@@ -60,8 +60,8 @@ unsigned inputParser(string str, unsigned &idx, unsigned &data){
 Options settingParser(ifstream &fin){
     unsigned WORD_LENGTH = 32;
     unsigned TRACK_LENGTH = 4; 
-    unsigned UNIT_SIZE = 2;
-    unsigned KP_LENGTH = 3;
+    unsigned UNIT_SIZE = 1;
+    unsigned KP_LENGTH = 2;
 
     Options options(
         WORD_LENGTH,
@@ -74,7 +74,7 @@ Options settingParser(ifstream &fin){
         Options::update_function::OVERWRITE,
         Options::insert_function::SEQUENTIAL,
         Options::delete_function::SEQUENTIAL,
-        Options::split_merge_function::UNIT
+        Options::split_merge_function::TRAD
     );
 
     return options;

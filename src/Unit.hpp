@@ -173,7 +173,7 @@ struct Unit{
 
         if(!isLeaf())
             throw "This function is for Leaf node";
-
+        
         if(isFull(unit_offset)){
             //* get the middle key and the pointer of new split unit
             KeyPtrSet promote = splitNode(idx, unit_offset);
@@ -424,8 +424,6 @@ struct Unit{
                         for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
                             destination._data[j] = source._data[i];
 
-                            //destination._bitmap[j] = true;
-                            //source._bitmap[i] = false;
                             source._data[i].delAll();
                         }
                     }
@@ -433,11 +431,10 @@ struct Unit{
                         for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
                             destination._data[j] = source._data[i];
 
-                            //destination._bitmap[j] = true;
-                            //source._bitmap[i] = false;
                             source._data[i].delAll();
                         }
                     }
+                    std::clog << "<log> destination: " << destination << std::endl;
                     break;
                 case Options::ordering::UNSORTED:
                     throw "unsorted split developing";
@@ -908,7 +905,9 @@ struct Unit{
             for(int i = (left.getSize() + right.getSize()) / 2; i < _options.track_length; ++i){
                 right.insertData(left._data[i].getKey(0), left._data[i].getPtr());
                 left.deleteData(left._data[i].getKey(0));
+                //std::clog << "<log> right: " << right << std::endl;
             }
+            
         }
         else{
 
@@ -1003,14 +1002,7 @@ struct Unit{
     /* Supported Functions */
 
     bool isFull(unsigned offset) const{
-        //std::clog << "<log> <isFull()> offset: " << offset << std::endl;
-
-        for(int i = 0; i < _options.track_length; ++i){
-            if(!_tracks[offset]._data[i].getBitmap(0)){ //TODO
-                return false;
-            }
-        }
-        return true;
+        return _tracks[offset].isFull();
     }
 
     bool isFullUnit() const{

@@ -78,6 +78,13 @@ struct KeyPtrSet{
         bitmap[_size] = true;
         key[_size] = val;
         ++_size;
+        //! only for two keys
+        if(_capacity == 3){
+            if(bitmap[0] && bitmap[1] && key[0] > key[1]){
+                swap(key[0], key[1]);
+            }
+        }
+            
     }
 
     unsigned getKey(unsigned offset) const{
