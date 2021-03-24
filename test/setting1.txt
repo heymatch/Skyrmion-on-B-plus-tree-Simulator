@@ -1,11 +1,11 @@
 word_length=32
 track_length=8
-unit_size=2
-kp_length=3
+unit_size=1
+kp_length=2
 ordering=SORTED
 read_function=SEQUENTIAL
 search_function=SEQUENTIAL
 update_function=OVERWRITE
 insert_function=SEQUENTIAL
 delete_function=SEQUENTIAL
-split_merge_function=UNIT
+split_merge_function=TRAD
