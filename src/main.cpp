@@ -58,23 +58,89 @@ unsigned inputParser(string str, unsigned &idx, unsigned &data){
  * TODO setting file
 */
 Options settingParser(ifstream &fin){
-    unsigned WORD_LENGTH = 32;
-    unsigned TRACK_LENGTH = 4; 
-    unsigned UNIT_SIZE = 1;
-    unsigned KP_LENGTH = 2;
+    unsigned WORD_LENGTH = 0;
+    unsigned TRACK_LENGTH = 0; 
+    unsigned UNIT_SIZE = 0;
+    unsigned KP_LENGTH = 0;
+    Options::ordering ordering = Options::ordering::None;
+    Options::read_function read_function = Options::read_function::None;
+    Options::search_function search_function = Options::search_function::None;
+    Options::update_function update_function = Options::update_function::None;
+    Options::insert_function insert_function = Options::insert_function::None;
+    Options::delete_function delete_function = Options::delete_function::None;
+    Options::split_merge_function split_merge_function = Options::split_merge_function::None;
 
+    string input;
+    while(getline(fin, input)){
+        stringstream ss(input);
+        string op, val;
+        getline(ss, op, '=');
+        getline(ss, val);
+        
+        if(op == "word_length"){
+            WORD_LENGTH = stoi(val);
+        }
+        else if(op == "track_length"){
+            TRACK_LENGTH = stoi(val);
+        }
+        else if(op == "unit_size"){
+            UNIT_SIZE = stoi(val);
+        }
+        else if(op == "kp_length"){
+            KP_LENGTH = stoi(val);
+        }
+        else if(op == "ordering"){
+            if(val == "SORTED"){
+                ordering = Options::ordering::SORTED;
+            }
+        }
+        else if(op == "read_function"){
+            if(val == "SEQUENTIAL"){
+                read_function = Options::read_function::SEQUENTIAL;
+            }
+        }
+        else if(op == "search_function"){
+            if(val == "SEQUENTIAL"){
+                search_function = Options::search_function::SEQUENTIAL;
+            }
+        }
+        else if(op == "update_function"){
+            if(val == "OVERWRITE"){
+                update_function = Options::update_function::OVERWRITE;
+            }
+        }
+        else if(op == "insert_function"){
+            if(val == "SEQUENTIAL"){
+                insert_function = Options::insert_function::SEQUENTIAL;
+            }
+        }
+        else if(op == "delete_function"){
+            if(val == "SEQUENTIAL"){
+                delete_function = Options::delete_function::SEQUENTIAL;
+            }
+        }
+        else if(op == "split_merge_function"){
+            if(val == "TRAD"){
+                split_merge_function = Options::split_merge_function::TRAD;
+            }
+            else if(val == "UNIT"){
+                split_merge_function = Options::split_merge_function::UNIT;
+            }
+        }
+    }
+    
     Options options(
         WORD_LENGTH,
         TRACK_LENGTH,
         UNIT_SIZE,
         KP_LENGTH,
-        Options::ordering::SORTED,
-        Options::read_function::SEQUENTIAL,
-        Options::search_function::SEQUENTIAL,
-        Options::update_function::OVERWRITE,
-        Options::insert_function::SEQUENTIAL,
-        Options::delete_function::SEQUENTIAL,
-        Options::split_merge_function::TRAD
+        ordering,
+        read_function,
+        search_function,
+        update_function,
+        insert_function,
+        delete_function,
+        split_merge_function
     );
 
     return options;
@@ -88,8 +154,8 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     
     // * load data
-    ifstream fin(argv[1]);
-    if(fin.fail()){
+    ifstream workload(argv[1]);
+    if(workload.fail()){
         cerr << "file: '" << argv[1] << "' open error" << endl;
         return EXIT_FAILURE;
     }
@@ -109,7 +175,7 @@ int main(int argc, char **argv){
         string input;
         
         try{
-            while(getline(fin, input)){
+            while(getline(workload, input)){
                 unsigned index = 0, data = 0;
                 switch(inputParser(input, index, data)){
                     case Operation::SEARCH:

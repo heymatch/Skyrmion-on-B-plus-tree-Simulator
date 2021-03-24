@@ -12,11 +12,14 @@ public:
     }
 
     unsigned *searchData(unsigned idx){
-        return _root->searchData(idx, 0);
+        unsigned unit_offset = 0;
+        return _root->searchData(idx, unit_offset);
     }
 
     void updateData(unsigned idx, unsigned data){
-        unsigned *dataPtr = _root->searchData(idx, 0);
+        unsigned unit_offset = 0;
+        unsigned *dataPtr = _root->searchData(idx, unit_offset);
+        
         if(dataPtr != nullptr){
             *dataPtr = data;
         }
@@ -25,9 +28,10 @@ public:
     void insertData(unsigned idx, unsigned data){
         if(_root == nullptr){
             _root = new Unit(_options);
+            _root->_tracks[0].setValid(true);
         }
 
-        _root->insertData(idx, data, 0);
+        _root->insertData(idx, data, 0, -1);
         
         if(_root->getParentUnit() != nullptr){
             _root = _root->getParentUnit();
@@ -44,7 +48,7 @@ public:
         _root->deleteData(idx, 0, -1, mergeFlag);
 
         if(!_root->_isRoot){
-            _root = _root->getSideUnit();
+            _root = _root->getSideUnit(0);
         }
 
         if(_root != nullptr){

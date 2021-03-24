@@ -19,7 +19,7 @@ struct Node{
             _parent = nullptr;
             _id = NodeId++;
             _sideBitmap = false;
-            _isValid = true;
+            _isValid = false;
             if(!isLeaf){
                 for(int i = 0; i < _options.track_length; ++i){
                     _data[i] = KeyPtrSet(_options.kp_length);
@@ -141,6 +141,7 @@ struct Node{
                 return _side;
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                /*
                 KeyPtrSet last = getMaxData();
                 if(last.getSize() == 1){
                     next_unit_offset = 0;
@@ -150,7 +151,9 @@ struct Node{
 
                     next_unit_offset = 0;
                     return _side;
-                }
+                }*/
+                next_unit_offset = 0;
+                return _side;
             }
             
         }
@@ -262,32 +265,33 @@ struct Node{
         else{
             //TODO insert into the same pointer, just add the index to the key-point set
             if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                
+                /*if(data == _side){
+                    unsigned rightMostOffset = getRightMostOffset() / _options.unit_size;
+                    _data[rightMostOffset].addKey(idx);
+
+                    return;
+                }*/
                 for(int i = 0; i < _options.track_length; ++i){
                     //std::clog << "<log> _data[i]._size: " << _data[i]._size << std::endl;
                     //std::clog << "<log> _data[i].getPtr(): " << _data[i].getPtr() << std::endl;
                     //std::clog << "<log> _side: " << _side << std::endl;
                     //std::clog << "<log> data: " << data << std::endl;
 
-                    
-                    if(_data[i].getPtr() == _side){
-                        _side = (Unit *)data;
-
-                        return;
-                    }
-
-                    if(data == _side){
-                        unsigned rightMostOffset = getRightMostOffset();
-                        _data[rightMostOffset].addKey(idx);
-
-                        return;
-                    }
-
                     if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
                         _data[i].addKey(idx);
 
                         return;
                     }
+                    
+                    if(_data[i].getPtr() == _side){
+                        _data[i].addKey(idx);
+                        _side = (Unit *)data;
+                        return;
+                    }
                 }
+
+                
             }
 
             KeyPtrSet newData(_options.kp_length, false);
@@ -725,6 +729,20 @@ struct Node{
     */
     bool isHalf() const{
         return getSize() == _options.track_length / 2;
+    }
+
+    /**
+     * * Done
+    */
+    void setValid(bool valid){
+        _isValid = valid;
+    }
+
+    /**
+     * * Done
+    */
+    bool isValid() const{
+        return _isValid;
     }
 
     /**
