@@ -48,7 +48,7 @@ public:
         _root->deleteData(idx, 0, -1, mergeFlag);
 
         if(!_root->_isRoot){
-            _root = _root->getSideUnit(0);
+            _root = _root->getBackSideUnit(0);
         }
 
         if(_root != nullptr){

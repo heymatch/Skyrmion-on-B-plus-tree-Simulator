@@ -5,6 +5,8 @@
 #include <sstream>
 using namespace std;
 
+#define dbg(info) std::clog << info << std::endl;
+
 #include "Options.hpp"
 #include "BPTree.hpp"
 

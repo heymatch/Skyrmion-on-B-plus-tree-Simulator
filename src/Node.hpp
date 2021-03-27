@@ -12,19 +12,22 @@ struct Unit;
 struct Node{
     Node(Options options = Options(), bool None = true, bool isLeaf = true) : _options(options){
         if(!None){
-            _data = new KeyPtrSet[_options.track_length]();
-            //_bitmap = new bool[_options.track_length]();
             _isLeaf = isLeaf;
-            _side = nullptr;
+            _sideBack = nullptr;
+            _sideFront = nullptr;
             _parent = nullptr;
-            _id = NodeId++;
-            _sideBitmap = false;
+            _sideBackBitmap = false;
+            _sideFrontBitmap = false;
             _isValid = false;
+            
+            _data = new KeyPtrSet[_options.track_length]();
             if(!isLeaf){
                 for(int i = 0; i < _options.track_length; ++i){
                     _data[i] = KeyPtrSet(_options.kp_length);
                 }
             }
+
+            _id = NodeId++;
         }
     }
 
@@ -34,15 +37,19 @@ struct Node{
         _data = new KeyPtrSet[_options.track_length]();
 
         _isLeaf = right._isLeaf;
-        _side = right._side;
+        _sideBack = right._sideBack;
         _parent = right._parent;
         _id = right._id;
-        _sideBitmap = right._sideBitmap;
+        _sideBackBitmap = right._sideBackBitmap;
         _isValid = right._isValid;
 
         for(int i = 0; i < _options.track_length; ++i){
             _data[i] = right._data[i];
         }
+    }
+
+    ~Node(){
+        delete[] _data;
     }
 
     Node &operator=(const Node &right){
@@ -51,10 +58,10 @@ struct Node{
         _data = new KeyPtrSet[_options.track_length]();
 
         _isLeaf = right._isLeaf;
-        _side = right._side;
+        _sideBack = right._sideBack;
         _parent = right._parent;
         _id = right._id;
-        _sideBitmap = right._sideBitmap;
+        _sideBackBitmap = right._sideBackBitmap;
         _isValid = right._isValid;
 
         //_shiftCounter = right._shiftCounter;
@@ -138,7 +145,7 @@ struct Node{
             }
 
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                return _side;
+                return _sideBack;
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
                 /*
@@ -153,7 +160,7 @@ struct Node{
                     return _side;
                 }*/
                 next_unit_offset = 0;
-                return _side;
+                return _sideBack;
             }
             
         }
@@ -284,9 +291,9 @@ struct Node{
                         return;
                     }
                     
-                    if(_data[i].getPtr() == _side){
+                    if(_data[i].getPtr() == _sideBack){
                         _data[i].addKey(idx);
-                        _side = (Unit *)data;
+                        _sideBack = (Unit *)data;
                         return;
                     }
                 }
@@ -302,7 +309,7 @@ struct Node{
             unsigned shiftPos = getShiftPosition();
             unsigned insertPos = getInsertPosition(idx, insertSide);
 
-            //TODO
+            //! Only insert at unused KeyPtrSet
             if(_data[insertPos].getBitmap(0)){
                 if(shiftPos < insertPos){
                     if(!insertSide)
@@ -322,10 +329,10 @@ struct Node{
             //std::clog << "<log> insertPos: " << insertPos << std::endl;
             //std::clog << "<log> insertSide: " << insertSide << std::endl;
 
-            if(_side != nullptr){
+            if(_sideBack != nullptr){
                 if(insertSide){
-                    void *temp = _side;
-                    _side = (Unit *)_data[insertPos].getPtr();
+                    void *temp = _sideBack;
+                    _sideBack = (Unit *)_data[insertPos].getPtr();
                     _data[insertPos].setPtr(temp);
                 }
                 else if(!insertSide && split){
@@ -377,7 +384,7 @@ struct Node{
             if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){ //TODO
                 // delete side unit
                 if(!_isLeaf && isRightMostOffset(i) && side){
-                    connectSideUnit((Unit *)_data[i].getPtr());
+                    connectBackSideUnit((Unit *)_data[i].getPtr());
                 }
                 deleteMark(i);
                 return;
@@ -392,9 +399,17 @@ struct Node{
     /**
      * * Done
     */
-    void connectSideUnit(Unit *unit){
-        _side = unit;
-        _sideBitmap = true;
+    void connectBackSideUnit(Unit *unit){
+        _sideBack = unit;
+        _sideBackBitmap = true;
+    }
+
+    /**
+     * * Done
+    */
+    void connectFrontSideUnit(Unit *unit){
+        _sideFront = unit;
+        _sideFrontBitmap = true;
     }
 
     /**
@@ -412,7 +427,8 @@ struct Node{
             _data[offset].delKey(0);
         }
         else{
-            _data[offset / _options.unit_size].delKey(offset % _options.unit_size);
+            //_data[offset / _options.unit_size].delKey(offset % _options.unit_size);
+            _data[offset].delKey(0);
         }
     }
 
@@ -675,10 +691,10 @@ struct Node{
             
             //TODO
             for(int i = 0; i < last; ++i){
-                if(!_data[i].getBitmap(0) && _data[i+1].getBitmap(0) && wait_insert_idx < _data[i+1].getKey(i % _options.unit_size)){
+                if(!_data[i].getBitmap(0) && _data[i+1].getBitmap(0) && wait_insert_idx < _data[i+1].getKey(0)){
                     return i;
                 }
-                else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(i % _options.unit_size)){
+                else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(0)){
                     return i;
                 }
             }
@@ -701,12 +717,20 @@ struct Node{
             }
         }
         else{
+            /*
             for(int i = 0; i < _options.track_length; ++i){
                 for(int j = 0; j < _options.unit_size; ++j){
                     if(!_data[i].getBitmap(j)){
                         shiftPoint = i + j;
                         break;
                     }
+                }
+            }
+            */
+            for(int i = 0; i < _options.track_length; ++i){
+                if(!_data[i].getBitmap(0)){
+                    shiftPoint = i;
+                    break;
                 }
             }
         }
@@ -759,11 +783,18 @@ struct Node{
             }
         }
         else{
+            /*
             for(int i = 0; i < _options.track_length; ++i){
                 for(int j = 0; j < _options.unit_size; ++j){
                     if(_data[i].getBitmap(j)){
                         counter++;
                     }
+                }
+            }*/
+
+            for(int i = 0; i < _options.track_length; ++i){
+                if(_data[i].getBitmap(0)){
+                    counter++;
                 }
             }
         }
@@ -777,8 +808,10 @@ struct Node{
     /* Data Member (Meta Data) */
     //? bool *_bitmap;
     bool _isLeaf;
-    Unit *_side;
-    bool _sideBitmap;
+    Unit *_sideBack;
+    Unit *_sideFront;
+    bool _sideBackBitmap;
+    bool _sideFrontBitmap;
     Unit *_parent;
     bool _isValid;
 
@@ -795,7 +828,7 @@ struct Node{
 
 std::ostream &operator<<(std::ostream &out, const Node &right){
     //std::clog << "<log> Node Print" << std::endl;
-    out << "\t\t(\n";
+    out << "\n\t\t(\n";
 
     //* status
     out << "\t\t\t" << right._shiftCounter << "\n";
@@ -807,9 +840,14 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
         else out << ", ";
         out << right._data[i];
     }
-    out << " _side: " << right._side;
+    out << " _sideFront: " << right._sideFront;
+    if(!right._sideFrontBitmap) out << "*";
+    out << " _sideBack: " << right._sideBack;
+    if(!right._sideBackBitmap) out << "*";
 
     out << "\n\t\t)";
+
+    if(!right.isValid()) out << "*";
 
     return out;
 }

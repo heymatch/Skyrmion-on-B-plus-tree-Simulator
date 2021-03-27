@@ -30,6 +30,11 @@ struct KeyPtrSet{
         }
     }
 
+    ~KeyPtrSet(){
+        delete[] key;
+        delete[] bitmap;
+    }
+
     KeyPtrSet &operator=(const KeyPtrSet &right){
         key = new unsigned[right._capacity - 1]();
         bitmap = new bool[right._capacity - 1]();
@@ -120,19 +125,21 @@ struct KeyPtrSet{
 #include <algorithm>
 namespace System{
     unsigned getMid(KeyPtrSet *arr, unsigned len, unsigned insert){
-        unsigned t_len = (arr[0]._capacity - 1) * len + 1;
+        unsigned t_len = 1;
         std::vector<unsigned> V(t_len);
+        V[0] = insert;
 
-        int it = 0;
         for(int i = 0; i < len; ++i){
-            for(int j = 0; j < arr[i]._capacity-1; ++j, ++it){
-                V[it] = arr[i].getKey(j);
+            for(int j = 0; j < arr[i]._capacity - 1; ++j){
+                if(arr[i].getBitmap(j)){
+                    ++t_len;
+                    V.push_back(arr[i].getKey(j));
+                }
             }
         }
-        V[it++] = insert;
 
         std::sort(V.begin(), V.end());
-        //std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
+        std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
         return V[t_len / 2];
     }
 }
