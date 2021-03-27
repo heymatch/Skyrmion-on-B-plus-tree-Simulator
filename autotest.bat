@@ -16,9 +16,9 @@ REM FC test\answer%1.ans test\output%1.out
 GOTO DONE
 
 :TEST
-SET /A target=15
+SET /A target=8
 SET /A pass=0
-FOR /l %%a IN (1 1 15) DO (
+FOR /l %%a IN (1 1 %target%) DO (
     REM COPY test\output%%a.out test\past%%a.out 
     ECHO Test test\testcase%%a.txt ...
     Skyrmion.exe test\testcase%%a.txt test\setting%2.txt > test\output%%a.out 2> test\log%%a.log
