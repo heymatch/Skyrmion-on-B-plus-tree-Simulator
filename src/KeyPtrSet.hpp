@@ -67,6 +67,14 @@ struct KeyPtrSet{
         if(bitmap[offset])
             --_size;
         bitmap[offset] = false;
+
+        //! only for two keys
+        if(_capacity == 3){
+            if(!bitmap[0] && bitmap[1]){
+                swap(key[0], key[1]);
+                swap(bitmap[0], bitmap[1]);
+            }
+        }
     }
 
     void delAll(){
@@ -83,13 +91,13 @@ struct KeyPtrSet{
         bitmap[_size] = true;
         key[_size] = val;
         ++_size;
+
         //! only for two keys
         if(_capacity == 3){
             if(bitmap[0] && bitmap[1] && key[0] > key[1]){
                 swap(key[0], key[1]);
             }
         }
-            
     }
 
     unsigned getKey(unsigned offset) const{
@@ -139,7 +147,13 @@ namespace System{
         }
 
         std::sort(V.begin(), V.end());
+
+        for(auto &it: V){
+            std::clog << it << " ";
+        }
+        std::clog << endl;
         std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
+
         return V[t_len / 2];
     }
 }

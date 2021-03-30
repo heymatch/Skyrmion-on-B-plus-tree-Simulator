@@ -30,7 +30,7 @@ public:
             _root = new Unit(_options);
             _root->_tracks[0].setValid(true);
         }
-
+        
         _root->insertData(idx, data, 0, -1);
         
         if(_root->getParentUnit() != nullptr){
