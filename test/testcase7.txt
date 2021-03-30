@@ -2,9 +2,14 @@ insert 5000
 insert 7500
 insert 10000
 insert 2500
+
 insert 8787
+
 insert 123456
+
 insert 7777
+#@@@
+#!!!
 insert 4500
 insert 6412
 insert 5453
@@ -13,11 +18,14 @@ insert 4127
 insert 1234567
 insert 11111
 insert 123457
+#@@@
 insert 111475
+#@@@
+#!!!
 insert 14215
 insert 74652
 insert 14754
-@@@
-delete 11111
-@@@
-delete 14215
+#@@@
+#delete 11111
+#@@@
+#delete 14215
