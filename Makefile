@@ -2,9 +2,6 @@
 CC := g++
 CFLAGS := -std=c++11
 
-# initial
-
-
 # source
 ifeq ($(OS), Windows_NT)
 SRC_LIST := $(shell dir /b .\src\*.hpp)
@@ -29,21 +26,29 @@ fast: compile
 all: clear compile
 
 # compile only
-compile: $(OBJ)
+compile: init $(OBJ)
 ifeq ($(OS), Windows_NT)
 	$(CC) $(CFLAGS) -o $(OBJ_PATH)main.o -c $(SRC_PATH)main.cpp
 	$(CC) $(CFLAGS) -o Skyrmion.exe $(OBJ) $(OBJ_PATH)main.o
 else
 	$(CC) $(CFLAGS) -o $(OBJ_PATH)main.o -c $(SRC_PATH)main.cpp
-	$(CC) $(CFLAGS) -o Skyrmion $(OBJ) $(OBJ_PATH)main.o
+	$(CC) $(CFLAGS) -o Skyrmion.out $(OBJ) $(OBJ_PATH)main.o
 endif
 
 # compile pair of .hpp 	
 $(OBJ_PATH)%.o: $(SRC_PATH)%.cpp $(SRC_PATH)%.hpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
+.PHONY: clear init
+
+init:
+ifeq ($(OS), Windows_NT)
+	IF NOT EXIST "obj" MKDIR obj
+else
+	mkdir -p obj
+endif
+
 # clear .exe/.out and .o
-.PHONY: clear
 clear:
 ifeq ($(OS), Windows_NT)
 	del .\obj\*.o

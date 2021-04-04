@@ -36,6 +36,9 @@ struct KeyPtrSet{
     }
 
     KeyPtrSet &operator=(const KeyPtrSet &right){
+        delete[] key;
+        delete[] bitmap;
+
         key = new unsigned[right._capacity - 1]();
         bitmap = new bool[right._capacity - 1]();
 
@@ -138,11 +141,9 @@ namespace System{
         V[0] = insert;
 
         for(int i = 0; i < len; ++i){
-            for(int j = 0; j < arr[i]._capacity - 1; ++j){
-                if(arr[i].getBitmap(j)){
-                    ++t_len;
-                    V.push_back(arr[i].getKey(j));
-                }
+            if(arr[i].getBitmap(0)){
+                ++t_len;
+                V.push_back(arr[i].getKey(0));
             }
         }
 
