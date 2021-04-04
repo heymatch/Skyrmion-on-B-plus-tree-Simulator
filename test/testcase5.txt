@@ -20,6 +20,7 @@ insert 115
 insert 120
 insert 117
 insert 512
+@@@
 insert 155
 #@@@
 insert 140
@@ -33,23 +34,23 @@ insert 135
 insert 220
 #@@@
 insert 240
-#@@@
+@@@
 #!!!
 insert 750
-#@@@
-
+@@@
 insert 10000
-
+#@@@
 insert 5000
 #@@@
 insert 1024
-#@@@
+@@@
 #!!!
 insert 2048
 #@@@
 insert 8096
 #@@@
 insert 3333
+#@@@
 insert 11111
 #@@@
 insert 22222
@@ -57,7 +58,7 @@ insert 22222
 #!!!
 insert 33333
 insert 12345
-#@@@
+@@@
 insert 44444
 @@@
 insert 6031
@@ -71,8 +72,9 @@ insert 7676
 insert 2266
 @@@
 insert 2798
-#@@@
+@@@
 insert 2164
+@@@
 search 51 
 search 41
 search 21

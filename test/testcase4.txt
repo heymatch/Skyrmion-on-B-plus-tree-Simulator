@@ -19,7 +19,7 @@ insert 85
 insert 500
 insert 700
 search 1000
-#@@@
+@@@
 insert 200
 @@@
 #!!!

@@ -2,6 +2,8 @@
 ::FC test/answer1 test/output1
 
 @ECHO OFF
+make
+
 IF "%1" == "test" ( GOTO TEST )
 IF "%1" == "cmp" ( GOTO CMP )
 IF "%1" == "ans" ( GOTO ANS )
@@ -28,14 +30,14 @@ FOR /l %%a IN (1 1 %target%) DO (
 GOTO DONE
 
 :CMP
-FOR /l %%a IN (1 1 17) DO (
+FOR /l %%a IN (1 1 %target%) DO (
     Skyrmion.exe test\testcase%%a.txt test\setting%2.txt > test\output%%a.out 
     FC test\answer%%a.ans test\output%%a.out
 )
 GOTO DONE
 
 :ANS
-FOR /l %%a IN (1 1 17) DO (
+FOR /l %%a IN (1 1 %target%) DO (
     @Skyrmion.exe test\testcase%%a.txt test\setting%2.txt > test\answer%%a.ans 
 )
 GOTO DONE

@@ -13,6 +13,12 @@ insert 313
 #@@@
 search 41
 search 31
+#insert 81
+#insert 91
+#@@@
+#insert 100
+@@@
+#!!!
 insert 1000
 #@@@
 search 245
