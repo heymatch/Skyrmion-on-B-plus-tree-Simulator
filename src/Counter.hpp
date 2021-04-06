@@ -1,6 +1,8 @@
 #ifndef COUNTER_HPP
 #define COUNTER_HPP
 
+#define unsigned uint64_t
+
 #include <string>
 #include <ostream>
 

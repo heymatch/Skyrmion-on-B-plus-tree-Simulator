@@ -1,11 +1,18 @@
 #ifndef NODE_H
 #define NODE_H
 
+#define unsigned uint64_t
+
 #include "Options.hpp"
 #include "KeyPtrSet.hpp"
 #include "Unit.hpp"
 #include "Counter.hpp"
 #include <ostream>
+
+namespace System{
+    unsigned log2(unsigned number);
+    unsigned countSkyrmion(unsigned data);
+};
 
 struct Unit;
 
@@ -105,23 +112,39 @@ struct Node{
      * TODO evaluation
      */
     void *searchData(unsigned idx, unsigned &next_unit_offset){
-        switch (_options.search_mode)
-        {
-        case Options::search_function::SEQUENTIAL:
-            //TODO evaluation 
-            break;
-        case Options::search_function::TRAD_BINARY_SEARCH:
-            //TODO evaluation 
-            break;
-        case Options::search_function::BIT_BINARY_SEARCH:
-            //TODO evaluation 
-            break;
-        default:
-            throw "undefined search operation";
-        }
-
         if(_options.split_merge_mode == Options::split_merge_function::TRAD){
             if(_isLeaf){
+                switch (_options.search_mode){
+                case Options::search_function::SEQUENTIAL:
+                    //TODO evaluation 
+                    break;
+                case Options::search_function::TRAD_BINARY_SEARCH:
+                {
+                    int l = 0;
+                    int h = _options.track_length - 1;
+                    while (l <= h) {
+                        _shiftCounter.count(2 * _options.word_length);
+                        _readCounter.count(_options.word_length);
+                        int mid = (l + h) / 2;
+                        if (_data[mid].getKey(0) > idx) {
+                            h = mid - 1;
+                        }
+                        else if (_data[mid].getKey(0) < idx) {
+                            l = mid + 1;
+                        }
+                        else{
+                            break;
+                        }
+                    }
+                }
+                    break;
+                case Options::search_function::BIT_BINARY_SEARCH:
+                    _shiftCounter.count(2 * _options.word_length);
+                    break;
+                default:
+                    throw "undefined search operation";
+                }
+
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
                         return _data[i].getPtr();
@@ -131,6 +154,21 @@ struct Node{
                 return nullptr;
             }
             else{
+                switch (_options.search_mode)
+                {
+                case Options::search_function::SEQUENTIAL:
+                    //TODO evaluation 
+                    break;
+                case Options::search_function::TRAD_BINARY_SEARCH:
+                    _shiftCounter.count(2 * _options.word_length * System::log2(_options.track_length));
+                    break;
+                case Options::search_function::BIT_BINARY_SEARCH:
+                    _shiftCounter.count(2 * _options.word_length);
+                    break;
+                default:
+                    throw "undefined search operation";
+                }
+
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && idx < _data[i].getKey(0)){
                         return _data[i].getPtr();
@@ -203,7 +241,8 @@ struct Node{
      * @param split if false, data will direct insert
     */
     void insertData(unsigned idx, void *data, bool split = true){
-        // evaluate for find a insert position
+        //// evaluate for find a insert position
+        /*
         switch (_options.insert_mode)
         {
         case Options::insert_function::SEQUENTIAL:
@@ -215,28 +254,34 @@ struct Node{
         default:
             throw "undefined insert operation";
         }
+        */
 
-        // evaluate for insert a data
-        switch (_options.update_mode)
-        {
-        case Options::update_function::OVERWRITE:
-            //TODO evaluation 
-            break;
-        case Options::update_function::PERMUTATION_WRITE:
-            //TODO evaluation 
-            break;
-        case Options::update_function::PERMUTE_WORD_COUNTER:
-            //TODO evaluation 
-            break;
-        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-            //TODO evaluation 
-            break;
-        default:
-            throw "undefined update operation";
-            break;
-        }
+        
 
         if(_isLeaf){
+            //* Evaluate for insert a data
+            switch (_options.update_mode){
+            case Options::update_function::OVERWRITE:
+                _shiftCounter.count(2 * _options.word_length);
+                _removeCounter.count(2 * _options.word_length);
+                _insertCounter.count(System::countSkyrmion(idx));
+                _insertCounter.count(System::countSkyrmion((unsigned)data));
+                _shiftCounter.count(2 * _options.word_length);
+                break;
+            case Options::update_function::PERMUTATION_WRITE:
+                //TODO evaluation 
+                break;
+            case Options::update_function::PERMUTE_WORD_COUNTER:
+                //TODO evaluation 
+                break;
+            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                //TODO evaluation 
+                break;
+            default:
+                throw "undefined update operation";
+                break;
+            }
+
             KeyPtrSet newData(2);
             newData.setPtr(data);
             newData.addKey(idx);
@@ -245,36 +290,58 @@ struct Node{
             unsigned shiftPos = getShiftPosition();
             unsigned insertPos = getInsertPosition(idx, insertSide);
 
-            switch (_options.node_ordering){
-                case Options::ordering::SORTED:
-                {
-                    if(_data[insertPos].getBitmap(0)){
-                        if(shiftPos < insertPos){
-                            if(!insertSide)
-                                insertPos -= 1;
-                            for(int i = shiftPos; i < insertPos; ++i){
-                                _data[i] = _data[i+1];
-                            }
-                        }
-                        else{
-                            for(int i = shiftPos; i > insertPos; --i){
-                                _data[i] = _data[i-1];
-                            }
+            if(_options.node_ordering == Options::ordering::SORTED){
+                if(_data[insertPos].getBitmap(0)){
+                    if(shiftPos < insertPos){
+                        if(!insertSide)
+                            insertPos -= 1;
+                        for(int i = shiftPos; i < insertPos; ++i){
+                            _data[i] = _data[i+1];
+                            _shiftCounter.count(2 * _options.word_length);
                         }
                     }
-
-                    _data[insertPos] = newData;
+                    else{
+                        for(int i = shiftPos; i > insertPos; --i){
+                            _data[i] = _data[i-1];
+                            _shiftCounter.count(2 * _options.word_length);
+                        }
+                    }
                 }
-                    break;
-                case Options::ordering::UNSORTED:
-                    _data[insertPos] = newData;
-                    break;
-                default:
-                    throw "undefined insert operation";
+
+                _data[insertPos] = newData;
+            }
+            else if(_options.node_ordering == Options::ordering::UNSORTED){
+                _data[insertPos] = newData;
+            }
+            else{
+                throw "undefined insert operation";
             }
         }
         else{
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
+                //* Evaluate for insert a data
+                switch (_options.update_mode){
+                case Options::update_function::OVERWRITE:
+                    _shiftCounter.count(2 * _options.word_length);
+                    _removeCounter.count(2 * _options.word_length);
+                    _insertCounter.count(System::countSkyrmion(idx));
+                    _insertCounter.count(System::countSkyrmion((unsigned)data));
+                    _shiftCounter.count(2 * _options.word_length);
+                    break;
+                case Options::update_function::PERMUTATION_WRITE:
+                    //TODO evaluation 
+                    break;
+                case Options::update_function::PERMUTE_WORD_COUNTER:
+                    //TODO evaluation 
+                    break;
+                case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                    //TODO evaluation 
+                    break;
+                default:
+                    throw "undefined update operation";
+                    break;
+                }
+
                 KeyPtrSet newData(2, false);
                 newData.setPtr(data);
                 newData.addKey(idx);
@@ -291,11 +358,13 @@ struct Node{
                         }
                         for(int i = shiftPos; i < insertPos; ++i){
                             _data[i] = _data[i+1];
+                            _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                     else{
                         for(int i = shiftPos; i > insertPos; --i){
                             _data[i] = _data[i-1];
+                            _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                 }
@@ -320,20 +389,19 @@ struct Node{
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
                 std::clog << "<log> <Node::insertData()> _sideBack: " << _sideBack << std::endl;
                 std::clog << "<log> <Node::insertData()> data: " << data << std::endl;
-                if(_sideBack == data){
-
-                }
                 //* insert into the same pointer, just add the index to the key-point set
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
                         _data[i].addKey(idx);
                         
+                        /*
                         if(i > 0 && _data[i].getKey(0) < _data[i-1].getKey(1)){
                             unsigned temp = _data[i].getKey(0);
                             _data[i].setKey(0, _data[i-1].getKey(1));
                             _data[i-1].setKey(1, temp);
                         } 
-                        
+                        */
+
                         return;
                     }
                 }
@@ -347,11 +415,14 @@ struct Node{
                 unsigned insertPos = getInsertPosition(idx, insertSide);
 
                 std::clog << "<log> <Node::insertData()> insertSide: " << insertSide << std::endl;
+
+                /*
                 if(insertSide && getRightMostOffset() != -1 && _data[getRightMostOffset()].getSize() == 1){
                     _data[getRightMostOffset()].addKey(idx);
                     _sideBack = (Unit *)data;
                     return;
                 }
+                */
 
                 //* Only insert at unused KeyPtrSet
                 if(_data[insertPos].getBitmap(0)){
@@ -396,6 +467,7 @@ struct Node{
                 
                 _data[insertPos] = newData;
 
+                
                 for(int i = 1; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getKey(0) < _data[i-1].getKey(1)){
                         unsigned temp = _data[i].getKey(0);
@@ -404,10 +476,28 @@ struct Node{
                     } 
                 }
                 
+                /*
                 if(_data[getRightMostOffset()].getSize() == 1){
                     _sideBack = (Unit *)_data[getRightMostOffset()].getPtr();
                 }
+                */
 
+               if(_sideBack != nullptr){
+                    if(insertSide){
+                        void *temp = _sideBack;
+                        _sideBack = (Unit *)_data[insertPos].getPtr();
+                        _data[insertPos].setPtr(temp);
+                    }
+                    else if(!insertSide && split && insertPos == 0){
+                        int i = 0;
+                        while(!_data[insertPos+i+1].getBitmap(0))++i;
+                        void *temp = _data[insertPos+i+1].getPtr();
+                        _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
+                        _data[insertPos].setPtr(temp);
+                    }
+                }
+
+                /*
                 if(_sideBack != nullptr){
                     if(!insertSide && split && insertPos == 0){
                         int i = 0;
@@ -417,7 +507,7 @@ struct Node{
                         _data[insertPos].setPtr(temp);
                     }
                 }
-
+                */
             }
     
         }
@@ -1055,28 +1145,63 @@ struct Node{
     Counter _migrateCounter = Counter("Migrate");
 };
 
+namespace System{
+    unsigned log2(unsigned number) {
+        unsigned count = 0;
+        while (number >>= 1) ++count;
+        return count;
+    }
+
+    unsigned countSkyrmion(unsigned data) {
+        unsigned number = 0;
+        unsigned a = 0;
+        while (data > 0) {
+            a = data % 2;
+            data = data / 2;
+            if (a == 1) {
+                number++;
+            }
+        }
+        return number;
+    }
+};
+
 std::ostream &operator<<(std::ostream &out, const Node &right){
     //std::clog << "<log> Node Print" << std::endl;
-    out << "\n\t\t(\n";
+    
 
     //* status
-    out << "\t\t\t" << right._shiftCounter << "\n";
+    out << "Node "<< right._id << "\n";
+    out << right._shiftCounter << "\n";
+    out << right._insertCounter << "\n";
+    out << right._removeCounter << "\n";
+    out << right._readCounter << "\n";
+    out << right._migrateCounter << "\n";
 
-    out << "\t\t\t";
-    bool first = true;
-    for(int i = 0; i < right._options.track_length; ++i){
-        if(first)first = false;
-        else out << ", ";
-        out << right._data[i];
-    }
-    out << " _sideFront: " << right._sideFront;
-    if(!right._sideFrontBitmap) out << "*";
-    out << " _sideBack: " << right._sideBack;
-    if(!right._sideBackBitmap) out << "*";
+    //* debug
+    // out << "\n\t\t(\n";
+    // out << "\t\t\t" << "Node "<< right._id << "\n";
+    // out << "\t\t\t" << right._shiftCounter << "\n";
+    // out << "\t\t\t" << right._insertCounter << "\n";
+    // out << "\t\t\t" << right._removeCounter << "\n";
+    // out << "\t\t\t" << right._readCounter << "\n";
+    // out << "\t\t\t" << right._migrateCounter << "\n";
 
-    out << "\n\t\t)";
+    // out << "\t\t\t";
+    // bool first = true;
+    // for(int i = 0; i < right._options.track_length; ++i){
+    //     if(first)first = false;
+    //     else out << ", ";
+    //     out << right._data[i];
+    // }
+    // out << " _sideFront: " << right._sideFront;
+    // if(!right._sideFrontBitmap) out << "*";
+    // out << " _sideBack: " << right._sideBack;
+    // if(!right._sideBackBitmap) out << "*";
 
-    if(!right.isValid()) out << "*";
+    // out << "\n\t\t)";
+
+    // if(!right.isValid()) out << "*";
 
     return out;
 }

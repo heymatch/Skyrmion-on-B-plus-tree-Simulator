@@ -6,6 +6,7 @@
 using namespace std;
 
 #define dbg(info) std::clog << info << std::endl;
+#define unsigned uint64_t
 
 #include "Options.hpp"
 #include "BPTree.hpp"
@@ -49,7 +50,8 @@ unsigned inputParser(string str, unsigned &idx, unsigned &data){
         return Operation::STOP;
     }
     else if(op == "@@@"){
-        return Operation::CHECK;
+        return Operation::SKIP;
+        //return Operation::CHECK;
     }
     else if(op == ""){
         return Operation::SKIP;
@@ -100,15 +102,27 @@ Options settingParser(ifstream &fin){
             if(val == "SEQUENTIAL"){
                 read_function = Options::read_function::SEQUENTIAL;
             }
+            else if(val == "RANGE_READ"){
+                read_function = Options::read_function::RANGE_READ;
+            }
         }
         else if(op == "search_function"){
             if(val == "SEQUENTIAL"){
                 search_function = Options::search_function::SEQUENTIAL;
             }
+            else if(val == "TRAD_BINARY_SEARCH"){
+                search_function = Options::search_function::TRAD_BINARY_SEARCH;
+            }
+            else if(val == "BIT_BINARY_SEARCH"){
+                search_function = Options::search_function::BIT_BINARY_SEARCH;
+            }
         }
         else if(op == "update_function"){
             if(val == "OVERWRITE"){
                 update_function = Options::update_function::OVERWRITE;
+            }
+            else if(val == "PERMUTE_WITHOUT_COUNTER"){
+                update_function = Options::update_function::PERMUTE_WITHOUT_COUNTER;
             }
         }
         else if(op == "insert_function"){
@@ -129,6 +143,8 @@ Options settingParser(ifstream &fin){
                 split_merge_function = Options::split_merge_function::UNIT;
             }
         }
+
+        std::clog << "<log> setting: " << op << " " << val << std::endl;
     }
     
     Options options(
@@ -152,7 +168,8 @@ int main(int argc, char **argv){
     // argument
 	// * argument1 = data filename
     // * argument2 = setting filename
-    if(argc != 3)
+    // * argument3 = output filename
+    if(argc != 4)
         return EXIT_FAILURE;
     
     // * load data
@@ -166,6 +183,13 @@ int main(int argc, char **argv){
     ifstream setting(argv[2]);
     if(setting.fail()){
         cerr << "file: '" << argv[2] << "' open error" << endl;
+        return EXIT_FAILURE;
+    }
+
+    // * output setting
+    ofstream fout(argv[3]);
+    if(setting.fail()){
+        cerr << "file: '" << argv[3] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
@@ -183,10 +207,12 @@ int main(int argc, char **argv){
                     case Operation::SEARCH:
                         try{
                             unsigned *dataPtr = tree.searchData(index);
+                            /*
                             if(dataPtr == nullptr)
                                 cout << "Search index " << index << ": " << "Not found" << endl;
                             else
                                 cout << "Search index " << index << ": " << *dataPtr << endl;
+                            */
                         }
                         catch(const char* e){
                             cout << e << endl;
@@ -194,15 +220,15 @@ int main(int argc, char **argv){
                         break;
                     case Operation::INSERT:
                         tree.insertData(index, data);
-                        cout << "Insert index " << index << ": " << data << endl;
+                        //cout << "Insert index " << index << ": " << data << endl;
                         break;
                     case Operation::DELETE:
                         tree.deleteData(index);
-                        cout << "Delete index " << index << endl;
+                        //cout << "Delete index " << index << endl;
                         break;
                     case Operation::UPDATE:
                         tree.updateData(index, data);
-                        cout << "Update index " << index << ": " << data << endl;
+                        //cout << "Update index " << index << ": " << data << endl;
                         break;
                     case Operation::SKIP:
                         continue;
@@ -217,7 +243,7 @@ int main(int argc, char **argv){
                 //std::clog << "<log main> " << input << " finish" << std::endl;
             }
             std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
-            cout << tree << endl;
+            fout << tree << endl;
         }
         catch(const char *e){
             cout << e << endl;
@@ -226,6 +252,11 @@ int main(int argc, char **argv){
         }
     }
 
+    workload.close();
+    setting.close();
+    fout.close();
+
     std::clog << "<log> exit success" << std::endl;
+
     return EXIT_SUCCESS;
 }

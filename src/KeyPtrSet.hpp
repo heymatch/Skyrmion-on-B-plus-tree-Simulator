@@ -1,6 +1,8 @@
 #ifndef KEYPTRSET_H
 #define KEYPTRSET_H
 
+#define unsigned uint64_t
+
 #include "Options.hpp"
 #include <ostream>
 
@@ -148,29 +150,35 @@ namespace System{
         V[0] = insert;
 
         for(int i = 0; i < len; ++i){
+            /*
             for(int j = 0; j < arr[i]._capacity-1; ++j){
                 if(arr[i].getBitmap(j)){
                     ++t_len;
                     V.push_back(arr[i].getKey(j));
                 }
             }
-            
+            */
+            if(arr[i].getBitmap(0)){
+                ++t_len;
+                V.push_back(arr[i].getKey(0));
+            }
         }
 
         std::sort(V.begin(), V.end());
 
+        /*
         for(auto &it: V){
             std::clog << it << " ";
         }
         std::clog << endl;
-        
+        */
         
         if(t_len % 2 == 0){
-            std::clog << "<log> V[t_len / 2 - 1]: " << V[t_len / 2 - 1] << std::endl;
+            //std::clog << "<log> V[t_len / 2 - 1]: " << V[t_len / 2 - 1] << std::endl;
             return V[t_len / 2 - 1];
         }
         else{
-            std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
+            //std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
             return V[t_len / 2];
         }
         

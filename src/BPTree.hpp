@@ -1,6 +1,8 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
+#define unsigned uint64_t
+
 #include "Unit.hpp"
 #include <iostream>
 
@@ -73,9 +75,9 @@ std::ostream &operator<<(std::ostream &out, const BPTree &right){
         out << "B+ Tree is not constructed!";
     }
     else{
-        out << "{\n";
+        //out << "{\n";
         out << *(right._root);
-        out << "\n}\n";
+        //out << "\n}\n";
     }
     
     return out;

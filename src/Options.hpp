@@ -1,6 +1,8 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#define unsigned uint64_t
+
 struct Options{
     // e.g., 32, 64
     unsigned word_length;
