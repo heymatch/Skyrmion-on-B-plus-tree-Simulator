@@ -64,6 +64,13 @@ struct KeyPtrSet{
         if(!bitmap[offset])
             ++_size;
         bitmap[offset] = true;
+
+        //! only for two keys
+        if(_capacity == 3){
+            if(bitmap[0] && bitmap[1] && key[0] > key[1]){
+                swap(key[0], key[1]);
+            }
+        }
     }
 
     void delKey(unsigned offset){
@@ -141,10 +148,13 @@ namespace System{
         V[0] = insert;
 
         for(int i = 0; i < len; ++i){
-            if(arr[i].getBitmap(0)){
-                ++t_len;
-                V.push_back(arr[i].getKey(0));
+            for(int j = 0; j < arr[i]._capacity-1; ++j){
+                if(arr[i].getBitmap(j)){
+                    ++t_len;
+                    V.push_back(arr[i].getKey(j));
+                }
             }
+            
         }
 
         std::sort(V.begin(), V.end());
@@ -153,9 +163,17 @@ namespace System{
             std::clog << it << " ";
         }
         std::clog << endl;
-        std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
-
-        return V[t_len / 2];
+        
+        
+        if(t_len % 2 == 0){
+            std::clog << "<log> V[t_len / 2 - 1]: " << V[t_len / 2 - 1] << std::endl;
+            return V[t_len / 2 - 1];
+        }
+        else{
+            std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
+            return V[t_len / 2];
+        }
+        
     }
 }
 

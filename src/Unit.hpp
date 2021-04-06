@@ -111,7 +111,7 @@ struct Unit{
                     if(dataPtr == nullptr){
                         if(hasBackSideUnit()){
                             unit_offset = 0;
-                            dataPtr = (unsigned *)getBackSideUnit()->searchData(idx, unit_offset);
+                            dataPtr = getBackSideUnit()->searchData(idx, unit_offset);
                         }
                     }
                 }
@@ -124,7 +124,19 @@ struct Unit{
                     // std::clog << "<log> <searchData()> idx: " << idx << std::endl;
                     // std::clog << "<log> <searchData()> _id: " << _id << std::endl;
                     // std::clog << "<log> <searchData()> unit_offset: " << unit_offset << std::endl;
-                    dataPtr = (unsigned *)((Unit *)_tracks[unit_offset].searchData(idx, unit_offset))->searchData(idx, unit_offset);
+                    Unit *nextUnit = (Unit *)_tracks[unit_offset].searchData(idx, unit_offset);
+                    if(unit_offset == _options.unit_size){
+                        if(nextUnit->_tracks[1].isValid()){
+                            unit_offset = 1;
+                        }
+                        else{
+                            unit_offset = 0;
+                        }
+                    }
+                    else{
+                        unit_offset = 0;
+                    }
+                    dataPtr = (unsigned *)nextUnit->searchData(idx, unit_offset);
                 }
                 catch(int e){
                     if(e != -1) throw "search error";
@@ -167,8 +179,6 @@ struct Unit{
             insertCurrentData(idx, data, unit_offset, data_enter_offset);
         }
         else{
-            
-            
             if(_tracks[unit_offset]._sideBack == nullptr){
                 throw "insert side error";
             }
@@ -205,10 +215,31 @@ struct Unit{
                 }
 
                 KeyPtrSet rightMostData = _tracks[unit_offset].getMaxData();
-                unsigned leftMostOffset = _tracks[unit_offset].getLeftMostOffset();
+                
 
                 if(rightMostData.getPtr() == getBackSideUnit(unit_offset)){
-                    ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 1, _options.track_length);
+                    
+                    if(((Unit *)_tracks[unit_offset]._sideBack)->_tracks[1].isValid()){
+                        unsigned next_unit_offset;
+                        unsigned maxIndexInternal = _tracks[unit_offset].getMaxIndex();
+                        unsigned maxIndexNext = getBackSideUnit(unit_offset)->_tracks[1].getMinIndex();
+                        if(maxIndexInternal <= maxIndexNext){
+                            ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 1, _options.track_length);
+                        }
+                        else{
+                            
+                            if(getBackSideUnit(unit_offset)->isLeaf()){
+                                getBackSideUnit(unit_offset)->getBackSideUnit(0)->insertData(idx, data, 0, _options.track_length);
+                            }
+                            else{
+                                throw "test throw";
+                            }
+                            
+                        }
+                    }
+                    else{
+                        ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
+                    }
                 }
                 else{
                     ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
@@ -490,7 +521,7 @@ struct Unit{
                     ((Unit *)promote.ptr)->connectFrontSideUnit(this);
                 }
 
-                //std::clog << "<log> this->_tracks[0]._parent: " << this->_tracks[0]._parent << std::endl;
+                std::clog << "<log> getParentUnit()->_tracks[getParentOffset()]: " << getParentUnit()->_tracks[getParentOffset()] << std::endl;
                 getParentUnit()->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, getParentOffset(), 0);
 
                 // insert new index from root
@@ -532,7 +563,7 @@ struct Unit{
                     Unit *rightUnit = (Unit *)promote.ptr;
 
                     if(idx < promote.getKey(0)){
-                        insertCurrentPointer(idx, unit, unit_offset, 0);
+                        insertCurrentPointer(idx, unit, 0, 0);
                         unit->connectParentUnit(this, 0);
                     }
                     else if(idx > promote.getKey(0)){
@@ -567,14 +598,20 @@ struct Unit{
 
                 return;
             }
+
+            _tracks[0].insertData(idx, unit);
+            unit->connectParentUnit(this, 0);
         }
         else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
             std::clog << "<log> <insertCurrentPointer()> isFullUnit(): " << isFullUnit() << std::endl;
+            std::clog << "<log> <insertCurrentPointer()> isFull(unit_offset): " << isFull(unit_offset) << std::endl;
             std::clog << "<log> <insertCurrentPointer()> isPossibleInsert(unit_offset, unit): " << isPossibleInsert(unit_offset, unit) << std::endl; 
 
-            if(isFull(unit_offset) && !isFullUnit() && !isPossibleInsert(unit_offset, unit)){
+            if(isFull(unit_offset) && !isPossibleInsert(unit_offset, unit)){
                 {
                     KeyPtrSet promote = splitNode(idx, unit_offset);
+                    //unsigned wait_insert_index = _tracks[0].getMaxIndex();
+                    //KeyPtrSet promote = splitNode(wait_insert_index, unit_offset);
 
                     if(_isRoot){
                         setRoot(false);
@@ -607,22 +644,67 @@ struct Unit{
                         return;
                     }
 
-                    if(idx < promote.getKey(0)){
-                        _tracks[0].insertData(idx, unit, true);
-                        unit->connectParentUnit(this, 0);
+                    getParentUnit()->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, getParentOffset(), 0);
+
+                    Unit *rightUnit = (Unit *)promote.ptr;
+                    if(this == rightUnit){
+                        //std::clog << "<log> <insertCurrentPointer()> _tracks[0]: " << _tracks[0] << std::endl; 
+                        //std::clog << "<log> <insertCurrentPointer()> _tracks[1]: " << _tracks[1] << std::endl; 
+                        if(idx < promote.getKey(0)){
+                            _tracks[0].insertData(idx, unit, true);
+                            unit->connectParentUnit(this, 0);
+                        }
+                        else if(idx > promote.getKey(0)){
+                            _tracks[1].insertData(idx, unit, true);
+                            unit->connectParentUnit(this, 1);
+                        }
+                        else{ 
+                            unsigned leftMostOffset = _tracks[1].getLeftMostOffset();
+                            _tracks[1]._data[leftMostOffset].setPtr(unit);
+                            unit->connectParentUnit(this, 1);
+                        }
                     }
-                    else if(idx > promote.getKey(0)){
-                        _tracks[1].insertData(idx, unit, true);
-                        unit->connectParentUnit(this, 1);
-                    }
-                    else{ 
-                        unsigned leftMostOffset = _tracks[1].getLeftMostOffset();
-                        _tracks[1]._data[leftMostOffset].setPtr(unit);
-                        unit->connectParentUnit(this, 1);
+                    else{
+                        std::clog << "<log> <insertCurrentPointer()> _tracks[1]: " << _tracks[1] << std::endl; 
+                        std::clog << "<log> <insertCurrentPointer()> rightUnit->_tracks[0]: " << rightUnit->_tracks[0] << std::endl;
+                        std::clog << "<log> <insertCurrentPointer()> idx: " << idx << std::endl; 
+                        std::clog << "<log> <insertCurrentPointer()> promote.getKey(0): " << promote.getKey(0) << std::endl;  
+                        if(unit_offset == 0){
+                            if(idx < promote.getKey(0)){
+                                _tracks[0].insertData(idx, unit, true);
+                                unit->connectParentUnit(this, 0);
+                            }
+                            else if(idx > promote.getKey(0)){
+                                _tracks[1].insertData(idx, unit, true);
+                                unit->connectParentUnit(this, 1);
+                            }
+                            else{ 
+                                unsigned leftMostOffset = _tracks[1].getLeftMostOffset();
+                                _tracks[1]._data[leftMostOffset].setPtr(unit);
+                                unit->connectParentUnit(this, 1);
+                            }
+                        }
+                        else if(unit_offset == 1){
+                            if(idx < promote.getKey(0)){
+                            _tracks[1].insertData(idx, unit, true);
+                            unit->connectParentUnit(this, 1);
+                            }
+                            else if(idx > promote.getKey(0)){
+                                rightUnit->_tracks[0].insertData(idx, unit, true);
+                                unit->connectParentUnit(this, 0);
+                            }
+                            else{ 
+                                unsigned leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
+                                rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                                unit->connectParentUnit(this, 0);
+                            }
+                        }
+                        
                     }
 
                     return;
                 }
+                
             }
 
             /*
@@ -778,13 +860,15 @@ struct Unit{
                 return;
             }
             */
+
+            _tracks[unit_offset].insertData(idx, unit);
+            unit->connectParentUnit(this, unit_offset);
         }
         
         //std::clog << "<log> <insertCurrentPointer()> _tracks[offset]: " << _tracks[offset] << std::endl; 
         
         
-        _tracks[unit_offset].insertData(idx, unit);
-        unit->connectParentUnit(this, unit_offset);
+        
         std::clog << "<log> <insertCurrentPointer()> _tracks[offset]: " << _tracks[unit_offset] << std::endl; 
     }
 
@@ -890,58 +974,128 @@ struct Unit{
                 unsigned promoteKey = System::getMid(_tracks[0]._data, _options.track_length, wait_insert_idx);
 
                 // combine as a key-point set
-                promote.setPtr(this);
+                if(!isLeaf() && !isPossibleInsert(unit_offset, this)){
+                    promote.setPtr(getBackSideUnit());
+                }
+                else{
+                    promote.setPtr(this);
+                }
                 promote.addKey(promoteKey);
 
                 copyHalfNode(_tracks[0], _tracks[1], promote, wait_insert_idx);
                 _tracks[1].setValid(true);
+                
             }
             //* Unit-Unit Split
-            else if(isFullUnit()){
-                //std::clog << "<log> getParentUnit()->getValidSize(): " << getParentUnit()->getValidSize() << std::endl;
-                if(hasBackSideUnit() && !getBackSideUnit()->isAllValid()){
-                    getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[0], getBackSideUnit()->_tracks[1]);
+            else{
+                if(isLeaf()){
+                    //std::clog << "<log> getParentUnit()->getValidSize(): " << getParentUnit()->getValidSize() << std::endl;
+                    if(hasBackSideUnit() && !getBackSideUnit()->isAllValid()){
+                        getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[0], getBackSideUnit()->_tracks[1]);
 
-                    unsigned promoteKey = System::getMid(_tracks[1]._data, _options.track_length, wait_insert_idx);
-                
-                    promote.setPtr(getBackSideUnit());
-                    promote.addKey(promoteKey);
+                        unsigned promoteKey = System::getMid(_tracks[1]._data, _options.track_length, wait_insert_idx);
+                    
+                        promote.setPtr(getBackSideUnit());
+                        promote.addKey(promoteKey);
 
-                    // copying data
-                    copyHalfNode(_tracks[1], getBackSideUnit()->_tracks[0], promote, wait_insert_idx);
-                }
-                else{
-                    // split operation will generate same level unit/node
-                    Unit *newUnit = System::allocUnit(_options, isLeaf());
+                        // copying data
+                        copyHalfNode(_tracks[1], getBackSideUnit()->_tracks[0], promote, wait_insert_idx);
+                    }
+                    else{
+                        // split operation will generate same level unit/node
+                        Unit *newUnit = System::allocUnit(_options, isLeaf());
 
-                    // find the middle index
-                    unsigned promoteKey = System::getMid(_tracks[1]._data, _options.track_length, wait_insert_idx);
+                        // find the middle index
+                        unsigned promoteKey = System::getMid(_tracks[1]._data, _options.track_length, wait_insert_idx);
 
-                    // combine as a key-point set
-                    promote.setPtr(newUnit);
-                    promote.addKey(promoteKey);
+                        // combine as a key-point set
+                        promote.setPtr(newUnit);
+                        promote.addKey(promoteKey);
 
-                    // it is never root
-                    newUnit->setRoot(false);
+                        // it is never root
+                        newUnit->setRoot(false);
 
-                    // split operation will generate same level unit/node
-                    if(!isLeaf()) newUnit->setLeaf(false);
+                        // split operation will generate same level unit/node
+                        if(!isLeaf()) newUnit->setLeaf(false);
 
-                    //* copying data
-                    copyHalfNode(_tracks[1], newUnit->_tracks[0], promote, wait_insert_idx);
-                    newUnit->_tracks[0].setValid(true);
-                    //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
+                        //* copying data
+                        copyHalfNode(_tracks[1], newUnit->_tracks[0], promote, wait_insert_idx);
+                        newUnit->_tracks[0].setValid(true);
+                        //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
 
-                    //* sure to have correct parent pointers
-                    if(!isLeaf()){
-                        getBackSideUnit()->connectParentUnit(this, 1);
-                        newUnit->getBackSideUnit()->connectParentUnit(newUnit);
+                        //* sure to have correct parent pointers
+                        if(!isLeaf()){
+                            getBackSideUnit()->connectParentUnit(this, 1);
+                            newUnit->getBackSideUnit()->connectParentUnit(newUnit);
+                        }
                     }
                 }
+                else{
+                    if(unit_offset == 0){
+                        {
+                            // split operation will generate same level unit/node
+                            Unit *newUnit = System::allocUnit(_options, isLeaf());
 
-            }
-            else{
-                throw "split error";
+                            migrateNode(_tracks[1], newUnit->_tracks[0]);
+
+                            // find the middle index
+                            unsigned promoteKey = System::getMid(_tracks[0]._data, _options.track_length, wait_insert_idx);
+
+                            // combine as a key-point set
+                            promote.setPtr(newUnit);
+                            promote.addKey(promoteKey);
+
+                            // it is never root
+                            newUnit->setRoot(false);
+
+                            // split operation will generate same level unit/node
+                            if(!isLeaf()) newUnit->setLeaf(false);
+
+                            //* copying data
+                            copyHalfNode(_tracks[0], _tracks[1], promote, wait_insert_idx);
+                            newUnit->_tracks[0].setValid(true);
+                            //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
+
+                            //* sure to have correct parent pointers
+                            if(!isLeaf()){
+                                getBackSideUnit(0)->connectParentUnit(this, 0);
+                                newUnit->getBackSideUnit()->connectParentUnit(newUnit);
+                            }
+                        }
+                    }
+                    else if(unit_offset == 1){
+                        {
+                            // split operation will generate same level unit/node
+                            Unit *newUnit = System::allocUnit(_options, isLeaf());
+
+                            // find the middle index
+                            unsigned promoteKey = System::getMid(_tracks[1]._data, _options.track_length, wait_insert_idx);
+
+                            // combine as a key-point set
+                            promote.setPtr(newUnit);
+                            promote.addKey(promoteKey);
+
+                            // it is never root
+                            newUnit->setRoot(false);
+
+                            // split operation will generate same level unit/node
+                            if(!isLeaf()) newUnit->setLeaf(false);
+
+                            //* copying data
+                            copyHalfNode(_tracks[1], newUnit->_tracks[0], promote, wait_insert_idx);
+                            newUnit->_tracks[0].setValid(true);
+                            //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
+
+                            //* sure to have correct parent pointers
+                            if(!isLeaf()){
+                                getBackSideUnit(1)->connectParentUnit(this, 1);
+                                newUnit->getBackSideUnit()->connectParentUnit(newUnit);
+                            }
+                        }
+                    }
+                    
+                }
+
             }
         }
         else{
@@ -957,28 +1111,24 @@ struct Unit{
      */
     void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote, unsigned wait_insert_idx){
         if(isLeaf()){
-            switch(_options.node_ordering){
-                case Options::ordering::SORTED:
-                    if(wait_insert_idx < promote.getKey(0)){
-                        for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
-                            destination._data[j] = source._data[i];
+            if(_options.node_ordering == Options::ordering::SORTED){
+                if(wait_insert_idx < promote.getKey(0)){
+                    for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
+                        destination._data[j] = source._data[i];
 
-                            source._data[i].delAll();
-                        }
+                        source._data[i].delAll();
                     }
-                    else{
-                        for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                            destination._data[j] = source._data[i];
+                }
+                else{
+                    for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
+                        destination._data[j] = source._data[i];
 
-                            source._data[i].delAll();
-                        }
+                        source._data[i].delAll();
                     }
-                    //std::clog << "<log> destination: " << destination << std::endl;
-                    break;
-                case Options::ordering::UNSORTED:
-                    throw "unsorted split developing";
-                default:
-                    throw "undefined ordering";
+                }
+            }
+            else if(_options.node_ordering == Options::ordering::UNSORTED){
+                throw "unsorted split developing";
             }
         }
         else{
@@ -987,9 +1137,6 @@ struct Unit{
                 if(wait_insert_idx < promote.getKey(0)){
                     for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
                         destination._data[j] = source._data[i];
-
-                        //destination._bitmap[j] = true;
-                        //source._bitmap[i] = false;
                         source._data[i].delAll();
 
                         ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
@@ -998,83 +1145,116 @@ struct Unit{
                 else{
                     for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
                         destination._data[j] = source._data[i];
-
-                        //destination._bitmap[j] = true;
-                        //source._bitmap[i] = false;
                         source._data[i].delAll();
 
                         ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
                     }
                 }
                 destination.connectBackSideUnit(source._sideBack);
+
+                bool promoteMid = true;
+                for(int i = 0; i < _options.track_length; ++i){
+                    if(source._data[i].getBitmap(0) && source._data[i].getKey(0) == promote.getKey(0)){
+                        source.deleteMark(i);
+                        promoteMid = false;
+                        source.connectBackSideUnit((Unit *)source._data[i].getPtr());
+                        //std::clog << "<log> <copyHalfNode()> source" << std::endl;
+                    }
+                }
+                for(int i = 0; i < _options.track_length; ++i){
+                    if(destination._data[i].getBitmap(0) && destination._data[i].getKey(0) == promote.getKey(0)){
+                        destination.deleteMark(i);
+                        promoteMid = false;
+                        source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                        //std::clog << "<log> <copyHalfNode()> destination" << std::endl;
+                    }                 
+                }
+
+                if(promoteMid){
+                    source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                    //std::clog << "<log> <copyHalfNode()> promoteMid" << std::endl;
+                    //std::clog << "<log> <copyHalfNode()> destination._data[0].getPtr(): " << destination._data[0].getPtr() << std::endl;
+                }
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                bool inUnit = isFull(0);
                 unsigned mid = _options.track_length / 2;
                 if(wait_insert_idx < promote.getKey(0)){
                     for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
                         destination._data[j] = source._data[i];
-
-                        //destination._bitmap[j] = true;
-                        //source._bitmap[i] = false;
                         source._data[i].delAll();
-                        if(isAllValid()){
-                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 0);
+
+                        if(inUnit){
+                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 1);
                         }
                         else{
-                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 1);
+                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 0);
                         }
                     }
                 }
                 else{
                     for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
                         destination._data[j] = source._data[i];
-
-                        //destination._bitmap[j] = true;
-                        //source._bitmap[i] = false;
                         source._data[i].delAll();
 
-                        if(isAllValid()){
-                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 0);
+                        if(inUnit){
+                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 1);
                         }
                         else{
-                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 1);
+                            ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr(), 0);
                         }
                     }
                 }
                 destination.connectBackSideUnit(source._sideBack);
-            }
-
-            bool promoteMid = true;
-            for(int i = 0; i < _options.track_length; ++i){
-                if(source._data[i].getBitmap(0) && source._data[i].getKey(0) == promote.getKey(0)){
-                    //std::clog << "<log> <copyHalfNode()> source" << std::endl;
-                    //source.deleteMark(i);
-                    source.deleteData(promote.getKey(0));
-                    promoteMid = false;
-                    source.connectBackSideUnit((Unit *)source._data[i].getPtr());
+                if(inUnit){
+                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 0);
+                    destination._sideBack->connectParentUnit((Unit *)promote.getPtr(), 1);
                 }
-            }
-            for(int i = 0; i < _options.track_length; ++i){
-                if(destination._data[i].getBitmap(0) && destination._data[i].getKey(0) == promote.getKey(0)){
-                    //std::clog << "<log> <copyHalfNode()> destination" << std::endl;
-                    //destination.deleteMark(i);
-                    destination.deleteData(promote.getKey(0));
-                    promoteMid = false;
-                    source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                else{
+                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 1);
+                    destination._sideBack->connectParentUnit((Unit *)promote.getPtr(), 0);
                 }
-            }
+                
 
-            if(promoteMid){
-                source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
-                //destination._data[0].setPtr((Unit *)promote.getPtr());
-            }
+                bool promoteMid = true;
+                for(int i = 0; i < _options.track_length; ++i){
+                    for(int j = 0; j < _options.unit_size; ++j){
+                        if(source._data[i].getBitmap(j) && source._data[i].getKey(j) == promote.getKey(0)){
+                            source.deleteData(promote.getKey(0));
+                            promoteMid = false;
+                            source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());
+                        }
+                    }
+                    
+                }
+                for(int i = 0; i < _options.track_length; ++i){
+                    for(int j = 0; j < _options.unit_size; ++j){
+                        if(destination._data[i].getBitmap(j) && destination._data[i].getKey(j) == promote.getKey(0)){
+                            destination.deleteData(promote.getKey(0));
+                            promoteMid = false;
+                            //source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                            source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());
+                        }
+                    }
+                    
+                }
 
-            if(source._data[source.getRightMostOffset()].getSize() == 2){
-                source._sideBack->connectParentUnit(this, 0);
-            }
+                if(promoteMid){
+                    source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());
+                    //source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                }
 
-            std::clog << "<log> <copyHalfNode()> Internal source: " << source << std::endl;
-            std::clog << "<log> <copyHalfNode()> Internal destination: " << destination << std::endl;
+                if(inUnit){
+                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 0);
+                }
+                else{
+                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 1);
+                }
+
+                std::clog << "<log> <copyHalfNode()> Internal source: " << source << std::endl;
+                std::clog << "<log> <copyHalfNode()> Internal destination: " << destination << std::endl;
+            }
+            
         }
     }
     
@@ -1598,26 +1778,29 @@ struct Unit{
      * @param right
     */
     void migrateNode(Node &left, Node &right){
+        std::clog << "<log> <Unit::migrateNode()>" << std::endl;
+        //std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
+        //std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
         if(isLeaf()){
             for(int i = 0; i < _options.track_length; ++i){
                 if(left._data[i].getBitmap(0)){
-                    right.insertData(left._data[i].getKey(0), left._data[i].getPtr());
-                    left.deleteData(left._data[i].getKey(0));
+                    right._data[i] = left._data[i];
+                    left.deleteMark(i);
                 }
             }
-            right.setValid(true);
         }
         else{
             for(int i = 0; i < _options.track_length; ++i){
                 if(left._data[i].getBitmap(0)){
-                    right.insertData(left._data[i].getKey(0), left._data[i].getPtr());
-                    left.deleteData(left._data[i].getKey(0));
+                    right._data[i] = left._data[i];
+                    left.deleteMark(i);
                 }
             }
-            right.setValid(true);
+            right.connectBackSideUnit(left._sideBack);   
         }
-        std::clog << "<log> <migrateNode()> left: " << left << std::endl;
-        std::clog << "<log> <migrateNode()> right: " << right << std::endl;
+        right.setValid(true);
+        //std::clog << "<log> <migrateNode() end> left: " << left << std::endl;
+        //std::clog << "<log> <migrateNode() end> right: " << right << std::endl;
     }
 
     /* Minor Functions */
@@ -1771,7 +1954,7 @@ struct Unit{
     */
     bool isPossibleInsert(unsigned unit_offset, void *wait_insert_pointer){
         for(int i = 0; i < _options.track_length; ++i){
-            if(_tracks[unit_offset]._data[i].getBitmap(0) && _tracks[unit_offset]._data[i].getPtr() == wait_insert_pointer){
+            if(_tracks[unit_offset]._data[i].getBitmap(0) && _tracks[unit_offset]._data[i].getSize() < _options.unit_size && _tracks[unit_offset]._data[i].getPtr() == wait_insert_pointer){
                 return true;
             }
         }

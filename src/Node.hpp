@@ -161,9 +161,8 @@ struct Node{
                     } 
                 }
 
-                next_unit_offset = 0;
-                return _sideBack;
-                
+                next_unit_offset = _options.unit_size;
+                return _sideBack;      
             }
             
         }
@@ -303,10 +302,6 @@ struct Node{
 
                 _data[insertPos] = newData;  
 
-                if(insertSide){
-                    deleteMark(_options.track_length-1);
-                }
-
                 if(_sideBack != nullptr){
                     if(insertSide){
                         void *temp = _sideBack;
@@ -332,13 +327,13 @@ struct Node{
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
                         _data[i].addKey(idx);
-                        /*
+                        
                         if(i > 0 && _data[i].getKey(0) < _data[i-1].getKey(1)){
                             unsigned temp = _data[i].getKey(0);
                             _data[i].setKey(0, _data[i-1].getKey(1));
                             _data[i-1].setKey(1, temp);
                         } 
-                        */
+                        
                         return;
                     }
                 }
