@@ -1,8 +1,6 @@
 #ifndef NODE_H
 #define NODE_H
 
-#define unsigned uint64_t
-
 #include "Options.hpp"
 #include "KeyPtrSet.hpp"
 #include "Unit.hpp"
@@ -10,8 +8,8 @@
 #include <ostream>
 
 namespace System{
-    unsigned log2(unsigned number);
-    unsigned countSkyrmion(unsigned data);
+    uint64_t log2(uint64_t number);
+    uint64_t countSkyrmion(uint64_t data);
 };
 
 struct Unit;
@@ -83,7 +81,7 @@ struct Node{
     /* Major Functions */
 
     //* Return array of KeyPtrSet
-    KeyPtrSet *readData(unsigned lower, unsigned upper){
+    KeyPtrSet *readData(uint64_t lower, uint64_t upper){
         if(upper < lower)
             throw "invalid read bound";
          
@@ -111,7 +109,7 @@ struct Node{
     /**
      * TODO evaluation
      */
-    void *searchData(unsigned idx, unsigned &next_unit_offset){
+    void *searchData(uint64_t idx, uint64_t &next_unit_offset){
         if(_options.split_merge_mode == Options::split_merge_function::TRAD){
             if(_isLeaf){
                 switch (_options.search_mode){
@@ -209,7 +207,7 @@ struct Node{
     }
     
     //?
-    void updateData(unsigned idx, unsigned data){
+    void updateData(uint64_t idx, uint64_t data){
         switch (_options.update_mode)
         {
         case Options::update_function::OVERWRITE:
@@ -230,7 +228,7 @@ struct Node{
         }
     }
 
-    void updateIndex(unsigned offset, unsigned idx){
+    void updateIndex(uint64_t offset, uint64_t idx){
         _data[offset].setKey(0, idx);
     }
 
@@ -240,7 +238,7 @@ struct Node{
      * TODO insert into the same pointer, just add the index to the key-point set
      * @param split if false, data will direct insert
     */
-    void insertData(unsigned idx, void *data, bool split = true){
+    void insertData(uint64_t idx, void *data, bool split = true){
         //// evaluate for find a insert position
         /*
         switch (_options.insert_mode)
@@ -265,7 +263,7 @@ struct Node{
                 _shiftCounter.count(2 * _options.word_length);
                 _removeCounter.count(2 * _options.word_length);
                 _insertCounter.count(System::countSkyrmion(idx));
-                _insertCounter.count(System::countSkyrmion((unsigned)data));
+                _insertCounter.count(System::countSkyrmion((uint64_t)data));
                 _shiftCounter.count(2 * _options.word_length);
                 break;
             case Options::update_function::PERMUTATION_WRITE:
@@ -287,8 +285,8 @@ struct Node{
             newData.addKey(idx);
 
             bool insertSide = false;
-            unsigned shiftPos = getShiftPosition();
-            unsigned insertPos = getInsertPosition(idx, insertSide);
+            uint64_t shiftPos = getShiftPosition();
+            uint64_t insertPos = getInsertPosition(idx, insertSide);
 
             if(_options.node_ordering == Options::ordering::SORTED){
                 if(_data[insertPos].getBitmap(0)){
@@ -325,7 +323,7 @@ struct Node{
                     _shiftCounter.count(2 * _options.word_length);
                     _removeCounter.count(2 * _options.word_length);
                     _insertCounter.count(System::countSkyrmion(idx));
-                    _insertCounter.count(System::countSkyrmion((unsigned)data));
+                    _insertCounter.count(System::countSkyrmion((uint64_t)data));
                     _shiftCounter.count(2 * _options.word_length);
                     break;
                 case Options::update_function::PERMUTATION_WRITE:
@@ -347,8 +345,8 @@ struct Node{
                 newData.addKey(idx);
 
                 bool insertSide = false;
-                unsigned shiftPos = getShiftPosition();
-                unsigned insertPos = getInsertPosition(idx, insertSide);
+                uint64_t shiftPos = getShiftPosition();
+                uint64_t insertPos = getInsertPosition(idx, insertSide);
 
                 //* Only insert at unused KeyPtrSet
                 if(_data[insertPos].getBitmap(0)){
@@ -396,7 +394,7 @@ struct Node{
                         
                         /*
                         if(i > 0 && _data[i].getKey(0) < _data[i-1].getKey(1)){
-                            unsigned temp = _data[i].getKey(0);
+                            uint64_t temp = _data[i].getKey(0);
                             _data[i].setKey(0, _data[i-1].getKey(1));
                             _data[i-1].setKey(1, temp);
                         } 
@@ -411,8 +409,8 @@ struct Node{
                 newData.addKey(idx);
 
                 bool insertSide = false;
-                unsigned shiftPos = getShiftPosition();
-                unsigned insertPos = getInsertPosition(idx, insertSide);
+                uint64_t shiftPos = getShiftPosition();
+                uint64_t insertPos = getInsertPosition(idx, insertSide);
 
                 std::clog << "<log> <Node::insertData()> insertSide: " << insertSide << std::endl;
 
@@ -441,7 +439,7 @@ struct Node{
                     }
                 }
                 /*
-                unsigned rightMostOffset = getRightMostOffset();
+                uint64_t rightMostOffset = getRightMostOffset();
                 if(rightMostOffset != -1 && insertSide && _data[rightMostOffset].getSize() == 1){
                     _data[rightMostOffset].addKey(idx);
                     _sideBack = (Unit *)data;
@@ -452,7 +450,7 @@ struct Node{
                 }
                 else{
                     if(insertPos > 0 && newData.getKey(0) < _data[insertPos-1].getKey(1)){
-                        unsigned temp = newData.getKey(0);
+                        uint64_t temp = newData.getKey(0);
                         newData.setKey(0, _data[insertPos-1].getKey(1));
                         _data[insertPos-1].setKey(1, temp);
                     }
@@ -470,7 +468,7 @@ struct Node{
                 
                 for(int i = 1; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getKey(0) < _data[i-1].getKey(1)){
-                        unsigned temp = _data[i].getKey(0);
+                        uint64_t temp = _data[i].getKey(0);
                         _data[i].setKey(0, _data[i-1].getKey(1));
                         _data[i-1].setKey(1, temp);
                     } 
@@ -517,8 +515,8 @@ struct Node{
      * * Insert KeyPtrSet to front
     */
     void insertDataFromFront(KeyPtrSet data){
-        unsigned shiftPos = _options.track_length - 1;
-        unsigned insertPos = 0;
+        uint64_t shiftPos = _options.track_length - 1;
+        uint64_t insertPos = 0;
 
         //* Only insert at unused KeyPtrSet
         if(_data[insertPos].getBitmap(0)){
@@ -541,7 +539,7 @@ struct Node{
      * * Insert KeyPtrSet to back
     */
     void insertDataFromBack(KeyPtrSet data){
-        unsigned insertPos = getSize();
+        uint64_t insertPos = getSize();
         _data[insertPos] = data;
     }
 
@@ -552,7 +550,7 @@ struct Node{
      * TODO redesign as deleteData(offset, side) to direct delete (still need to check right most) 
      * @param side for internal, if true, and try to delete the right most index, that will delete the side unit
      */
-    void deleteData(unsigned idx, bool side = false){
+    void deleteData(uint64_t idx, bool side = false){
         std::clog << "<log> <Node::deleteData()>: " << idx << std::endl;
 
         switch (_options.search_mode)
@@ -653,7 +651,7 @@ struct Node{
     /**
      * * Done
     */
-    void connectParentNode(Unit *unit, unsigned offset = 0){
+    void connectParentNode(Unit *unit, uint64_t offset = 0){
         _parent = unit;
         _parentOffset = offset;
     }
@@ -661,7 +659,7 @@ struct Node{
     /**
      * @param side ?
     */
-    void deleteMark(unsigned offset, bool side = false){
+    void deleteMark(uint64_t offset, bool side = false){
         if(_isLeaf){
             //_data[offset].delKey(0);
             _data[offset].delAll();
@@ -677,7 +675,7 @@ struct Node{
      * * Done
      * @return offset
     */
-    unsigned getOffsetByIndex(unsigned idx){
+    uint64_t getOffsetByIndex(uint64_t idx){
         if(_isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
                 if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
@@ -701,7 +699,7 @@ struct Node{
     /**
      * * Done
     */
-    unsigned getMinIndex(){
+    uint64_t getMinIndex(){
         if(_isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
                 if(_data[i].getBitmap(0)){
@@ -725,7 +723,7 @@ struct Node{
     /**
      * * Done
     */
-    unsigned getMaxIndex(){
+    uint64_t getMaxIndex(){
         if(_isLeaf){
             for(int i = _options.track_length - 1; i >= 0; --i){
                 if(_data[i].getBitmap(0)){
@@ -788,7 +786,7 @@ struct Node{
     /**
      * * Done
     */
-    unsigned getLeftMostOffset(){
+    uint64_t getLeftMostOffset(){
         if(_isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
                 if(_data[i].getBitmap(0))
@@ -816,7 +814,7 @@ struct Node{
     /**
      * * Done
     */
-    unsigned getRightMostOffset(){
+    uint64_t getRightMostOffset(){
         if(_isLeaf){
             for(int i = _options.track_length - 1; i >= 0; --i){
                 if(_data[i].getBitmap(0))
@@ -844,7 +842,7 @@ struct Node{
     /**
      * ? Checking
     */
-    bool isRightMostOffset(unsigned offset) const{
+    bool isRightMostOffset(uint64_t offset) const{
         if(offset == _options.track_length)
             return true;
             
@@ -876,7 +874,7 @@ struct Node{
     /**
      * ? Checking
     */
-    bool isLeftMostOffset(unsigned offset) const{
+    bool isLeftMostOffset(uint64_t offset) const{
         if(offset == -1 || offset == _options.track_length)
             return false;
         
@@ -907,7 +905,7 @@ struct Node{
     /**
      * ? Checking
     */
-    unsigned getClosestRightOffset(unsigned offset){
+    uint64_t getClosestRightOffset(uint64_t offset){
         if(_isLeaf){
             for(int i = offset + 1; i < _options.track_length; ++i){
                 if(_data[i].getBitmap(0)){
@@ -930,7 +928,7 @@ struct Node{
     /**
      * ? Checking
     */
-    unsigned getClosestLeftOffset(unsigned offset){
+    uint64_t getClosestLeftOffset(uint64_t offset){
         if(_isLeaf){
             for(int i = offset - 1; i >= 0; --i){
                 if(_data[i].getBitmap(0)){
@@ -950,10 +948,10 @@ struct Node{
     }
     
     // Return insert position
-    unsigned getInsertPosition(unsigned wait_insert_idx, bool &insertSide){
+    uint64_t getInsertPosition(uint64_t wait_insert_idx, bool &insertSide){
         if(_isLeaf){
             if(_options.node_ordering == Options::ordering::SORTED){
-                unsigned last = 0;
+                uint64_t last = 0;
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0)){
                         last = i + 1;
@@ -985,7 +983,7 @@ struct Node{
             }
         }
         else{
-            unsigned last = 0;
+            uint64_t last = 0;
             for(int i = 0; i < _options.track_length; ++i){
                 if(_data[i].getBitmap(0)){
                     last = i + 1;
@@ -1007,8 +1005,8 @@ struct Node{
         
     }
 
-    unsigned getShiftPosition(){
-        unsigned shiftPoint = -1;
+    uint64_t getShiftPosition(){
+        uint64_t shiftPoint = -1;
 
         if(_isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
@@ -1080,8 +1078,8 @@ struct Node{
     /**
      * * Done
     */
-    unsigned getSize() const{
-        unsigned counter = 0;
+    uint64_t getSize() const{
+        uint64_t counter = 0;
 
         if(_isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
@@ -1131,12 +1129,12 @@ struct Node{
     bool _sideBackBitmap;
     bool _sideFrontBitmap;
     Unit *_parent;
-    unsigned _parentOffset;
+    uint64_t _parentOffset;
     bool _isValid;
 
     /* System */
     Options _options;
-    unsigned _id;
+    uint64_t _id;
 
     Counter _readCounter = Counter("Read");
     Counter _shiftCounter = Counter("Shift");
@@ -1146,15 +1144,15 @@ struct Node{
 };
 
 namespace System{
-    unsigned log2(unsigned number) {
-        unsigned count = 0;
+    uint64_t log2(uint64_t number) {
+        uint64_t count = 0;
         while (number >>= 1) ++count;
         return count;
     }
 
-    unsigned countSkyrmion(unsigned data) {
-        unsigned number = 0;
-        unsigned a = 0;
+    uint64_t countSkyrmion(uint64_t data) {
+        uint64_t number = 0;
+        uint64_t a = 0;
         while (data > 0) {
             a = data % 2;
             data = data / 2;
@@ -1171,15 +1169,15 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
     
 
     //* status
-    out << "Node "<< right._id << "\n";
-    out << right._shiftCounter << "\n";
-    out << right._insertCounter << "\n";
-    out << right._removeCounter << "\n";
-    out << right._readCounter << "\n";
-    out << right._migrateCounter << "\n";
+    // out << "Node "<< right._id << "\n";
+    // out << right._shiftCounter << "\n";
+    // out << right._insertCounter << "\n";
+    // out << right._removeCounter << "\n";
+    // out << right._readCounter << "\n";
+    // out << right._migrateCounter << "\n";
 
     //* debug
-    // out << "\n\t\t(\n";
+    out << "\n\t\t(\n";
     // out << "\t\t\t" << "Node "<< right._id << "\n";
     // out << "\t\t\t" << right._shiftCounter << "\n";
     // out << "\t\t\t" << right._insertCounter << "\n";
@@ -1187,21 +1185,21 @@ std::ostream &operator<<(std::ostream &out, const Node &right){
     // out << "\t\t\t" << right._readCounter << "\n";
     // out << "\t\t\t" << right._migrateCounter << "\n";
 
-    // out << "\t\t\t";
-    // bool first = true;
-    // for(int i = 0; i < right._options.track_length; ++i){
-    //     if(first)first = false;
-    //     else out << ", ";
-    //     out << right._data[i];
-    // }
-    // out << " _sideFront: " << right._sideFront;
-    // if(!right._sideFrontBitmap) out << "*";
-    // out << " _sideBack: " << right._sideBack;
-    // if(!right._sideBackBitmap) out << "*";
+    out << "\t\t\t";
+    bool first = true;
+    for(int i = 0; i < right._options.track_length; ++i){
+        if(first)first = false;
+        else out << ", ";
+        out << right._data[i];
+    }
+    out << " _sideFront: " << right._sideFront;
+    if(!right._sideFrontBitmap) out << "*";
+    out << " _sideBack: " << right._sideBack;
+    if(!right._sideBackBitmap) out << "*";
 
-    // out << "\n\t\t)";
+    out << "\n\t\t)";
 
-    // if(!right.isValid()) out << "*";
+    if(!right.isValid()) out << "*";
 
     return out;
 }

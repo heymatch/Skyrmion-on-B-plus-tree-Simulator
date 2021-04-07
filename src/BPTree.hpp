@@ -1,8 +1,6 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
-#define unsigned uint64_t
-
 #include "Unit.hpp"
 #include <iostream>
 
@@ -13,21 +11,21 @@ public:
         _root = nullptr;
     }
 
-    unsigned *searchData(unsigned idx){
-        unsigned unit_offset = 0;
+    uint64_t *searchData(uint64_t idx){
+        uint64_t unit_offset = 0;
         return _root->searchData(idx, unit_offset);
     }
 
-    void updateData(unsigned idx, unsigned data){
-        unsigned unit_offset = 0;
-        unsigned *dataPtr = _root->searchData(idx, unit_offset);
+    void updateData(uint64_t idx, uint64_t data){
+        uint64_t unit_offset = 0;
+        uint64_t *dataPtr = _root->searchData(idx, unit_offset);
         
         if(dataPtr != nullptr){
             *dataPtr = data;
         }
     }
 
-    void insertData(unsigned idx, unsigned data){
+    void insertData(uint64_t idx, uint64_t data){
         if(_root == nullptr){
             _root = new Unit(_options);
             _root->_tracks[0].setValid(true);
@@ -41,7 +39,7 @@ public:
             
     }
 
-    void deleteData(unsigned idx){
+    void deleteData(uint64_t idx){
         if(_root == nullptr){
             return;
         }

@@ -1,14 +1,12 @@
 #ifndef COUNTER_HPP
 #define COUNTER_HPP
 
-#define unsigned uint64_t
-
 #include <string>
 #include <ostream>
 
-static unsigned BPTreeId = 0;
-static unsigned UnitId = 0;
-static unsigned NodeId = 0;
+static uint64_t BPTreeId = 0;
+static uint64_t UnitId = 0;
+static uint64_t NodeId = 0;
 
 class Counter{
     friend std::ostream& operator<<(std::ostream &out, Counter right);
@@ -18,11 +16,11 @@ public:
         _times = 0;
     }
 
-    void count(unsigned times){
+    void count(uint64_t times){
         _times += times;
     }
 
-    unsigned get() const{
+    uint64_t get() const{
         return _times;
     }
 
@@ -32,7 +30,7 @@ public:
 
 private:
     std::string _name;
-    unsigned _times;
+    uint64_t _times;
 };
 
 std::ostream& operator<<(std::ostream &out, Counter right){

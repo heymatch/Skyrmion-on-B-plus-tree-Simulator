@@ -6,7 +6,6 @@
 using namespace std;
 
 #define dbg(info) std::clog << info << std::endl;
-#define unsigned uint64_t
 
 #include "Options.hpp"
 #include "BPTree.hpp"
@@ -21,7 +20,7 @@ enum Operation{
     CHECK
 };
 
-unsigned inputParser(string str, unsigned &idx, unsigned &data){
+uint64_t inputParser(string str, uint64_t &idx, uint64_t &data){
     stringstream ss(str);
     string op;
     ss >> op;
@@ -50,8 +49,8 @@ unsigned inputParser(string str, unsigned &idx, unsigned &data){
         return Operation::STOP;
     }
     else if(op == "@@@"){
-        return Operation::SKIP;
-        //return Operation::CHECK;
+        // return Operation::SKIP;
+        return Operation::CHECK;
     }
     else if(op == ""){
         return Operation::SKIP;
@@ -62,10 +61,10 @@ unsigned inputParser(string str, unsigned &idx, unsigned &data){
  * TODO setting file
 */
 Options settingParser(ifstream &fin){
-    unsigned WORD_LENGTH = 0;
-    unsigned TRACK_LENGTH = 0; 
-    unsigned UNIT_SIZE = 0;
-    unsigned KP_LENGTH = 0;
+    uint64_t WORD_LENGTH = 0;
+    uint64_t TRACK_LENGTH = 0; 
+    uint64_t UNIT_SIZE = 0;
+    uint64_t KP_LENGTH = 0;
     Options::ordering ordering = Options::ordering::None;
     Options::read_function read_function = Options::read_function::None;
     Options::search_function search_function = Options::search_function::None;
@@ -202,17 +201,17 @@ int main(int argc, char **argv){
         
         try{
             while(getline(workload, input)){
-                unsigned index = 0, data = 0;
+                uint64_t index = 0, data = 0;
                 switch(inputParser(input, index, data)){
                     case Operation::SEARCH:
                         try{
-                            unsigned *dataPtr = tree.searchData(index);
-                            /*
+                            uint64_t *dataPtr = tree.searchData(index);
+                            
                             if(dataPtr == nullptr)
-                                cout << "Search index " << index << ": " << "Not found" << endl;
+                                fout << "Search index " << index << ": " << "Not found" << endl;
                             else
-                                cout << "Search index " << index << ": " << *dataPtr << endl;
-                            */
+                                fout << "Search index " << index << ": " << *dataPtr << endl;
+                            
                         }
                         catch(const char* e){
                             cout << e << endl;
@@ -220,27 +219,27 @@ int main(int argc, char **argv){
                         break;
                     case Operation::INSERT:
                         tree.insertData(index, data);
-                        //cout << "Insert index " << index << ": " << data << endl;
+                        fout << "Insert index " << index << ": " << data << endl;
                         break;
                     case Operation::DELETE:
                         tree.deleteData(index);
-                        //cout << "Delete index " << index << endl;
+                        fout << "Delete index " << index << endl;
                         break;
                     case Operation::UPDATE:
                         tree.updateData(index, data);
-                        //cout << "Update index " << index << ": " << data << endl;
+                        fout << "Update index " << index << ": " << data << endl;
                         break;
                     case Operation::SKIP:
                         continue;
                     case Operation::STOP:
                         throw "Debug force stop";
                     case Operation::CHECK:
-                        cout << tree << endl;
+                        fout << tree << endl;
                         break;
                     default:
                         throw "undefined BPTree operation";
                 }
-                //std::clog << "<log main> " << input << " finish" << std::endl;
+                std::clog << "<log> <main()> " << input << " finish" << std::endl;
             }
             std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
             fout << tree << endl;

@@ -1,31 +1,29 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
-#define unsigned uint64_t
-
 struct Options{
     // e.g., 32, 64
-    unsigned word_length;
+    uint64_t word_length;
 
     // number of words in a track
     //! odd number leads to problem
     // e.g., 4, 8, 16
-    unsigned track_length;
+    uint64_t track_length;
 
     // e.g., 1 = single track, 2 = double tracks
-    unsigned unit_size; 
+    uint64_t unit_size; 
 
     // key pointer length
     // at least 2
     // 1 pointer + n keys
     // e.g., 2, 3
-    unsigned kp_length; 
+    uint64_t kp_length; 
 
     // access port sharing
     //? not use
-    unsigned ap_sharing; 
+    uint64_t ap_sharing; 
 
-    enum struct ordering : unsigned{
+    enum struct ordering : uint64_t{
         None,
         UNSORTED, //! skip
         SORTED
@@ -36,14 +34,14 @@ struct Options{
             throw "This operation needs sorted structure";
     }
 
-    enum struct read_function : unsigned{
+    enum struct read_function : uint64_t{
         None,
         SEQUENTIAL, 
         RANGE_READ
     };
     read_function read_mode;
 
-    enum struct search_function : unsigned{
+    enum struct search_function : uint64_t{
         None,
         SEQUENTIAL,
         TRAD_BINARY_SEARCH,
@@ -51,7 +49,7 @@ struct Options{
     };
     search_function search_mode;
 
-    enum struct update_function : unsigned{
+    enum struct update_function : uint64_t{
         None,
         OVERWRITE,
         PERMUTATION_WRITE,
@@ -60,21 +58,21 @@ struct Options{
     };
     update_function update_mode;
 
-    enum struct insert_function : unsigned{
+    enum struct insert_function : uint64_t{
         None,
         SEQUENTIAL,
         BIT_BINARY_INSERT
     };
     insert_function insert_mode;
 
-    enum struct delete_function : unsigned{
+    enum struct delete_function : uint64_t{
         None,
         SEQUENTIAL,
         BALANCE
     };
     delete_function delete_mode;
 
-    enum struct split_merge_function : unsigned{
+    enum struct split_merge_function : uint64_t{
         None,
         TRAD,
         UNIT
@@ -83,10 +81,10 @@ struct Options{
     
 
     Options(
-            unsigned word_length = 0,
-            unsigned track_length = 0,
-            unsigned unit_size = 0,
-            unsigned kp_length = 0,
+            uint64_t word_length = 0,
+            uint64_t track_length = 0,
+            uint64_t unit_size = 0,
+            uint64_t kp_length = 0,
             ordering node_ordering = ordering::None,
             read_function read_mode = read_function::None,
             search_function search_mode = search_function::None,
