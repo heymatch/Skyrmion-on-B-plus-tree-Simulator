@@ -1,11 +1,12 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include <ostream>
+
 #include "Options.hpp"
 #include "KeyPtrSet.hpp"
 #include "Node.hpp"
 #include "Counter.hpp"
-#include <ostream>
 
 namespace System{
     Unit *allocUnit(Options options, bool isLeaf = true);
@@ -102,6 +103,7 @@ struct Unit{
                     //std::clog << "<log> <searchData()> _id: " << _id << std::endl;
                     //std::clog << "<log> <searchData()> unit_offset: " << unit_offset << std::endl;
                     dataPtr = (uint64_t *)_tracks[unit_offset].searchData(idx, unit_offset);
+                    /*
                     if(dataPtr == nullptr){
                         if(unit_offset + 1 < _options.unit_size){
                             unit_offset += 1;
@@ -113,7 +115,7 @@ struct Unit{
                             unit_offset = 0;
                             dataPtr = getBackSideUnit()->searchData(idx, unit_offset);
                         }
-                    }
+                    }*/
                 }
                 catch(int e){
                     if(e != -1) throw "search error";
@@ -132,9 +134,6 @@ struct Unit{
                         else{
                             unit_offset = 0;
                         }
-                    }
-                    else{
-                        unit_offset = 0;
                     }
                     dataPtr = (uint64_t *)nextUnit->searchData(idx, unit_offset);
                 }
@@ -224,7 +223,7 @@ struct Unit{
                     //TODO evaluation 
                     break;
                 case Options::search_function::TRAD_BINARY_SEARCH:
-                    _tracks[unit_offset]._shiftCounter.count(2 * _options.word_length * System::log2(_options.track_length));
+                    _tracks[unit_offset]._shiftCounter.count(2 * _options.word_length * Evaluation::log2(_options.track_length));
                     _tracks[unit_offset]._readCounter.count(_options.word_length * 2 * _options.track_length);
                     break;
                 case Options::search_function::BIT_BINARY_SEARCH:
@@ -779,7 +778,7 @@ struct Unit{
 
     void insertCurrentPointer(uint64_t idx, Unit *unit, uint64_t unit_offset, uint64_t data_enter_offset){
         //
-        //std::clog << "<log> <insertCurrentPointer()> unit: " << unit << std::endl;
+        //
         //std::clog << "<log> <insertCurrentPointer()> offset: " << unit_offset << std::endl;
         // 
 
@@ -853,11 +852,12 @@ struct Unit{
         }
         else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
             std::clog << "<log> <insertCurrentPointer()> idx: " << idx << std::endl;
+            std::clog << "<log> <insertCurrentPointer()> unit: " << unit << std::endl;
             std::clog << "<log> <insertCurrentPointer()> _tracks[offset]: " << _tracks[unit_offset] << std::endl;
             std::clog << "<log> <insertCurrentPointer()> insertSide: " << insertSide << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> isFullUnit(): " << isFullUnit() << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> isFull(unit_offset): " << isFull(unit_offset) << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> isPossibleInsert(unit_offset, unit): " << isPossibleInsert(unit_offset, unit) << std::endl; 
+            // std::clog << "<log> <insertCurrentPointer()> isFullUnit(): " << isFullUnit() << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> isFull(unit_offset): " << isFull(unit_offset) << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> isPossibleInsert(unit_offset, unit): " << isPossibleInsert(unit_offset, unit) << std::endl; 
             
             if(isFull(unit_offset) && !isPossibleInsert(unit_offset, unit)){
                 if(isRoot()){
@@ -886,6 +886,16 @@ struct Unit{
                         uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
                         rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
                         unit->connectParentUnit(rightUnit, 0);
+
+                        if(getBackSideUnit()->getValidSize() == 2){
+                            std::clog << "<log> <copyHalfNode()> unit: " << unit << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[0]: " << unit->_tracks[0] << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[1]: " << unit->_tracks[1] << std::endl;
+                            throw "promote mid test 1";
+
+                            getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[1], unit->_tracks[1], unit, 1);
+                            getBackSideUnit()->_tracks[1].setValid(false);
+                        } 
                     }
 
                     //std::clog << "<log> <insertCurrentPointer()> _tracks[offset]: " << _tracks[unit_offset] << std::endl; 
@@ -898,22 +908,32 @@ struct Unit{
 
                     Unit *rightUnit = (Unit *)promote.ptr;
                     if(idx < promote.getKey(0)){
-                        insertCurrentPointer(idx, unit, 0, 0);
-                        unit->connectParentUnit(this, unit_offset);
+                        _tracks[0].insertData(idx, unit, true);
+                        unit->connectParentUnit(this, 0);
                     }
                     else if(idx > promote.getKey(0)){
-                        rightUnit->insertCurrentPointer(idx, unit, 0, 0);
-                        unit->connectParentUnit(rightUnit, unit_offset);
+                        rightUnit->_tracks[0].insertData(idx, unit, true);
+                        unit->connectParentUnit(rightUnit, 0);
                     }
                     else{
                         uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
                         rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
-                        unit->connectParentUnit(rightUnit, unit_offset);
+                        unit->connectParentUnit(rightUnit, 0);
+
+                        if(getBackSideUnit()->getValidSize() == 2){
+                            std::clog << "<log> <copyHalfNode()> unit: " << unit << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[0]: " << unit->_tracks[0] << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[1]: " << unit->_tracks[1] << std::endl;
+                            throw "promote mid test 2";
+
+                            getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[1], unit->_tracks[1], unit, 1);
+                            getBackSideUnit()->_tracks[1].setValid(false);
+                        }
                     }
 
                     return;
                 }
-                else{
+                else if(!isAllValid()){
                     // throw "test";
 
                     KeyPtrSet promote = splitNode(idx, unit_offset, insertSide);
@@ -921,18 +941,68 @@ struct Unit{
                     getParentUnit()->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, getParentOffset(), 0);          
 
                     Unit *rightUnit = (Unit *)promote.ptr;
+                    if(this != rightUnit){
+                        throw "error";
+                    }
+
                     if(idx < promote.getKey(0)){
-                        insertCurrentPointer(idx, unit, 0, 0);
+                        _tracks[0].insertData(idx, unit, true);
                         unit->connectParentUnit(this, 0);
                     }
                     else if(idx > promote.getKey(0)){
-                        insertCurrentPointer(idx, unit, 1, 0);
+                        _tracks[1].insertData(idx, unit, false);
                         unit->connectParentUnit(this, 1);
                     }
                     else{
-                        uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
-                        _tracks[0]._data[leftMostOffset].setPtr(unit);
+                        uint64_t leftMostOffset = _tracks[1].getLeftMostOffset();
+                        _tracks[1]._data[leftMostOffset].setPtr(unit);
                         unit->connectParentUnit(this, 0);
+
+                        if(getBackSideUnit()->getValidSize() == 2){
+                            std::clog << "<log> <copyHalfNode()> unit: " << unit << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[0]: " << unit->_tracks[0] << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[1]: " << unit->_tracks[1] << std::endl;
+                            throw "promote mid test 3";
+
+                            getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[1], unit->_tracks[1], unit, 1);
+                            getBackSideUnit()->_tracks[1].setValid(false);
+                        }
+                    }
+
+                    std::clog << "<log> <insertCurrentPointer()> _tracks[1]: " << _tracks[1] << std::endl;
+                    
+                    return;
+                }
+                else{
+                    // throw "test";
+
+                    KeyPtrSet promote = splitNode(idx, unit_offset);
+
+                    getParentUnit()->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, getParentOffset(), 0);          
+
+                    Unit *rightUnit = (Unit *)promote.ptr;
+                    if(idx < promote.getKey(0)){
+                        _tracks[0].insertData(idx, unit, false);
+                        unit->connectParentUnit(this, unit_offset);
+                    }
+                    else if(idx > promote.getKey(0)){
+                        rightUnit->_tracks[0].insertData(idx, unit, true);
+                        unit->connectParentUnit(rightUnit, 0);
+                    }
+                    else{
+                        uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
+                        rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                        unit->connectParentUnit(rightUnit, 0);
+
+                        if(getBackSideUnit()->getValidSize() == 2){
+                            std::clog << "<log> <copyHalfNode()> unit: " << unit << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[0]: " << unit->_tracks[0] << std::endl;
+                            std::clog << "<log> <copyHalfNode()> ((Unit *)promote.getPtr())->_tracks[1]: " << unit->_tracks[1] << std::endl;
+                            throw "promote mid test 4";
+
+                            getBackSideUnit()->migrateNode(getBackSideUnit()->_tracks[1], unit->_tracks[1], unit, 1);
+                            getBackSideUnit()->_tracks[1].setValid(false);
+                        }
                     }
                     
                     return;
@@ -1391,14 +1461,12 @@ struct Unit{
                     }
                 }
                 else{
-                    throw "Internal split developing";
-                    /*
+                    // throw "Internal split developing";
+                    
                     if(unit_offset == 0){
                         {
                             // split operation will generate same level unit/node
                             Unit *newUnit = System::allocUnit(_options, isLeaf());
-
-                            migrateNode(_tracks[1], newUnit->_tracks[0]);
 
                             // find the middle index
                             uint64_t promoteKey = System::getMid(_tracks[0]._data, _options.track_length, wait_insert_idx);
@@ -1414,9 +1482,11 @@ struct Unit{
                             if(!isLeaf()) newUnit->setLeaf(false);
 
                             //* copying data
-                            copyHalfNode(_tracks[0], _tracks[1], promote, wait_insert_idx);
+                            migrateNode(_tracks[1], newUnit->_tracks[0], newUnit, 0);
                             newUnit->_tracks[0].setValid(true);
-                            //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
+                            promote.setPtr(this);
+                            copyHalfNode(_tracks[0], _tracks[1], promote, wait_insert_idx);
+                            promote.setPtr(newUnit);
 
                             //* sure to have correct parent pointers
                             if(!isLeaf()){
@@ -1455,7 +1525,6 @@ struct Unit{
                             }
                         }
                     }
-                    */
                 }
 
             }
@@ -1471,7 +1540,7 @@ struct Unit{
      * * Copy half data from source to destination
      * TODO evaluation
      */
-    void copyHalfNode(Node &source, Node &destination, KeyPtrSet promote, uint64_t wait_insert_idx){
+    void copyHalfNode(Node &source, Node &destination, KeyPtrSet &promote, uint64_t wait_insert_idx){
         //std::clog << "<log> <copyHalfNode()>" << std::endl;
         if(isLeaf()){
             switch (_options.read_mode){
@@ -1499,8 +1568,8 @@ struct Unit{
                             case Options::update_function::OVERWRITE:
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(System::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(System::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 break;
                             case Options::update_function::PERMUTATION_WRITE:
@@ -1527,8 +1596,8 @@ struct Unit{
                             case Options::update_function::OVERWRITE:
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(System::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(System::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 break;
                             case Options::update_function::PERMUTATION_WRITE:
@@ -1550,6 +1619,9 @@ struct Unit{
             else if(_options.node_ordering == Options::ordering::UNSORTED){
                 throw "unsorted split developing";
             }
+
+            std::clog << "<log> <copyHalfNode()> Leaf source: " << source << std::endl;
+            std::clog << "<log> <copyHalfNode()> Leaf destination: " << destination << std::endl;
         }
         else{
             switch (_options.read_mode){
@@ -1578,8 +1650,8 @@ struct Unit{
                             case Options::update_function::OVERWRITE:
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(System::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(System::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 break;
                             case Options::update_function::PERMUTATION_WRITE:
@@ -1608,8 +1680,8 @@ struct Unit{
                             case Options::update_function::OVERWRITE:
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(System::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(System::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
                                 destination._shiftCounter.count(2 * _options.word_length);
                                 break;
                             case Options::update_function::PERMUTATION_WRITE:
@@ -1731,33 +1803,42 @@ struct Unit{
                         promoteMid = false;
                         source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
                         //source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());
+
+                        if(source._sideBack->getValidSize() == 2){
+                            //std::clog << "<log> <copyHalfNode()> 3. For C" << std::endl;
+                            Unit *newUnit = System::allocUnit(_options, source._sideBack->isLeaf());
+                            newUnit->setRoot(false);
+
+                            source._sideBack->migrateNode(source._sideBack->_tracks[1], newUnit->_tracks[0], newUnit, 0);
+                            source._sideBack->_tracks[1].setValid(false);
+
+                            destination._data[0].setPtr(newUnit);
+                            if(inUnit){
+                                newUnit->connectParentUnit((Unit *)promote.getPtr(), 1);
+                            }
+                            else{
+                                newUnit->connectParentUnit((Unit *)promote.getPtr(), 0);
+                            }
+                            
+
+                            //std::clog << "<log> <copyHalfNode()> newUnit: " << newUnit << std::endl;
+                        }
                     }
                 }
 
                 if(promoteMid){
                     source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
-                    //source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());
+                    
+                    //source.connectBackSideUnit((Unit *)source._data[source.getRightMostOffset()].getPtr());    
                 }
                 
-                if(source._sideBack->getValidSize() == 2){
-                    Unit *newUnit = System::allocUnit(_options, source._sideBack->isLeaf());
-                    newUnit->setRoot(false);
-
-                    migrateNode(source._sideBack->_tracks[0], newUnit->_tracks[0]);
-                    migrateNode(source._sideBack->_tracks[1], source._sideBack->_tracks[0]);
-                    source._sideBack->_tracks[1].setValid(false);
-
-                    source.connectBackSideUnit(newUnit);
-                    newUnit->connectParentUnit(this);
-
-                    std::clog << "<log> <copyHalfNode()> newUnit: " << newUnit << std::endl;
-                }
+                
 
                 if(inUnit){
-                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 0);
+                    source._sideBack->connectParentUnit(this, 0);
                 }
                 else{
-                    source._sideBack->connectParentUnit((Unit *)promote.getPtr(), 1);
+                    source._sideBack->connectParentUnit(this, 1);
                 }
 
                 std::clog << "<log> <copyHalfNode()> Internal source: " << source << std::endl;
@@ -2286,10 +2367,14 @@ struct Unit{
      * @param left
      * @param right
     */
-    void migrateNode(Node &left, Node &right){
+    void migrateNode(Node &left, Node &right, Unit *parentUnit = nullptr, unsigned parentUnitOffset = 0){
+        if(left._isLeaf != right._isLeaf){
+            throw "<migrateNode()> type error";
+        }
+
         std::clog << "<log> <Unit::migrateNode()>" << std::endl;
-        //std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
-        //std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
+        std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
+        std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
         if(left._isLeaf){
             for(int i = 0; i < _options.track_length; ++i){
                 if(left._data[i].getBitmap(0)){
@@ -2299,18 +2384,24 @@ struct Unit{
             }
         }
         else{
+            if(parentUnit == nullptr){
+                throw "<Unit::migrateNode()::Internal> error";
+            }
+
             for(int i = 0; i < _options.track_length; ++i){
                 if(left._data[i].getBitmap(0)){
                     right._data[i] = left._data[i];
+                    ((Unit *)right._data[i].getPtr())->connectParentUnit(parentUnit, parentUnitOffset);
                     left.deleteMark(i);
                 }
             }
-            right.connectBackSideUnit(left._sideBack);   
+            right.connectBackSideUnit(left._sideBack);
+            right._sideBack->connectParentUnit(parentUnit, parentUnitOffset);
         }
         right.setValid(true);
 
-        //std::clog << "<log> <migrateNode() end> left: " << left << std::endl;
-        //std::clog << "<log> <migrateNode() end> right: " << right << std::endl;
+        std::clog << "<log> <migrateNode() end> left: " << left << std::endl;
+        std::clog << "<log> <migrateNode() end> right: " << right << std::endl;
     }
 
     /* Minor Functions */

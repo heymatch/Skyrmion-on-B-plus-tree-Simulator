@@ -32,7 +32,7 @@ ifeq ($(OS), Windows_NT)
 	$(CC) $(CFLAGS) -o Skyrmion.exe $(OBJ) $(OBJ_PATH)main.o
 else
 	$(CC) $(CFLAGS) -o $(OBJ_PATH)main.o -c $(SRC_PATH)main.cpp
-	$(CC) $(CFLAGS) -o Skyrmion.out $(OBJ) $(OBJ_PATH)main.o
+	$(CC) $(CFLAGS) -o Skyrmion $(OBJ) $(OBJ_PATH)main.o
 endif
 
 # compile pair of .hpp 	

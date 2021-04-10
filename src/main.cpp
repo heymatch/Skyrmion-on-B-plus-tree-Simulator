@@ -20,7 +20,7 @@ enum Operation{
     CHECK
 };
 
-uint64_t inputParser(string str, uint64_t &idx, uint64_t &data){
+int inputParser(string str, Index &idx, Data &data){
     stringstream ss(str);
     string op;
     ss >> op;
@@ -58,7 +58,7 @@ uint64_t inputParser(string str, uint64_t &idx, uint64_t &data){
 }
 
 /**
- * TODO setting file
+ * * setting file
 */
 Options settingParser(ifstream &fin){
     uint64_t WORD_LENGTH = 0;
@@ -78,7 +78,11 @@ Options settingParser(ifstream &fin){
         stringstream ss(input);
         string op, val;
         getline(ss, op, '=');
+        #ifdef __linux__
+        getline(ss, val, '\r');
+        #elif _WIN64
         getline(ss, val);
+        #endif
         
         if(op == "word_length"){
             WORD_LENGTH = stoi(val);
@@ -164,6 +168,15 @@ Options settingParser(ifstream &fin){
 }
 
 int main(int argc, char **argv){
+    #ifdef __linux__
+        cout << "Using Linux" << endl;
+    #elif _WIN64
+        cout << "Using Windows 64" << endl;
+    #else
+        cout << "Not Support this operating system" << endl;
+        reutrn EXIT_FAILURE;
+    #endif
+
     // argument
 	// * argument1 = data filename
     // * argument2 = setting filename
@@ -200,8 +213,14 @@ int main(int argc, char **argv){
         string input;
         
         try{
+            #ifdef __linux__
+            while(getline(workload, input, '\r')){
+                workload.ignore();
+            #elif _WIN64
             while(getline(workload, input)){
-                uint64_t index = 0, data = 0;
+            #endif
+                Index index = 0;
+                Data data = 0;
                 switch(inputParser(input, index, data)){
                     case Operation::SEARCH:
                         try{
@@ -239,7 +258,7 @@ int main(int argc, char **argv){
                     default:
                         throw "undefined BPTree operation";
                 }
-                std::clog << "<log> <main()> " << input << " finish" << std::endl;
+                // std::clog << "<log> <main()> " << input << " finish" << std::endl;
             }
             std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
             fout << tree << endl;

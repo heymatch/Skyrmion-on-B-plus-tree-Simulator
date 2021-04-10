@@ -1,8 +1,9 @@
 #ifndef BPTREE_H
 #define BPTREE_H
 
-#include "Unit.hpp"
 #include <iostream>
+#include "Options.hpp"
+#include "Unit.hpp"
 
 class BPTree{
     friend std::ostream &operator<<(std::ostream &out, const BPTree &right);
@@ -11,12 +12,12 @@ public:
         _root = nullptr;
     }
 
-    uint64_t *searchData(uint64_t idx){
-        uint64_t unit_offset = 0;
+    uint64_t *searchData(const Index &idx){
+        Offset unit_offset = 0;
         return _root->searchData(idx, unit_offset);
     }
 
-    void updateData(uint64_t idx, uint64_t data){
+    void updateData(Index idx, uint64_t data){
         uint64_t unit_offset = 0;
         uint64_t *dataPtr = _root->searchData(idx, unit_offset);
         
@@ -25,7 +26,7 @@ public:
         }
     }
 
-    void insertData(uint64_t idx, uint64_t data){
+    void insertData(const Index &idx, uint64_t data){
         if(_root == nullptr){
             _root = new Unit(_options);
             _root->_tracks[0].setValid(true);
@@ -39,7 +40,7 @@ public:
             
     }
 
-    void deleteData(uint64_t idx){
+    void deleteData(const Index &idx){
         if(_root == nullptr){
             return;
         }

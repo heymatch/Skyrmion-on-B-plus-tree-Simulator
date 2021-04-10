@@ -1,29 +1,34 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+typedef uint64_t Index;
+typedef size_t Offset;
+typedef size_t Size;
+typedef uint8_t Data;
+
 struct Options{
     // e.g., 32, 64
-    uint64_t word_length;
+    Size word_length;
 
     // number of words in a track
     //! odd number leads to problem
     // e.g., 4, 8, 16
-    uint64_t track_length;
+    Size track_length;
 
     // e.g., 1 = single track, 2 = double tracks
-    uint64_t unit_size; 
+    Size unit_size; 
 
     // key pointer length
     // at least 2
     // 1 pointer + n keys
     // e.g., 2, 3
-    uint64_t kp_length; 
+    Size kp_length; 
 
     // access port sharing
     //? not use
-    uint64_t ap_sharing; 
+    Size ap_sharing; 
 
-    enum struct ordering : uint64_t{
+    enum struct ordering : Size{
         None,
         UNSORTED, //! skip
         SORTED
@@ -34,14 +39,14 @@ struct Options{
             throw "This operation needs sorted structure";
     }
 
-    enum struct read_function : uint64_t{
+    enum struct read_function : Size{
         None,
         SEQUENTIAL, 
         RANGE_READ
     };
     read_function read_mode;
 
-    enum struct search_function : uint64_t{
+    enum struct search_function : Size{
         None,
         SEQUENTIAL,
         TRAD_BINARY_SEARCH,
@@ -49,7 +54,7 @@ struct Options{
     };
     search_function search_mode;
 
-    enum struct update_function : uint64_t{
+    enum struct update_function : Size{
         None,
         OVERWRITE,
         PERMUTATION_WRITE,
@@ -58,21 +63,21 @@ struct Options{
     };
     update_function update_mode;
 
-    enum struct insert_function : uint64_t{
+    enum struct insert_function : Size{
         None,
         SEQUENTIAL,
         BIT_BINARY_INSERT
     };
     insert_function insert_mode;
 
-    enum struct delete_function : uint64_t{
+    enum struct delete_function : Size{
         None,
         SEQUENTIAL,
         BALANCE
     };
     delete_function delete_mode;
 
-    enum struct split_merge_function : uint64_t{
+    enum struct split_merge_function : Size{
         None,
         TRAD,
         UNIT
@@ -81,10 +86,10 @@ struct Options{
     
 
     Options(
-            uint64_t word_length = 0,
-            uint64_t track_length = 0,
-            uint64_t unit_size = 0,
-            uint64_t kp_length = 0,
+            Size word_length = 0,
+            Size track_length = 0,
+            Size unit_size = 0,
+            Size kp_length = 0,
             ordering node_ordering = ordering::None,
             read_function read_mode = read_function::None,
             search_function search_mode = search_function::None,

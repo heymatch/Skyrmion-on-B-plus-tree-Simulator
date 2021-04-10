@@ -7,9 +7,50 @@
 #include "Counter.hpp"
 #include <ostream>
 
-namespace System{
-    uint64_t log2(uint64_t number);
-    uint64_t countSkyrmion(uint64_t data);
+namespace Evaluation{
+    uint64_t log2(uint64_t number) {
+        uint64_t count = 0;
+        while (number >>= 1) ++count;
+        return count;
+    }
+
+    uint64_t countSkyrmion(uint64_t data) {
+        uint64_t number = 0;
+        uint64_t a = 0;
+        while (data > 0) {
+            a = data % 2;
+            data = data / 2;
+            if (a == 1) {
+                number++;
+            }
+        }
+        return number;
+    }
+
+    void sequential_read(){
+        
+    }
+
+    void range_read(){
+
+    }
+
+    void overwrite(){
+
+    }
+
+    void permute(){
+
+    }
+
+    void binary_search(){
+
+    }
+
+    void bit_binary_search(){
+
+    }
+
 };
 
 struct Unit;
@@ -158,7 +199,7 @@ struct Node{
                     //TODO evaluation 
                     break;
                 case Options::search_function::TRAD_BINARY_SEARCH:
-                    _shiftCounter.count(2 * _options.word_length * System::log2(_options.track_length));
+                    _shiftCounter.count(2 * _options.word_length * Evaluation::log2(_options.track_length));
                     break;
                 case Options::search_function::BIT_BINARY_SEARCH:
                     _shiftCounter.count(2 * _options.word_length);
@@ -254,16 +295,14 @@ struct Node{
         }
         */
 
-        
-
         if(_isLeaf){
             //* Evaluate for insert a data
             switch (_options.update_mode){
             case Options::update_function::OVERWRITE:
                 _shiftCounter.count(2 * _options.word_length);
                 _removeCounter.count(2 * _options.word_length);
-                _insertCounter.count(System::countSkyrmion(idx));
-                _insertCounter.count(System::countSkyrmion((uint64_t)data));
+                _insertCounter.count(Evaluation::countSkyrmion(idx));
+                _insertCounter.count(Evaluation::countSkyrmion((uint64_t)data));
                 _shiftCounter.count(2 * _options.word_length);
                 break;
             case Options::update_function::PERMUTATION_WRITE:
@@ -322,8 +361,8 @@ struct Node{
                 case Options::update_function::OVERWRITE:
                     _shiftCounter.count(2 * _options.word_length);
                     _removeCounter.count(2 * _options.word_length);
-                    _insertCounter.count(System::countSkyrmion(idx));
-                    _insertCounter.count(System::countSkyrmion((uint64_t)data));
+                    _insertCounter.count(Evaluation::countSkyrmion(idx));
+                    _insertCounter.count(Evaluation::countSkyrmion((uint64_t)data));
                     _shiftCounter.count(2 * _options.word_length);
                     break;
                 case Options::update_function::PERMUTATION_WRITE:
@@ -481,17 +520,22 @@ struct Node{
                 */
 
                if(_sideBack != nullptr){
-                    if(insertSide){
+                    if(insertSide && split){
                         void *temp = _sideBack;
                         _sideBack = (Unit *)_data[insertPos].getPtr();
                         _data[insertPos].setPtr(temp);
                     }
-                    else if(!insertSide && split && insertPos == 0){
+                    else if(!insertSide && insertPos == 0){
                         int i = 0;
                         while(!_data[insertPos+i+1].getBitmap(0))++i;
                         void *temp = _data[insertPos+i+1].getPtr();
                         _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
                         _data[insertPos].setPtr(temp);
+                        
+                        if(_data[insertPos+i+1].getSize() == _options.unit_size){
+                            _data[insertPos].addKey(_data[insertPos+i+1].getKey(0));
+                            _data[insertPos+i+1].delKey(0);
+                        }
                     }
                 }
 
@@ -1141,27 +1185,6 @@ struct Node{
     Counter _insertCounter = Counter("Insert");
     Counter _removeCounter = Counter("Remove");
     Counter _migrateCounter = Counter("Migrate");
-};
-
-namespace System{
-    uint64_t log2(uint64_t number) {
-        uint64_t count = 0;
-        while (number >>= 1) ++count;
-        return count;
-    }
-
-    uint64_t countSkyrmion(uint64_t data) {
-        uint64_t number = 0;
-        uint64_t a = 0;
-        while (data > 0) {
-            a = data % 2;
-            data = data / 2;
-            if (a == 1) {
-                number++;
-            }
-        }
-        return number;
-    }
 };
 
 std::ostream &operator<<(std::ostream &out, const Node &right){
