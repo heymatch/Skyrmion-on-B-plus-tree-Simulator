@@ -28,7 +28,7 @@ namespace Evaluation{
     }
 
     void sequential_read(){
-        
+
     }
 
     void range_read(){
@@ -57,11 +57,13 @@ struct Unit;
 
 struct Node{
     Node(Options options = Options(), bool None = true, bool isLeaf = true) : _options(options){
+        _data = nullptr;
         if(!None){
             _isLeaf = isLeaf;
             _sideBack = nullptr;
             _sideFront = nullptr;
             _parent = nullptr;
+            _parentOffset = 0;
             _sideBackBitmap = false;
             _sideFrontBitmap = false;
             _isValid = false;
@@ -84,9 +86,12 @@ struct Node{
 
         _isLeaf = right._isLeaf;
         _sideBack = right._sideBack;
-        _parent = right._parent;
-        _id = right._id;
         _sideBackBitmap = right._sideBackBitmap;
+        _sideFront = right._sideFront;
+        _sideFrontBitmap = right._sideFrontBitmap;
+        _parent = right._parent;
+        _parentOffset = right._parentOffset;
+        _id = right._id;
         _isValid = right._isValid;
 
         for(int i = 0; i < _options.track_length; ++i){
@@ -99,15 +104,21 @@ struct Node{
     }
 
     Node &operator=(const Node &right){
+        if(_data != nullptr)
+            delete[] _data;
+
         _options = right._options;
 
         _data = new KeyPtrSet[_options.track_length]();
 
         _isLeaf = right._isLeaf;
         _sideBack = right._sideBack;
-        _parent = right._parent;
-        _id = right._id;
         _sideBackBitmap = right._sideBackBitmap;
+        _sideFront = right._sideFront;
+        _sideFrontBitmap = right._sideFrontBitmap;
+        _parent = right._parent;
+        _parentOffset = right._parentOffset;
+        _id = right._id;
         _isValid = right._isValid;
 
         //_shiftCounter = right._shiftCounter;
@@ -279,7 +290,7 @@ struct Node{
      * TODO insert into the same pointer, just add the index to the key-point set
      * @param split if false, data will direct insert
     */
-    void insertData(uint64_t idx, void *data, bool split = true){
+    void insertData(uint64_t idx, void *data, Offset &insertPosition, bool split = true){
         //// evaluate for find a insert position
         /*
         switch (_options.insert_mode)
@@ -325,30 +336,30 @@ struct Node{
 
             bool insertSide = false;
             uint64_t shiftPos = getShiftPosition();
-            uint64_t insertPos = getInsertPosition(idx, insertSide);
+            insertPosition = getInsertPosition(idx, insertSide);
 
             if(_options.node_ordering == Options::ordering::SORTED){
-                if(_data[insertPos].getBitmap(0)){
-                    if(shiftPos < insertPos){
+                if(_data[insertPosition].getBitmap(0)){
+                    if(shiftPos < insertPosition){
                         if(!insertSide)
-                            insertPos -= 1;
-                        for(int i = shiftPos; i < insertPos; ++i){
+                            insertPosition -= 1;
+                        for(int i = shiftPos; i < insertPosition; ++i){
                             _data[i] = _data[i+1];
                             _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                     else{
-                        for(int i = shiftPos; i > insertPos; --i){
+                        for(int i = shiftPos; i > insertPosition; --i){
                             _data[i] = _data[i-1];
                             _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                 }
 
-                _data[insertPos] = newData;
+                _data[insertPosition] = newData;
             }
             else if(_options.node_ordering == Options::ordering::UNSORTED){
-                _data[insertPos] = newData;
+                _data[insertPosition] = newData;
             }
             else{
                 throw "undefined insert operation";
@@ -385,60 +396,61 @@ struct Node{
 
                 bool insertSide = false;
                 uint64_t shiftPos = getShiftPosition();
-                uint64_t insertPos = getInsertPosition(idx, insertSide);
+                insertPosition = getInsertPosition(idx, insertSide);
 
                 //* Only insert at unused KeyPtrSet
-                if(_data[insertPos].getBitmap(0)){
-                    if(shiftPos < insertPos){
+                if(_data[insertPosition].getBitmap(0)){
+                    if(shiftPos < insertPosition){
                         if(!insertSide){
-                            insertPos -= 1;
+                            insertPosition -= 1;
                         }
-                        for(int i = shiftPos; i < insertPos; ++i){
+                        for(int i = shiftPos; i < insertPosition; ++i){
                             _data[i] = _data[i+1];
                             _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                     else{
-                        for(int i = shiftPos; i > insertPos; --i){
+                        for(int i = shiftPos; i > insertPosition; --i){
                             _data[i] = _data[i-1];
                             _shiftCounter.count(2 * _options.word_length);
                         }
                     }
                 }
 
-                _data[insertPos] = newData;  
+                _data[insertPosition] = newData;  
 
                 if(_sideBack != nullptr){
                     if(insertSide){
                         void *temp = _sideBack;
-                        _sideBack = (Unit *)_data[insertPos].getPtr();
-                        _data[insertPos].setPtr(temp);
+                        _sideBack = (Unit *)_data[insertPosition].getPtr();
+                        _data[insertPosition].setPtr(temp);
                     }
                     else if(!insertSide && split){
                         int i = 0;
-                        while(!_data[insertPos+i+1].getBitmap(0))++i;
-                        void *temp = _data[insertPos+i+1].getPtr();
-                        _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
-                        _data[insertPos].setPtr(temp);
+                        while(!_data[insertPosition+i+1].getBitmap(0))++i;
+                        void *temp = _data[insertPosition+i+1].getPtr();
+                        _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                        _data[insertPosition].setPtr(temp);
                     }
                 }
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                std::clog << "<log> <Node::insertData()> _sideBack: " << _sideBack << std::endl;
+                std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
                 std::clog << "<log> <Node::insertData()> data: " << data << std::endl;
+                std::clog << "<log> <Node::insertData()> _sideBack: " << _sideBack << std::endl;
                 //* insert into the same pointer, just add the index to the key-point set
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
                         _data[i].addKey(idx);
                         
-                        /*
-                        if(i > 0 && _data[i].getKey(0) < _data[i-1].getKey(1)){
-                            uint64_t temp = _data[i].getKey(0);
-                            _data[i].setKey(0, _data[i-1].getKey(1));
-                            _data[i-1].setKey(1, temp);
-                        } 
-                        */
-
+                        for(int i = 1; i < _options.track_length; ++i){
+                            if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
+                                uint64_t temp = _data[i].getKey(0);
+                                _data[i].setKey(0, _data[i-1].getKey(1));
+                                _data[i-1].setKey(1, temp);
+                            } 
+                        }
+                        std::clog << "<log> <Node::insertData()> end with same pointer" << std::endl;
                         return;
                     }
                 }
@@ -449,7 +461,7 @@ struct Node{
 
                 bool insertSide = false;
                 uint64_t shiftPos = getShiftPosition();
-                uint64_t insertPos = getInsertPosition(idx, insertSide);
+                insertPosition = getInsertPosition(idx, insertSide);
 
                 std::clog << "<log> <Node::insertData()> insertSide: " << insertSide << std::endl;
 
@@ -462,17 +474,17 @@ struct Node{
                 */
 
                 //* Only insert at unused KeyPtrSet
-                if(_data[insertPos].getBitmap(0)){
-                    if(shiftPos < insertPos){
+                if(_data[insertPosition].getBitmap(0)){
+                    if(shiftPos < insertPosition){
                         if(!insertSide){
-                            insertPos -= 1;
+                            insertPosition -= 1;
                         }
-                        for(int i = shiftPos; i < insertPos; ++i){
+                        for(int i = shiftPos; i < insertPosition; ++i){
                             _data[i] = _data[i+1];
                         }
                     }
                     else{
-                        for(int i = shiftPos; i > insertPos; --i){
+                        for(int i = shiftPos; i > insertPosition; --i){
                             _data[i] = _data[i-1];
                         }
                     }
@@ -502,11 +514,11 @@ struct Node{
                 //}
 
                 
-                _data[insertPos] = newData;
+                _data[insertPosition] = newData;
 
                 
                 for(int i = 1; i < _options.track_length; ++i){
-                    if(_data[i].getBitmap(0) && _data[i].getKey(0) < _data[i-1].getKey(1)){
+                    if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
                         uint64_t temp = _data[i].getKey(0);
                         _data[i].setKey(0, _data[i-1].getKey(1));
                         _data[i-1].setKey(1, temp);
@@ -522,19 +534,31 @@ struct Node{
                if(_sideBack != nullptr){
                     if(insertSide && split){
                         void *temp = _sideBack;
-                        _sideBack = (Unit *)_data[insertPos].getPtr();
-                        _data[insertPos].setPtr(temp);
+                        _sideBack = (Unit *)_data[insertPosition].getPtr();
+                        _data[insertPosition].setPtr(temp);
                     }
-                    else if(!insertSide && insertPos == 0){
+                    else if(!insertSide && insertPosition == 0 && split){
                         int i = 0;
-                        while(!_data[insertPos+i+1].getBitmap(0))++i;
-                        void *temp = _data[insertPos+i+1].getPtr();
-                        _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
-                        _data[insertPos].setPtr(temp);
-                        
-                        if(_data[insertPos+i+1].getSize() == _options.unit_size){
-                            _data[insertPos].addKey(_data[insertPos+i+1].getKey(0));
-                            _data[insertPos+i+1].delKey(0);
+                        while(!_data[insertPosition+i+1].getBitmap(0))++i;
+                        //if(_data[insertPosition+i+1].getSize() == 1){
+                            void *temp = _data[insertPosition+i+1].getPtr();
+                            _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                            _data[insertPosition].setPtr(temp);
+                        //}
+                        /*
+                        if(_data[insertPosition+i+1].getSize() == 1){
+                            void *temp = _data[insertPosition+i+1].getPtr();
+                            _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                            _data[insertPosition].setPtr(temp);
+                        }
+                        else{
+                            std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
+                            //throw "test";
+                        }*/
+
+                        if(_data[insertPosition+i+1].getSize() == _options.unit_size){
+                            _data[insertPosition].addKey(_data[insertPosition+i+1].getKey(0));
+                            _data[insertPosition+i+1].delKey(0);
                         }
                     }
                 }
@@ -550,6 +574,7 @@ struct Node{
                     }
                 }
                 */
+               std::clog << "<log> <Node::insertData()> end with new pointer" << std::endl;
             }
     
         }
@@ -1071,12 +1096,18 @@ struct Node{
                 }
             }
             */
+           std::clog << "<log> <Node::getShiftPosition()> " << std::endl;
             for(int i = 0; i < _options.track_length; ++i){
+                std::clog << _data[i].getKey(0) << " ";
+                std::clog << _data[i].getBitmap(0) << " ";
+                std::clog << _data[i].getKey(1) << " ";
+                std::clog << _data[i].getBitmap(1) << ", ";
                 if(!_data[i].getBitmap(0)){
                     shiftPoint = i;
                     break;
                 }
             }
+            std::clog << std::endl;
         }
         
         if(shiftPoint == -1)

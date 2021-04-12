@@ -28,7 +28,7 @@ int inputParser(string str, Index &idx, Data &data){
         return Operation::SKIP;
     }
     ss >> idx >> data;
-    if(data == 0)data = rand() % 1000 + 1;
+    if(data == 0)data = rand() % 255 + 1;
 
     for(char &it: op){
         it = tolower(it);
@@ -207,6 +207,7 @@ int main(int argc, char **argv){
 
     // initial
     srand(0);
+    std::clog << boolalpha;
 
     {
         BPTree tree(settingParser(setting));
@@ -239,6 +240,7 @@ int main(int argc, char **argv){
                     case Operation::INSERT:
                         tree.insertData(index, data);
                         fout << "Insert index " << index << ": " << data << endl;
+                        // fout << tree << endl;
                         break;
                     case Operation::DELETE:
                         tree.deleteData(index);

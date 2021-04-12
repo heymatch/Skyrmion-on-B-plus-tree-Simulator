@@ -1,6 +1,8 @@
 #ifndef KEYPTRSET_H
 #define KEYPTRSET_H
 
+#define uint64_t uint64_t
+
 #include "Options.hpp"
 #include <ostream>
 

@@ -3,22 +3,33 @@ insert 13487
 insert 13076
 insert 18495
 insert 12364
+#@@@
 insert 12373
 insert 18512
 insert 17537
+
 insert 19748
+#@@@
 insert 15148
+#@@@
 insert 18460
+#@@@
 insert 17494
+#@@@
 insert 14481
+#@@@
 insert 10217
+#@@@
 insert 10011
+#@@@
 insert 19646
+#@@@
 insert 12310
 insert 16014
 insert 19691
 insert 14732
 insert 10579
+#@@@
 insert 18762
 insert 11121
 insert 18322
@@ -27,13 +38,19 @@ insert 18066
 #@@@
 #!!!
 insert 14554
+@@@
 insert 19903
-#@@@
+@@@
 #!!!
 insert 15963
+@@@
+#!!!
 insert 10014
+#@@@
 insert 12418
+#@@@
 insert 10137
+#@@@
 insert 11178
 #@@@
 #!!!
@@ -44,11 +61,17 @@ insert 14325
 #@@@
 #!!!
 insert 15460
+#@@@
 insert 11843
+#@@@
 insert 11678
+#@@@
 insert 17362
+#@@@
 insert 19788
+#@@@
 insert 17846
+#@@@
 insert 12710
 #@@@
 #!!!
@@ -56,26 +79,33 @@ insert 10003
 #@@@
 #!!!
 insert 11461
+#@@@
 insert 12098
-@@@
+#@@@
 #!!!
 insert 13723
-@@@
-!!!
+#@@@
+#!!!
 insert 17393
+#@@@
 insert 17903
+#@@@
 insert 16119
+#@@@
 insert 10929
-@@@
-!!!
+#@@@
+#!!!
 insert 14696
+@@@
 insert 12150
+@@@
+#!!!
 insert 12006
 insert 19412
 insert 17546
 insert 19590
-@@@
-!!!
+#@@@
+#!!!
 insert 11481
 insert 16436
 insert 19264
@@ -91,8 +121,8 @@ insert 16614
 insert 11346
 insert 14487
 insert 11012
-@@@
-!!!
+#@@@
+#!!!
 insert 15803
 insert 11987
 insert 10141
@@ -102,40 +132,40 @@ insert 15798
 insert 14216
 insert 19818
 insert 14726
-@@@
-!!!
+#@@@
+#!!!
 #ok
 insert 16116
-#@@@
+##@@@
 #!!!
 #ok
 insert 13379
-#@@@
+##@@@
 #!!!
 #ok
 insert 12976
-#@@@
+##@@@
 #!!!
 insert 14157
-#@@@
+##@@@
 #!!!
 insert 14258
 insert 10540
 insert 11532
 insert 15401
-#@@@
+##@@@
 #!!!
 #ok
 insert 18431
-@@@
+#@@@
 #!!!
 #ok
 insert 15205
-@@@
-!!!
+#@@@
+#!!!
 #fail
 insert 16037
-#@@@
+##@@@
 #!!!
 #fail
 insert 14870
@@ -143,19 +173,24 @@ insert 11518
 insert 16411
 insert 15882
 insert 14755
+#fail: crash
 insert 19179
 insert 13337
+@@@
 insert 13568
-#@@@
+@@@
 #!!!
 insert 11736
+#fail: full
+@@@
+#!!!
 insert 14587
-#@@@
+##@@@
 #!!!
 insert 10824
 insert 12288
 insert 16005
-#@@@
+##@@@
 #!!!
 insert 15488
 insert 15980
@@ -171,30 +206,49 @@ insert 10582
 #@@@
 #!!!
 insert 12361
+#@@@
 insert 14501
+#@@@
 insert 14885
+#@@@
 insert 15900
+#@@@
 insert 18529
+#@@@
 insert 13159
+#@@@
 insert 16743
+#@@@
 insert 16296
+#@@@
 insert 10407
+#@@@
 insert 15805
+#@@@
 insert 14878
+#@@@
+#!!!
+#fail
 insert 10380
+#@@@
 insert 12547
+#@@@
 insert 13870
+#@@@
 insert 15035
+#@@@
 insert 19094
 insert 11187
 insert 18777
+#@@@
 insert 12293
 insert 15350
 insert 15758
 insert 18496
 insert 13901
+#@@@
 insert 17993
-@@@
+#@@@
 insert 15635
 insert 14583
 insert 19534
@@ -213,6 +267,7 @@ insert 12801
 insert 16068
 insert 10925
 insert 10436
+#fail: KeyPtrSet Overflow
 insert 12760
 insert 19637
 insert 12749
@@ -240,6 +295,7 @@ insert 12031
 insert 10048
 insert 18636
 insert 19879
+@@@
 insert 13513
 insert 15708
 insert 15167
@@ -263,6 +319,7 @@ insert 15433
 insert 19456
 insert 15284
 insert 15656
+#fail: full
 insert 10720
 insert 16182
 insert 11024
@@ -284,6 +341,7 @@ insert 14971
 insert 11941
 insert 19592
 insert 11165
+#fail crash
 insert 16066
 insert 13982
 insert 11440
@@ -355,6 +413,7 @@ insert 13303
 insert 17234
 insert 15382
 insert 16188
+#fail: crash
 insert 18875
 insert 10025
 insert 19960
@@ -681,6 +740,7 @@ insert 16782
 insert 19890
 insert 15388
 insert 16530
+#fail: KeyPtrSet Overflow
 insert 15380
 insert 15861
 insert 13902
@@ -888,6 +948,7 @@ insert 19423
 insert 13410
 insert 17015
 insert 15294
+#fail: crash
 insert 11019
 insert 11478
 insert 14322

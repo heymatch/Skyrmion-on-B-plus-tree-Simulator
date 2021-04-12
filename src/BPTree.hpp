@@ -29,6 +29,7 @@ public:
     void insertData(const Index &idx, uint64_t data){
         if(_root == nullptr){
             _root = new Unit(_options);
+            _leftMostUnit = _root;
             _root->_tracks[0].setValid(true);
         }
         
@@ -57,10 +58,13 @@ public:
         }
     }
 
-    ////Node *findParent(Unit *child);
+    void sideChecker(){
+
+    }
     
 private:
     Unit *_root;
+    Unit *_leftMostUnit;
 
     /* System */
     Options _options;
@@ -74,9 +78,9 @@ std::ostream &operator<<(std::ostream &out, const BPTree &right){
         out << "B+ Tree is not constructed!";
     }
     else{
-        //out << "{\n";
+        out << "{\n";
         out << *(right._root);
-        //out << "\n}\n";
+        out << "\n}\n";
     }
     
     return out;
