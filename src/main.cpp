@@ -239,7 +239,8 @@ int main(int argc, char **argv){
                         break;
                     case Operation::INSERT:
                         tree.insertData(index, data);
-                        fout << "Insert index " << index << ": " << data << endl;
+                        // fout << "Insert index " << index << ": " << data << endl;
+                        fout << "insert " << index << endl;
                         // fout << tree << endl;
                         break;
                     case Operation::DELETE:

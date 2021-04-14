@@ -144,24 +144,24 @@ struct KeyPtrSet{
 #include <vector>
 #include <algorithm>
 namespace System{
-    uint64_t getMid(KeyPtrSet *arr, uint64_t len, uint64_t insert){
+    uint64_t getMid(KeyPtrSet *arr, uint64_t len, uint64_t insert, Size capacity = 2){
         uint64_t t_len = 1;
         std::vector<uint64_t> V(t_len);
         V[0] = insert;
 
         for(int i = 0; i < len; ++i){
-            /*
-            for(int j = 0; j < arr[i]._capacity-1; ++j){
+            
+            for(int j = 0; j < capacity - 1; ++j){
                 if(arr[i].getBitmap(j)){
                     ++t_len;
                     V.push_back(arr[i].getKey(j));
                 }
             }
-            */
-            if(arr[i].getBitmap(0)){
-                ++t_len;
-                V.push_back(arr[i].getKey(0));
-            }
+            
+            // if(arr[i].getBitmap(0)){
+            //     ++t_len;
+            //     V.push_back(arr[i].getKey(0));
+            // }
         }
 
         std::sort(V.begin(), V.end());
@@ -175,7 +175,7 @@ namespace System{
         
         if(t_len % 2 == 0){
             //std::clog << "<log> V[t_len / 2 - 1]: " << V[t_len / 2 - 1] << std::endl;
-            return V[t_len / 2 - 1];
+            return V[t_len / 2];
         }
         else{
             //std::clog << "<log> V[t_len / 2]: " << V[t_len / 2] << std::endl;
