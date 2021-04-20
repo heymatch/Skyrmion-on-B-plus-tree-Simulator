@@ -28,7 +28,7 @@ int inputParser(string str, Index &idx, Data &data){
         return Operation::SKIP;
     }
     ss >> idx >> data;
-    if(data == 0)data = rand() % 255 + 1;
+    if(data == 0) data = rand() % 26 + 'a';
 
     for(char &it: op){
         it = tolower(it);
@@ -225,7 +225,7 @@ int main(int argc, char **argv){
                 switch(inputParser(input, index, data)){
                     case Operation::SEARCH:
                         try{
-                            uint64_t *dataPtr = tree.searchData(index);
+                            Data *dataPtr = tree.searchData(index);
                             
                             if(dataPtr == nullptr)
                                 fout << "Search index " << index << ": " << "Not found" << endl;

@@ -8,7 +8,7 @@
 
 struct KeyPtrSet{
     KeyPtrSet(uint64_t capacity = 2, bool dataPtr = true){
-        ptr = new void *();
+        ptr = new Data('O');
         key = new uint64_t[capacity - 1]();
         bitmap = new bool[capacity - 1]();
 
@@ -187,9 +187,11 @@ namespace System{
 
 std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
     out << "<";
+
     if(right._dataPtr)
-        out << *((uint64_t *)right.ptr) << ", ";
+        out << *((Data *)right.ptr) << ", ";
     else out << right.ptr << ", ";
+
     bool first = true;
     for(int i = 0; i < right._capacity - 1; ++i){
         if(first)first = false;
@@ -197,6 +199,7 @@ std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
         out << right.key[i];
         if(!right.bitmap[i]) out << "*";
     }
+
     out << ">";
     return out;
 }

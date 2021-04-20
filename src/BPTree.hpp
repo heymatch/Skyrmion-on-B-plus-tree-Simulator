@@ -12,14 +12,14 @@ public:
         _root = nullptr;
     }
 
-    uint64_t *searchData(const Index &idx){
+    Data *searchData(const Index &idx){
         Offset unit_offset = 0;
         return _root->searchData(idx, unit_offset);
     }
 
     void updateData(Index idx, uint64_t data){
         uint64_t unit_offset = 0;
-        uint64_t *dataPtr = _root->searchData(idx, unit_offset);
+        Data *dataPtr = _root->searchData(idx, unit_offset);
         
         if(dataPtr != nullptr){
             *dataPtr = data;

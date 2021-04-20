@@ -224,15 +224,16 @@ struct Unit{
                         throw "undefined search operation";
                     }
 
-                    for(int i = 0; i < _options.track_length; ++i){
-                        if(_data[i].getBitmap(0) && idx < _data[i].getKey(0)){
+                    for(int i = _options.track_length - 1; i >= 0 ; --i){
+                        if(_data[i].getBitmap(0) && idx >= _data[i].getKey(0)){
                             return _data[i].getPtr();
                         }
                     }
                     
+                    return _sideFront;
                 }
 
-                return _sideBack;
+                throw "<Node> search error";
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
                 if(_isLeaf){
@@ -245,9 +246,9 @@ struct Unit{
                     return nullptr;
                 }
                 else{
-                    for(int i = 0; i < _options.track_length; ++i){
-                        for(int j = 0; j < _options.unit_size; ++j){
-                            if(_data[i].getBitmap(j) && idx < _data[i].getKey(j)){
+                    for(int i = _options.track_length - 1; i >= 0; --i){
+                        for(int j = _options.unit_size - 1; j >= 0; --j){
+                            if(_data[i].getBitmap(j) && idx >= _data[i].getKey(j)){
                                 next_unit_offset = j;
                                 return _data[i].getPtr();
                             }
@@ -255,12 +256,12 @@ struct Unit{
                     }
 
                     next_unit_offset = _options.unit_size;
-                    return _sideBack;      
+                    return _sideFront;      
                 }
-                
+                throw "<Node> search error";
             }
-
             
+            throw "<Node> search error";
         }
         
         //?
@@ -295,7 +296,8 @@ struct Unit{
          * TODO insert into the same pointer, just add the index to the key-point set
          * @param split if false, data will direct insert
         */
-        void insertData(uint64_t idx, void *data, Offset &insertPosition, bool split = true){
+        void insertData(Index idx, void *data, Offset &insertPosition, bool insertSide = true){
+            
             //// evaluate for find a insert position
             /*
             switch (_options.insert_mode)
@@ -335,19 +337,16 @@ struct Unit{
                     break;
                 }
 
-                KeyPtrSet newData(2);
+                KeyPtrSet newData(2, true);
                 newData.setPtr(data);
                 newData.addKey(idx);
 
-                bool insertSide = false;
                 uint64_t shiftPos = getShiftPosition();
-                insertPosition = getInsertPosition(idx, insertSide);
+                insertPosition = getInsertPosition(idx, shiftPos);
 
                 if(_options.node_ordering == Options::ordering::SORTED){
                     if(_data[insertPosition].getBitmap(0)){
                         if(shiftPos < insertPosition){
-                            if(!insertSide)
-                                insertPosition -= 1;
                             for(int i = shiftPos; i < insertPosition; ++i){
                                 _data[i] = _data[i+1];
                                 _shiftCounter.count(2 * _options.word_length);
@@ -372,6 +371,7 @@ struct Unit{
             }
             else{
                 if(_options.split_merge_mode == Options::split_merge_function::TRAD){
+                    
                     //* Evaluate for insert a data
                     switch (_options.update_mode){
                     case Options::update_function::OVERWRITE:
@@ -399,16 +399,12 @@ struct Unit{
                     newData.setPtr(data);
                     newData.addKey(idx);
 
-                    bool insertSide = false;
-                    uint64_t shiftPos = getShiftPosition();
-                    insertPosition = getInsertPosition(idx, insertSide);
+                    Offset shiftPos = getShiftPosition();
+                    insertPosition = getInsertPosition(idx, shiftPos);
 
                     //* Only insert at unused KeyPtrSet
                     if(_data[insertPosition].getBitmap(0)){
                         if(shiftPos < insertPosition){
-                            if(!insertSide){
-                                insertPosition -= 1;
-                            }
                             for(int i = shiftPos; i < insertPosition; ++i){
                                 _data[i] = _data[i+1];
                                 _shiftCounter.count(2 * _options.word_length);
@@ -424,20 +420,20 @@ struct Unit{
 
                     _data[insertPosition] = newData;  
 
-                    if(_sideBack != nullptr){
-                        if(insertSide){
-                            void *temp = _sideBack;
-                            _sideBack = (Unit *)_data[insertPosition].getPtr();
-                            _data[insertPosition].setPtr(temp);
-                        }
-                        else if(!insertSide && split){
-                            int i = 0;
-                            while(!_data[insertPosition+i+1].getBitmap(0))++i;
-                            void *temp = _data[insertPosition+i+1].getPtr();
-                            _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
-                            _data[insertPosition].setPtr(temp);
-                        }
-                    }
+                    // if(_sideBack != nullptr){
+                    //     if(insertSide){
+                    //         void *temp = _sideBack;
+                    //         _sideBack = (Unit *)_data[insertPosition].getPtr();
+                    //         _data[insertPosition].setPtr(temp);
+                    //     }
+                    //     else if(!insertSide && split){
+                    //         int i = 0;
+                    //         while(!_data[insertPosition+i+1].getBitmap(0))++i;
+                    //         void *temp = _data[insertPosition+i+1].getPtr();
+                    //         _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                    //         _data[insertPosition].setPtr(temp);
+                    //     }
+                    // }
                 }
                 else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
                     std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
@@ -466,10 +462,7 @@ struct Unit{
 
                     bool insertSide = false;
                     uint64_t shiftPos = getShiftPosition();
-                    insertPosition = getInsertPosition(idx, insertSide);
-
-                    std::clog << "<log> <Node::insertData()> insertSide: " << insertSide << std::endl;
-
+                    insertPosition = getInsertPosition(idx, shiftPos);
                     /*
                     if(insertSide && getRightMostOffset() != -1 && _data[getRightMostOffset()].getSize() == 1){
                         _data[getRightMostOffset()].addKey(idx);
@@ -481,9 +474,6 @@ struct Unit{
                     //* Only insert at unused KeyPtrSet
                     if(_data[insertPosition].getBitmap(0)){
                         if(shiftPos < insertPosition){
-                            if(!insertSide){
-                                insertPosition -= 1;
-                            }
                             for(int i = shiftPos; i < insertPosition; ++i){
                                 _data[i] = _data[i+1];
                             }
@@ -492,6 +482,16 @@ struct Unit{
                             for(int i = shiftPos; i > insertPosition; --i){
                                 _data[i] = _data[i-1];
                             }
+                        }
+                    }
+
+                    _data[insertPosition] = newData;
+                    
+                    for(int i = 1; i < _options.track_length; ++i){
+                        if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
+                            Index temp = _data[i].getKey(0);
+                            _data[i].setKey(0, _data[i-1].getKey(1));
+                            _data[i-1].setKey(1, temp);
                         }
                     }
                     /*
@@ -519,15 +519,7 @@ struct Unit{
                     //}
 
                     
-                    _data[insertPosition] = newData;
                     
-                    for(int i = 1; i < _options.track_length; ++i){
-                        if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
-                            Index temp = _data[i].getKey(0);
-                            _data[i].setKey(0, _data[i-1].getKey(1));
-                            _data[i-1].setKey(1, temp);
-                        }
-                    }
                     // for(int i = 0; i < _options.track_length - 1; ++i){
                     //     if(
                     //         _data[i].getBitmap(0) &&
@@ -544,51 +536,38 @@ struct Unit{
                         _sideBack = (Unit *)_data[getRightMostOffset()].getPtr();
                     }
                     */
+                   
+                    // if(_sideBack != nullptr){
+                    //     if(insertSide && split){
+                    //         void *temp = _sideBack;
+                    //         _sideBack = (Unit *)_data[insertPosition].getPtr();
+                    //         _data[insertPosition].setPtr(temp);
+                    //     }
+                    //     else if(!insertSide && insertPosition == 0 && split){
+                    //         int i = 0;
+                    //         while(!_data[insertPosition+i+1].getBitmap(0))++i;
+                    //         //if(_data[insertPosition+i+1].getSize() == 1){
+                    //             void *temp = _data[insertPosition+i+1].getPtr();
+                    //             _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                    //             _data[insertPosition].setPtr(temp);
+                    //         //}
 
-                if(_sideBack != nullptr){
-                        if(insertSide && split){
-                            void *temp = _sideBack;
-                            _sideBack = (Unit *)_data[insertPosition].getPtr();
-                            _data[insertPosition].setPtr(temp);
-                        }
-                        else if(!insertSide && insertPosition == 0 && split){
-                            int i = 0;
-                            while(!_data[insertPosition+i+1].getBitmap(0))++i;
-                            //if(_data[insertPosition+i+1].getSize() == 1){
-                                void *temp = _data[insertPosition+i+1].getPtr();
-                                _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
-                                _data[insertPosition].setPtr(temp);
-                            //}
-                            /*
-                            if(_data[insertPosition+i+1].getSize() == 1){
-                                void *temp = _data[insertPosition+i+1].getPtr();
-                                _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
-                                _data[insertPosition].setPtr(temp);
-                            }
-                            else{
-                                std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
-                                //throw "test";
-                            }*/
+                    //         // if(_data[insertPosition+i+1].getSize() == 1){
+                    //         //     void *temp = _data[insertPosition+i+1].getPtr();
+                    //         //     _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
+                    //         //     _data[insertPosition].setPtr(temp);
+                    //         // }
+                    //         // else{
+                    //         //     std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
+                    //         //     //throw "test";
+                    //         // }
 
-                            if(_data[insertPosition+i+1].getSize() == _options.unit_size){
-                                _data[insertPosition].addKey(_data[insertPosition+i+1].getKey(0));
-                                _data[insertPosition+i+1].delKey(0);
-                            }
-                        }
-                    }
-
-                    /*
-                    if(_sideBack != nullptr){
-                        if(!insertSide && split && insertPos == 0){
-                            int i = 0;
-                            while(!_data[insertPos+i+1].getBitmap(0))++i;
-                            void *temp = _data[insertPos+i+1].getPtr();
-                            _data[insertPos+i+1].setPtr(_data[insertPos].getPtr());
-                            _data[insertPos].setPtr(temp);
-                        }
-                    }
-                    */
-                std::clog << "<log> <Node::insertData()> end with new pointer" << std::endl;
+                    //         if(_data[insertPosition+i+1].getSize() == _options.unit_size){
+                    //             _data[insertPosition].addKey(_data[insertPosition+i+1].getKey(0));
+                    //             _data[insertPosition+i+1].delKey(0);
+                    //         }
+                    //     }
+                    // }
                 }
         
             }
@@ -664,7 +643,7 @@ struct Unit{
 
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
                 for(int i = 0; i < _options.track_length; ++i){
-                    if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){ //TODO
+                    if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
                         // delete side unit
                         if(!_isLeaf && isRightMostOffset(i) && side){
                             connectBackSideUnit((Unit *)_data[i].getPtr());
@@ -1031,10 +1010,10 @@ struct Unit{
         }
         
         // Return insert position
-        uint64_t getInsertPosition(uint64_t wait_insert_idx, bool &insertSide){
+        Offset getInsertPosition(Index wait_insert_idx, Offset shiftPosition){
             if(_isLeaf){
                 if(_options.node_ordering == Options::ordering::SORTED){
-                    uint64_t last = 0;
+                    Offset last = 0;
                     for(int i = 0; i < _options.track_length; ++i){
                         if(_data[i].getBitmap(0)){
                             last = i + 1;
@@ -1046,16 +1025,16 @@ struct Unit{
                             return i;
                         }
                         else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(0)){
-                            return i;
+                            return i > shiftPosition ? i - 1 : i;
                         }
                     }
                     
-                    insertSide = true;
+                    // insertSide = true;
                     return last == _options.track_length ? last - 1 : last;
                 }
                 else if(_options.node_ordering == Options::ordering::UNSORTED){
                     for(int i = 0; i < _options.track_length; ++i){
-                        if(!_data[i].getBitmap(0)){ //TODO
+                        if(!_data[i].getBitmap(0)){
                             return i;
                         }
                     }
@@ -1066,11 +1045,11 @@ struct Unit{
                 }
             }
             else{
-                uint64_t last = 0;
+                Offset last = 0;
                 for(int i = 0; i < _options.track_length; ++i){
                     if(_data[i].getBitmap(0)){
                         last = i + 1;
-                    }
+                    } 
                 }
                 
                 for(int i = 0; i < last; ++i){
@@ -1078,11 +1057,11 @@ struct Unit{
                         return i;
                     }
                     else if(_data[i].getBitmap(0) && wait_insert_idx < _data[i].getKey(0)){
-                        return i;
+                        return i > shiftPosition ? i - 1 : i;
                     }
                 }
 
-                insertSide = true;
+                // insertSide = true;
                 return last == _options.track_length ? last - 1 : last;
             }
             
@@ -1100,28 +1079,27 @@ struct Unit{
                 }
             }
             else{
-                /*
+                // for(int i = 0; i < _options.track_length; ++i){
+                //     for(int j = 0; j < _options.unit_size; ++j){
+                //         if(!_data[i].getBitmap(j)){
+                //             shiftPoint = i + j;
+                //             break;
+                //         }
+                //     }
+                // }
+
+                // std::clog << "<log> <Node::getShiftPosition()> " << std::endl;
                 for(int i = 0; i < _options.track_length; ++i){
-                    for(int j = 0; j < _options.unit_size; ++j){
-                        if(!_data[i].getBitmap(j)){
-                            shiftPoint = i + j;
-                            break;
-                        }
-                    }
-                }
-                */
-            std::clog << "<log> <Node::getShiftPosition()> " << std::endl;
-                for(int i = 0; i < _options.track_length; ++i){
-                    std::clog << _data[i].getKey(0) << " ";
-                    std::clog << _data[i].getBitmap(0) << " ";
-                    std::clog << _data[i].getKey(1) << " ";
-                    std::clog << _data[i].getBitmap(1) << ", ";
+                    // std::clog << _data[i].getKey(0) << " ";
+                    // std::clog << _data[i].getBitmap(0) << " ";
+                    // std::clog << _data[i].getKey(1) << " ";
+                    // std::clog << _data[i].getBitmap(1) << ", ";
                     if(!_data[i].getBitmap(0)){
                         shiftPoint = i;
                         break;
                     }
                 }
-                std::clog << std::endl;
+                // std::clog << std::endl;
             }
             
             if(shiftPoint == -1)
@@ -1167,8 +1145,8 @@ struct Unit{
         /**
          * * Done
         */
-        uint64_t getSize() const{
-            uint64_t counter = 0;
+        Size getSize() const{
+            Size counter = 0;
 
             if(_isLeaf){
                 for(int i = 0; i < _options.track_length; ++i){
@@ -1232,14 +1210,11 @@ struct Unit{
         Counter _migrateCounter = Counter("Migrate");
     };
 
-    
-
     Unit(Options options, bool isLeaf = true) : _options(options){
         // init tracks
         _tracks = new Node[_options.unit_size]();
         for(int i = 0; i < _options.unit_size; ++i){
             _tracks[i] = Node(_options, false, isLeaf);
-            //std::clog << "<log> _tracks[i]: " << _tracks[i] << std::endl;
         }
         _tracks[0].setValid(true);
 
@@ -1288,7 +1263,7 @@ struct Unit{
 
     /* Major Functions */
 
-    KeyPtrSet *readData(uint64_t unit_offset){
+    KeyPtrSet *readData(Offset unit_offset){
         return _tracks[unit_offset].readData(0, _options.track_length);
     }
 
@@ -1296,13 +1271,13 @@ struct Unit{
      * * Return data pointer
      * * DONE
      */
-    uint64_t *searchData(uint64_t idx, uint64_t &unit_offset){
-        uint64_t *dataPtr = nullptr;
+    Data *searchData(Index idx, Offset &unit_offset){
+        Data *dataPtr = nullptr;
 
         if(_options.split_merge_mode == Options::split_merge_function::TRAD){
             if(isLeaf()){
                 try{
-                    dataPtr = (uint64_t *)_tracks[unit_offset].searchData(idx, unit_offset);
+                    dataPtr = (Data *)_tracks[unit_offset].searchData(idx, unit_offset);
                 }
                 catch(int e){
                     if(e != -1) throw "search error";
@@ -1310,7 +1285,7 @@ struct Unit{
             }
             else{
                 try{
-                    dataPtr = (uint64_t *)((Unit *)_tracks[unit_offset].searchData(idx, unit_offset))->searchData(idx, unit_offset);
+                    dataPtr = (Data *)((Unit *)_tracks[unit_offset].searchData(idx, unit_offset))->searchData(idx, unit_offset);
                 }
                 catch(int e){
                     if(e != -1) throw "search error";
@@ -1323,7 +1298,7 @@ struct Unit{
                     //std::clog << "<log> <searchData()> idx: " << idx << std::endl;
                     //std::clog << "<log> <searchData()> _id: " << _id << std::endl;
                     //std::clog << "<log> <searchData()> unit_offset: " << unit_offset << std::endl;
-                    dataPtr = (uint64_t *)_tracks[unit_offset].searchData(idx, unit_offset);
+                    dataPtr = (Data *)_tracks[unit_offset].searchData(idx, unit_offset);
 
                     // if(dataPtr == nullptr){
                     //     if(unit_offset + 1 < _options.unit_size){
@@ -1349,14 +1324,15 @@ struct Unit{
                     // std::clog << "<log> <searchData()> unit_offset: " << unit_offset << std::endl;
                     Unit *nextUnit = (Unit *)_tracks[unit_offset].searchData(idx, unit_offset);
                     if(unit_offset == _options.unit_size){
-                        if(nextUnit->_tracks[1].isValid()){
-                            unit_offset = 1;
-                        }
-                        else{
-                            unit_offset = 0;
-                        }
+                        unit_offset = 0;
+                        // if(nextUnit->_tracks[1].isValid()){
+                        //     unit_offset = 1;
+                        // }
+                        // else{
+                        //     unit_offset = 0;
+                        // }
                     }
-                    dataPtr = (uint64_t *)nextUnit->searchData(idx, unit_offset);
+                    dataPtr = (Data *)nextUnit->searchData(idx, unit_offset);
                 }
                 catch(int e){
                     if(e != -1) throw "search error";
@@ -1377,8 +1353,7 @@ struct Unit{
      * * Controller of insertion
      * TODO evaluation
      */
-    void insertData(uint64_t idx, uint64_t data, uint64_t unit_offset, uint64_t data_enter_offset){
-
+    void insertData(Index idx, const Data data, Offset unit_offset, Offset data_enter_offset){
         if(isLeaf()){
             switch (_options.search_mode){
             case Options::search_function::SEQUENTIAL:
@@ -1396,8 +1371,6 @@ struct Unit{
                 }
                 while (l <= h) {
                     int mid = (l + h) / 2;
-                    
-                    
                     if (_tracks[unit_offset]._data[mid].getKey(0) > idx) {
                         if(!_tracks[unit_offset]._data[mid].getBitmap(0)){
                             h = mid - 1;
@@ -1433,7 +1406,7 @@ struct Unit{
             insertCurrentData(idx, data, unit_offset, data_enter_offset);
         }
         else{
-            if(_tracks[unit_offset]._sideBack == nullptr){
+            if(_tracks[unit_offset]._sideFront == nullptr){
                 throw "insert side error";
             }
             
@@ -1455,70 +1428,70 @@ struct Unit{
                     throw "undefined search operation";
                 }
                 
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = _options.track_length - 1; i >= 0 ; --i){
                     if(
                         _tracks[unit_offset]._data[i].getBitmap(0) &&
                         _tracks[unit_offset]._data[i].getPtr() != nullptr &&
-                        idx < _tracks[unit_offset]._data[i].getKey(0)
+                        idx >= _tracks[unit_offset]._data[i].getKey(0)
                     ){
                         ((Unit *)_tracks[unit_offset]._data[i].getPtr())->insertData(idx, data, 0, i);
-                        
                         return;
                     }
                 }
-                ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
+                ((Unit *)_tracks[unit_offset]._sideFront)->insertData(idx, data, 0, _options.track_length);
+
+                return;
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                for(int i = 0; i < _options.track_length; ++i){
-                    for(int j = 0; j < _options.unit_size; ++j){
+                for(int i = _options.track_length - 1; i >= 0 ; --i){
+                    for(int j = _options.unit_size - 1; j >= 0 ; --j){
                         if(
                             _tracks[unit_offset]._data[i].getBitmap(j) &&
                             _tracks[unit_offset]._data[i].getPtr() != nullptr &&
-                            idx < _tracks[unit_offset]._data[i].getKey(j)
+                            idx >= _tracks[unit_offset]._data[i].getKey(j)
                         ){
-                            if(j == 1 && !((Unit *)_tracks[unit_offset]._data[i].getPtr())->isValid(1)){
-                                continue;
-                            }
                             ((Unit *)_tracks[unit_offset]._data[i].getPtr())->insertData(idx, data, j, i);
                             return;
                         }
                     }
                 }
-                ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
+                ((Unit *)_tracks[unit_offset]._sideFront)->insertData(idx, data, 0, _options.track_length);
 
-                /*
-                KeyPtrSet rightMostData = _tracks[unit_offset].getMaxData();
-                if(rightMostData.getPtr() == getBackSideUnit(unit_offset)){
+                return;
+
+                
+                // KeyPtrSet rightMostData = _tracks[unit_offset].getMaxData();
+                // if(rightMostData.getPtr() == getBackSideUnit(unit_offset)){
                     
-                    if(((Unit *)_tracks[unit_offset]._sideBack)->_tracks[1].isValid()){
-                        uint64_t next_unit_offset;
-                        uint64_t maxIndexInternal = _tracks[unit_offset].getMaxIndex();
-                        uint64_t maxIndexNext = getBackSideUnit(unit_offset)->_tracks[1].getMinIndex();
-                        if(maxIndexInternal <= maxIndexNext){
-                            ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 1, _options.track_length);
-                        }
-                        else{
+                //     if(((Unit *)_tracks[unit_offset]._sideBack)->_tracks[1].isValid()){
+                //         uint64_t next_unit_offset;
+                //         uint64_t maxIndexInternal = _tracks[unit_offset].getMaxIndex();
+                //         uint64_t maxIndexNext = getBackSideUnit(unit_offset)->_tracks[1].getMinIndex();
+                //         if(maxIndexInternal <= maxIndexNext){
+                //             ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 1, _options.track_length);
+                //         }
+                //         else{
                             
-                            if(getBackSideUnit(unit_offset)->isLeaf()){
-                                getBackSideUnit(unit_offset)->getBackSideUnit(0)->insertData(idx, data, 0, _options.track_length);
-                            }
-                            else{
-                                throw "test throw";
-                            }
+                //             if(getBackSideUnit(unit_offset)->isLeaf()){
+                //                 getBackSideUnit(unit_offset)->getBackSideUnit(0)->insertData(idx, data, 0, _options.track_length);
+                //             }
+                //             else{
+                //                 throw "test throw";
+                //             }
                             
-                        }
-                    }
-                    else{
-                        ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
-                    }
-                }
-                else{
-                    ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
-                }*/
+                //         }
+                //     }
+                //     else{
+                //         ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
+                //     }
+                // }
+                // else{
+                //     ((Unit *)_tracks[unit_offset]._sideBack)->insertData(idx, data, 0, _options.track_length);
+                // }
 
             }
 
-            return;
+            throw "<Unit::insertData()> error";
         }
     }
 
@@ -1567,19 +1540,17 @@ struct Unit{
                     //* it must be internal unit
                     newRoot->setLeaf(false);
 
-                    // new root unit insert current unit
-                    newRoot->insertCurrentPointer(*promote.key, this, 0, 0);
+                    //* new root unit insert current unit
+                    newRoot->connectFrontSideUnit(this);
                     this->connectParentUnit(newRoot, 0);
 
-                    // new root unit insert new split unit
-                    newRoot->connectBackSideUnit((Unit *)promote.ptr);
-                    ((Unit *)promote.ptr)->connectParentUnit(newRoot, 0);
+                    //* new root unit insert new split unit
+                    newRoot->insertCurrentPointer(promote.getKey(0), (Unit *)promote.getPtr(), 0, 0);
+                    ((Unit *)promote.getPtr())->connectParentUnit(newRoot, 0);
 
                     // side pointer connect to new split unit
-                    if(promote.getPtr() != this){
-                        connectBackSideUnit((Unit *)promote.ptr);
-                        ((Unit *)promote.ptr)->connectFrontSideUnit(this);
-                    }
+                    connectBackSideUnit((Unit *)promote.ptr);
+                    ((Unit *)promote.ptr)->connectFrontSideUnit(this);
 
                     // insert new index
                     getRoot()->insertData(idx, data, 0, -1);
@@ -1598,7 +1569,7 @@ struct Unit{
                 }
 
                 //std::clog << "<log> this->_tracks[0]._parent: " << this->_tracks[0]._parent << std::endl;
-                getParentUnit()->insertCurrentPointer(*promote.key, (Unit *)promote.ptr, getParentOffset(), 0);
+                getParentUnit()->insertCurrentPointer(promote.getKey(0), (Unit *)promote.getPtr(), getParentOffset(), 0);
 
                 // insert new index from root
                 //? or from its parent
@@ -1625,18 +1596,16 @@ struct Unit{
                     newRoot->setLeaf(false);
 
                     // new root unit insert current unit
-                    newRoot->insertCurrentPointer(*promote.key, this, 0, -1);
+                    newRoot->connectFrontSideUnit(this);
                     this->connectParentUnit(newRoot, 0);
 
                     // new root unit insert new split unit
-                    newRoot->connectBackSideUnit((Unit *)promote.ptr);
-                    ((Unit *)promote.ptr)->connectParentUnit(newRoot, 0);
+                    newRoot->insertCurrentPointer(promote.getKey(0), (Unit *)promote.getPtr(), 0, 0);
+                    ((Unit *)promote.getPtr())->connectParentUnit(newRoot, 0);
 
                     // side pointer connect to new split unit
-                    if(promote.getPtr() != this){
-                        connectBackSideUnit((Unit *)promote.ptr);
-                        ((Unit *)promote.ptr)->connectFrontSideUnit(this);
-                    }
+                    connectBackSideUnit((Unit *)promote.ptr);
+                    ((Unit *)promote.ptr)->connectFrontSideUnit(this);
 
                     // insert new index
                     getRoot()->insertData(idx, data, 0, -1);
@@ -2030,7 +1999,7 @@ struct Unit{
         }
 
         //* direct insert index and data as data pointer to node
-        _tracks[unit_offset].insertData(idx, new uint64_t(data), insertPosition);
+        _tracks[unit_offset].insertData(idx, new Data(data), insertPosition);
         //std::clog << "<log> <insertCurrentData()> _tracks[unit_offset]: " << _tracks[unit_offset] << std::endl;
     }
 
@@ -2063,11 +2032,11 @@ struct Unit{
 
                     Unit *newRoot = System::allocUnit(_options, false);
 
-                    newRoot->insertCurrentPointer(*promote.key, this, 0, 0);
+                    newRoot->connectFrontSideUnit(this, 0);
                     this->connectParentUnit(newRoot, 0);
 
-                    newRoot->connectBackSideUnit((Unit *)promote.ptr, 0);
-                    ((Unit *)promote.ptr)->connectParentUnit(newRoot, 0);
+                    newRoot->insertCurrentPointer(promote.getKey(0), (Unit *)promote.getPtr(), 0, 0);
+                    ((Unit *)promote.getPtr())->connectParentUnit(newRoot, 0);
                     
                     Unit *rightUnit = (Unit *)promote.ptr;
                     if(idx < promote.getKey(0)){
@@ -2079,8 +2048,10 @@ struct Unit{
                         unit->connectParentUnit(rightUnit, 0);
                     }
                     else{ 
-                        uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
-                        rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                        // Offset leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
+                        // rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                        // unit->connectParentUnit(rightUnit, 0);
+                        rightUnit->connectFrontSideUnit(unit);
                         unit->connectParentUnit(rightUnit, 0);
                     }
 
@@ -2099,8 +2070,10 @@ struct Unit{
                     unit->connectParentUnit(rightUnit, 0);
                 }
                 else{
-                    uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
-                    rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                    // uint64_t leftMostOffset = rightUnit->_tracks[0].getLeftMostOffset();
+                    // rightUnit->_tracks[0]._data[leftMostOffset].setPtr(unit);
+                    // unit->connectParentUnit(rightUnit, 0);
+                    rightUnit->connectFrontSideUnit(unit);
                     unit->connectParentUnit(rightUnit, 0);
                 }
 
@@ -2773,17 +2746,14 @@ struct Unit{
             
             // copying data
             copyHalfNode(_tracks[0], newUnit->_tracks[0], promote, wait_insert_idx);
-            //std::clog << "<log> _tracks[unit_offset]: " << _tracks[unit_offset] << std::endl;
-            //std::clog << "<log> newUnit->_tracks[0]: " << newUnit->_tracks[0] << std::endl;
 
             // sure to have correct parent pointers
-            if(!isLeaf()){
-                getBackSideUnit()->connectParentUnit(this);
-                newUnit->getBackSideUnit()->connectParentUnit(newUnit);
+            if(!isLeaf() && newUnit->hasFrontSideUnit()){
+                getFrontSideUnit()->connectParentUnit(this);
+                newUnit->getFrontSideUnit()->connectParentUnit(newUnit);
             }
         }
-        else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-            
+        else if(_options.split_merge_mode == Options::split_merge_function::UNIT){ 
             if(isRoot() || insertSide){
                 if(isLeaf()){
                     //* split operation will generate same level unit/node
@@ -3120,7 +3090,7 @@ struct Unit{
      * * Copy half data from source to destination
      * TODO evaluation
      */
-    void copyHalfNode(Node &source, Node &destination, KeyPtrSet &promote, uint64_t wait_insert_idx){
+    void copyHalfNode(Node &source, Node &destination, KeyPtrSet &promote, Index wait_insert_idx){
         //std::clog << "<log> <copyHalfNode()>" << std::endl;
         if(isLeaf()){
             switch (_options.read_mode){
@@ -3139,60 +3109,38 @@ struct Unit{
             }
 
             if(_options.node_ordering == Options::ordering::SORTED){
+                Offset mid = 0;
                 if(wait_insert_idx < promote.getKey(0)){
-                    for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
-                        destination._data[j] = source._data[i];
-                        source._data[i].delAll();
-
-                        switch (_options.update_mode){
-                            case Options::update_function::OVERWRITE:
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                break;
-                            case Options::update_function::PERMUTATION_WRITE:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WORD_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            default:
-                                throw "undefined update operation";
-                                break;
-                        }
-                    }
+                    mid = _options.track_length / 2 - 1;
                 }
                 else{
-                    for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                        destination._data[j] = source._data[i];
-                        source._data[i].delAll();
+                    mid = _options.track_length / 2;
+                }
 
-                        switch (_options.update_mode){
-                            case Options::update_function::OVERWRITE:
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                break;
-                            case Options::update_function::PERMUTATION_WRITE:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WORD_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            default:
-                                throw "undefined update operation";
-                                break;
-                        }
+                for(int i = mid, j = 0; i < _options.track_length; ++i, ++j){
+                    destination._data[j] = source._data[i];
+                    source._data[i].delAll();
+
+                    switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            destination._shiftCounter.count(2 * _options.word_length);
+                            destination._removeCounter.count(2 * _options.word_length);
+                            destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                            destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                            destination._shiftCounter.count(2 * _options.word_length);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
                     }
                 }
             }
@@ -3222,75 +3170,50 @@ struct Unit{
             }
 
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                uint64_t mid = _options.track_length / 2;
+                Offset mid = 0;
                 if(wait_insert_idx < promote.getKey(0)){
-                    for(int i = _options.track_length / 2 - 1, j = 0; i < _options.track_length; ++i, ++j){
-                        destination._data[j] = source._data[i];
-                        source._data[i].delAll();
-
-                        switch (_options.update_mode){
-                            case Options::update_function::OVERWRITE:
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                break;
-                            case Options::update_function::PERMUTATION_WRITE:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WORD_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            default:
-                                throw "undefined update operation";
-                                break;
-                        }
-
-                        ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
-                    }
+                    mid = _options.track_length / 2 - 1;
                 }
                 else{
-                    for(int i = _options.track_length / 2, j = 0; i < _options.track_length; ++i, ++j){
-                        destination._data[j] = source._data[i];
-                        source._data[i].delAll();
-
-                        switch (_options.update_mode){
-                            case Options::update_function::OVERWRITE:
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                destination._removeCounter.count(2 * _options.word_length);
-                                destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
-                                destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
-                                destination._shiftCounter.count(2 * _options.word_length);
-                                break;
-                            case Options::update_function::PERMUTATION_WRITE:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WORD_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            default:
-                                throw "undefined update operation";
-                                break;
-                        }
-
-                        ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
-                    }
+                    mid = _options.track_length / 2;
                 }
-                destination.connectBackSideUnit(source._sideBack);
+
+                for(int i = mid, j = 0; i < _options.track_length; ++i, ++j){
+                    destination._data[j] = source._data[i];
+                    source._data[i].delAll();
+
+                    switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            destination._shiftCounter.count(2 * _options.word_length);
+                            destination._removeCounter.count(2 * _options.word_length);
+                            destination._insertCounter.count(Evaluation::countSkyrmion(destination._data[j].getKey(0)));
+                            destination._insertCounter.count(Evaluation::countSkyrmion((uint64_t)destination._data[j].getPtr()));
+                            destination._shiftCounter.count(2 * _options.word_length);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
+                    }
+
+                    ((Unit *)destination._data[j].getPtr())->connectParentUnit((Unit *)promote.getPtr());
+                }
+                // destination.connectBackSideUnit(source._sideBack);
 
                 bool promoteMid = true;
                 for(int i = 0; i < _options.track_length; ++i){
                     if(source._data[i].getBitmap(0) && source._data[i].getKey(0) == promote.getKey(0)){
                         source.deleteMark(i);
                         promoteMid = false;
-                        source.connectBackSideUnit((Unit *)source._data[i].getPtr());
+                        destination.connectFrontSideUnit((Unit *)source._data[i].getPtr());
                         //std::clog << "<log> <copyHalfNode()> source" << std::endl;
                     }
                 }
@@ -3298,13 +3221,13 @@ struct Unit{
                     if(destination._data[i].getBitmap(0) && destination._data[i].getKey(0) == promote.getKey(0)){
                         destination.deleteMark(i);
                         promoteMid = false;
-                        source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                        destination.connectFrontSideUnit((Unit *)destination._data[i].getPtr());
                         //std::clog << "<log> <copyHalfNode()> destination" << std::endl;
                     }                 
                 }
 
                 if(promoteMid){
-                    source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
+                    // source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
                     //std::clog << "<log> <copyHalfNode()> promoteMid" << std::endl;
                     //std::clog << "<log> <copyHalfNode()> destination._data[0].getPtr(): " << destination._data[0].getPtr() << std::endl;
                 }
@@ -4467,14 +4390,19 @@ std::ostream &operator<<(std::ostream &out, const Unit::Node &right){
     // out << "\t\t\t" << right._migrateCounter << "\n";
 
     out << "\t\t\t";
+
+    out << " _sideFront: " << right._sideFront;
+    if(!right._sideFrontBitmap) out << "*";
+
+    out << " ";
+
     bool first = true;
     for(int i = 0; i < right._options.track_length; ++i){
         if(first)first = false;
         else out << ", ";
         out << right._data[i];
     }
-    out << " _sideFront: " << right._sideFront;
-    if(!right._sideFrontBitmap) out << "*";
+    
     out << " _sideBack: " << right._sideBack;
     if(!right._sideBackBitmap) out << "*";
 
@@ -4515,14 +4443,17 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     out << "\n\t]\n";
     if(!right.isLeaf()){
         for(int i = 0; i < right._options.unit_size; ++i){
+            if(right._tracks[i]._sideFrontBitmap && right._tracks[i]._sideFront != nullptr){
+                out << *(Unit *)right._tracks[i]._sideFront;
+            }
+
             for(int j = 0; j < right._options.track_length; ++j){
                 if(right._tracks[i]._data[j].getBitmap(0) && right._tracks[i]._data[j].getPtr() != nullptr){ //TODO
                     out << *(Unit *)right._tracks[i]._data[j].getPtr();
                 }
             }
 
-            uint64_t rightMostOffset = right._tracks[i].getRightMostOffset();
-            if(right._tracks[i]._sideBackBitmap && right._tracks[i]._sideBack != nullptr && right._tracks[i]._data[rightMostOffset].getPtr() != right._tracks[i]._sideBack){
+            if(right._tracks[i]._sideBackBitmap && right._tracks[i]._sideBack != nullptr){
                 out << *(Unit *)right._tracks[i]._sideBack;
             }
         }
