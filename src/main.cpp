@@ -178,34 +178,34 @@ int main(int argc, char **argv){
     #endif
 
     // argument
-	// * argument1 = data filename
-    // * argument2 = setting filename
-    // * argument3 = output filename
+	//* argument1 = data filename
+    //* argument2 = setting filename
+    //* argument3 = output filename
     if(argc != 4)
         return EXIT_FAILURE;
     
-    // * load data
+    //* load data
     ifstream workload(argv[1]);
     if(workload.fail()){
         cerr << "file: '" << argv[1] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
-    // * load setting
+    //* load setting
     ifstream setting(argv[2]);
     if(setting.fail()){
         cerr << "file: '" << argv[2] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
-    // * output setting
+    //* output setting
     ofstream fout(argv[3]);
     if(setting.fail()){
         cerr << "file: '" << argv[3] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
-    // initial
+    //* initial
     srand(0);
     std::clog << boolalpha;
 
