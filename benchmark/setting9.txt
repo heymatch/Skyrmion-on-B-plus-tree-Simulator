@@ -1,11 +1,11 @@
 word_length=64
-track_length=4
-unit_size=1
-kp_length=2
+track_length=10
+unit_size=2
+kp_length=3
 ordering=SORTED
 read_function=SEQUENTIAL
-search_function=TRAD_BINARY_SEARCH
+search_function=SEQUENTIAL
 update_function=OVERWRITE
 insert_function=SEQUENTIAL
 delete_function=SEQUENTIAL
-split_merge_function=TRAD
+split_merge_function=UNIT
