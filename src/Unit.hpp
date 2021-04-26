@@ -27,28 +27,67 @@ namespace Evaluation{
         return number;
     }
 
-    void sequential_read(){
+    void sequential_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+        if(isLeaf){
 
+        }
+        else{
+
+        }
     }
 
-    void range_read(){
+    void range_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+        if(isLeaf){
 
+        }
+        else{
+            
+        }
     }
 
-    void overwrite(){
+    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *OldData, const KeyPtrSet *NewData){
+        if(isLeaf){
 
+        }
+        else{
+            
+        }
     }
 
-    void permute(){
+    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *OldData, const KeyPtrSet *NewData){
+        if(isLeaf){
 
+        }
+        else{
+            
+        }
     }
 
-    void binary_search(){
+    void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *Data){
+        if(isLeaf){
 
+        }
+        else{
+            
+        }
     }
 
-    void bit_binary_search(){
+    void bit_binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *Data){
+        if(isLeaf){
 
+        }
+        else{
+            
+        }
+    }
+
+    void migrate(const Options &options, const bool &isLeaf, Counter &shiftCounter, Counter &migrateCounter, KeyPtrSet *Data){
+        if(isLeaf){
+
+        }
+        else{
+            
+        }
     }
 
 };
