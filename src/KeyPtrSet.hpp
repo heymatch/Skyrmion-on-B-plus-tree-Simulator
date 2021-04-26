@@ -157,10 +157,12 @@ namespace System{
                     V.push_back(arr[i].getKey(j));
                 }
             }
-            
-            // if(arr[i].getBitmap(0)){
-            //     ++t_len;
-            //     V.push_back(arr[i].getKey(0));
+
+            // for(int j = 0; j < arr[0]._capacity-1; ++j){
+            //     if(arr[i].getBitmap(j)){
+            //         ++t_len;
+            //         V.push_back(arr[i].getKey(j));
+            //     }
             // }
         }
 

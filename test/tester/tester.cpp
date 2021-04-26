@@ -15,7 +15,7 @@ int main(int argc, char **argv){
 
     if(type == 1){
         cout << "generate insert and search dataset" << endl;
-        int index[numberOfTestcases] = {};
+        vector<int> index(numberOfTestcases+1);
         for(int i = 1; i <= numberOfTestcases; ++i){
             index[i] = i + base;
         }
@@ -60,7 +60,7 @@ int main(int argc, char **argv){
     }
     else if(type == 3){
         cout << "generate insert, delete and search mixed dataset" << endl;
-        set<int> S;
+        unordered_set<int> S;
         int index[numberOfTestcases] = {};
         for(int i = 1; i <= numberOfTestcases; ++i){
             index[i] = i + base;
@@ -98,6 +98,26 @@ int main(int argc, char **argv){
                 else{
                     --i;
                 }
+            }
+        }
+    }
+    else if(type == 4){
+        cout << "Complete check" << endl;
+        unordered_set<uint64_t> S;
+        uint64_t index[numberOfTestcases] = {};
+        for(int i = 1; i <= numberOfTestcases; ++i){
+            index[i] = i + base;
+        }
+
+        for(int i = 1; i <= numberOfTestcases; ++i){
+            swap(index[i], index[rand() % numberOfTestcases + 1]);
+        }
+
+        for(int i = 1; i <= numberOfTestcases; ++i){
+            fout << "insert " << index[i] << endl;
+            S.insert(index[i]);
+            for(auto &it: S){
+                fout << "search " << it << endl; 
             }
         }
     }

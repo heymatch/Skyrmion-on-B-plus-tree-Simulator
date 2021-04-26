@@ -1,2 +1,2 @@
 main:
-	g++ tester.cpp
+	g++ -std=c++11 tester.cpp

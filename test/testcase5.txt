@@ -29,9 +29,9 @@ insert 140
 insert 130
 #@@@
 insert 160
-#@@@
+@@@
 insert 135
-#@@@
+@@@
 insert 220
 #@@@
 insert 240
@@ -40,7 +40,7 @@ insert 240
 insert 750
 #@@@
 insert 10000
-#@@@
+@@@
 insert 5000
 #@@@
 insert 1024
@@ -66,7 +66,7 @@ insert 6031
 #@@@
 #!!!
 insert 5793
-#@@@
+@@@
 insert 7676
 @@@
 #!!!
