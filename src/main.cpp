@@ -5,6 +5,9 @@
 #include <sstream>
 using namespace std;
 
+#define RELEASE
+// #define DEBUG
+
 #define dbg(info) std::clog << info << std::endl;
 
 #include "Options.hpp"
@@ -110,10 +113,7 @@ Options settingParser(ifstream &fin){
             }
         }
         else if(op == "search_function"){
-            if(val == "SEQUENTIAL"){
-                search_function = Options::search_function::SEQUENTIAL;
-            }
-            else if(val == "TRAD_BINARY_SEARCH"){
+            if(val == "TRAD_BINARY_SEARCH"){
                 search_function = Options::search_function::TRAD_BINARY_SEARCH;
             }
             else if(val == "BIT_BINARY_SEARCH"){
@@ -181,9 +181,13 @@ int main(int argc, char **argv){
 	//* argument1 = data filename
     //* argument2 = setting filename
     //* argument3 = output filename
-    if(argc != 4)
+    //* argument4 = csv output filename
+    if(argc != 5){
+        cout << "invalid arguments" << endl;
+        cout << "arg1 = data, arg2 = setting, arg3 = status, arg4 = csv" << endl;
         return EXIT_FAILURE;
-    
+    }
+        
     //* load data
     ifstream workload(argv[1]);
     if(workload.fail()){
@@ -200,7 +204,14 @@ int main(int argc, char **argv){
 
     //* output setting
     ofstream fout(argv[3]);
-    if(setting.fail()){
+    if(fout.fail()){
+        cerr << "file: '" << argv[3] << "' open error" << endl;
+        return EXIT_FAILURE;
+    }
+
+    //* csv output setting
+    ofstream fcsv(argv[4]);
+    if(fcsv.fail()){
         cerr << "file: '" << argv[3] << "' open error" << endl;
         return EXIT_FAILURE;
     }
@@ -209,69 +220,70 @@ int main(int argc, char **argv){
     srand(0);
     std::clog << boolalpha;
 
-    {
-        BPTree tree(settingParser(setting));
-        string input;
-        
-        try{
-            #ifdef __linux__
-            while(getline(workload, input, '\r')){
-                workload.ignore();
-            #elif _WIN64
-            while(getline(workload, input)){
-            #endif
-                Index index = 0;
-                Data data = 0;
-                switch(inputParser(input, index, data)){
-                    case Operation::SEARCH:
-                        try{
-                            Data *dataPtr = tree.searchData(index);
-                            
-                            if(dataPtr == nullptr)
-                                fout << "Search index " << index << ": " << "Not found" << endl;
-                            else
-                                fout << "Search index " << index << ": " << *dataPtr << endl;
-                            
-                        }
-                        catch(const char* e){
-                            cout << e << endl;
-                        }
-                        break;
-                    case Operation::INSERT:
-                        tree.insertData(index, data);
-                        // fout << "Insert index " << index << ": " << data << endl;
-                        fout << "insert " << index << endl;
-                        // fout << tree << endl;
-                        break;
-                    case Operation::DELETE:
-                        tree.deleteData(index);
-                        fout << "Delete index " << index << endl;
-                        break;
-                    case Operation::UPDATE:
-                        tree.updateData(index, data);
-                        fout << "Update index " << index << ": " << data << endl;
-                        break;
-                    case Operation::SKIP:
-                        continue;
-                    case Operation::STOP:
-                        throw "Debug force stop";
-                    case Operation::CHECK:
-                        fout << tree << endl;
-                        break;
-                    default:
-                        throw "undefined BPTree operation";
-                }
-                // std::clog << "<log> <main()> " << input << " finish" << std::endl;
+    BPTree tree(settingParser(setting));
+    string input;
+    
+    try{
+        #ifdef __linux__
+        while(getline(workload, input, '\r')){
+            workload.ignore();
+        #elif _WIN64
+        while(getline(workload, input)){
+        #endif
+            Index index = 0;
+            Data data = 0;
+            switch(inputParser(input, index, data)){
+                case Operation::SEARCH:
+                    try{
+                        Data *dataPtr = tree.searchData(index);
+                        
+                        if(dataPtr == nullptr)
+                            fout << "Search index " << index << ": " << "Not found" << endl;
+                        else
+                            fout << "Search index " << index << ": " << *dataPtr << endl;
+                        
+                    }
+                    catch(const char* e){
+                        cout << e << endl;
+                    }
+                    break;
+                case Operation::INSERT:
+                    tree.insertData(index, data);
+                    // fout << "Insert index " << index << ": " << data << endl;
+                    fout << "insert " << index << endl;
+                    // fout << tree << endl;
+                    break;
+                case Operation::DELETE:
+                    tree.deleteData(index);
+                    fout << "Delete index " << index << endl;
+                    break;
+                case Operation::UPDATE:
+                    tree.updateData(index, data);
+                    fout << "Update index " << index << ": " << data << endl;
+                    break;
+                case Operation::SKIP:
+                    continue;
+                case Operation::STOP:
+                    throw "Debug force stop";
+                case Operation::CHECK:
+                    fout << tree << endl;
+                    break;
+                default:
+                    throw "undefined BPTree operation";
             }
-            std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
-            fout << tree << endl;
+            // std::clog << "<log> <main()> " << input << " finish" << std::endl;
         }
-        catch(const char *e){
-            cout << e << endl;
-            clog << e << endl;
-            return EXIT_FAILURE;
-        }
+        std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
+        fout << "Tree Height: " << tree.height() << endl;
+        fout << "Sparse Node: " << tree.sparse() << endl;
+        fcsv << tree << endl;
     }
+    catch(const char *e){
+        cout << e << endl;
+        clog << e << endl;
+        return EXIT_FAILURE;
+    }
+
 
     workload.close();
     setting.close();

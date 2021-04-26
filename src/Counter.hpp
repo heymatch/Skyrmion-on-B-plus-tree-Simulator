@@ -34,7 +34,14 @@ private:
 };
 
 std::ostream& operator<<(std::ostream &out, Counter right){
+    #ifdef RELEASE
+    out << right.get();
+    #elif DUBUG
     out << "<Counter> " << right.name() << ": " << right.get();
+    #else 
+    out << "not set output flag";
+    #endif
+    
 
     return out;
 }

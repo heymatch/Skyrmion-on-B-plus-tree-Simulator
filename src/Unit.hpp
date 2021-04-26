@@ -638,7 +638,7 @@ struct Unit{
          * @param side for internal, if true, and try to delete the right most index, that will delete the side unit
          */
         void deleteData(uint64_t idx, bool side = false){
-            std::clog << "<log> <Node::deleteData()>: " << idx << std::endl;
+            // std::clog << "<log> <Node::deleteData()>: " << idx << std::endl;
 
             switch (_options.search_mode)
             {
@@ -1606,10 +1606,10 @@ struct Unit{
             }
         }
         else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-            std::clog << "<log> <insertCurrentData()> idx: " << idx << std::endl;
+            // std::clog << "<log> <insertCurrentData()> idx: " << idx << std::endl;
             // std::clog << "<log> <insertCurrentData()> _tracks[unit_offset]: " << _tracks[unit_offset] << std::endl;
-            std::clog << "<log> <Unit::insertCurrentData()::UNIT> isFullUnit(): " << isFullUnit() << std::endl;
-            std::clog << "<log> <insertCurrentData()> insertSide: " << insertSide << std::endl;
+            // std::clog << "<log> <Unit::insertCurrentData()::UNIT> isFullUnit(): " << isFullUnit() << std::endl;
+            // std::clog << "<log> <insertCurrentData()> insertSide: " << insertSide << std::endl;
 
             if(isFull(unit_offset) && !isFullUnit()){
                 if(isRoot()){
@@ -1676,7 +1676,7 @@ struct Unit{
                     return;
                 }
                 else if(isAllValid() && !isFullUnit()){
-                    std::clog << "<log> <Unit::insertCurrentData()::UNIT> balance" << std::endl;
+                    // std::clog << "<log> <Unit::insertCurrentData()::UNIT> balance" << std::endl;
 
                     Node *leftNode = nullptr, *rightNode = nullptr;
                     uint64_t mid = 0;
@@ -1766,7 +1766,7 @@ struct Unit{
                 
             }
             else if(isFullUnit()){
-                std::clog << "<log> <Unit::insertCurrentData()::UNIT> isFullUnit()" << std::endl;
+                // std::clog << "<log> <Unit::insertCurrentData()::UNIT> isFullUnit()" << std::endl;
 
                 /*if(hasBackSideUnit() && !getBackSideUnit()->isAllValid() && getParentUnit()->getBackSideUnit() != getBackSideUnit()){
                     //* get the middle key and the pointer of new split unit
@@ -2114,11 +2114,11 @@ struct Unit{
             unit->connectParentUnit(this, 0);
         }
         else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-            std::clog << "<log> <insertCurrentPointer()> idx: " << idx << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> unit: " << unit << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> idx: " << idx << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> unit: " << unit << std::endl;
             // std::clog << "<log> <insertCurrentPointer()> _tracks[offset]: " << _tracks[unit_offset] << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> this: " << this << std::endl;
-            std::clog << "<log> <insertCurrentPointer()> insertSide: " << insertSide << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> this: " << this << std::endl;
+            // std::clog << "<log> <insertCurrentPointer()> insertSide: " << insertSide << std::endl;
             // std::clog << "<log> <insertCurrentPointer()> isFullUnit(): " << isFullUnit() << std0::endl;
             // std::clog << "<log> <insertCurrentPointer()> isFull(unit_offset): " << isFull(unit_offset) << std::endl;
             // std::clog << "<log> <insertCurrentPointer()> isPossibleInsert(unit_offset, unit): " << isPossibleInsert(unit_offset, unit) << std::endl; 
@@ -2129,7 +2129,7 @@ struct Unit{
                 Offset rightUnitOffset;
 
                 if(isRoot()){
-                    std::clog << "<log> <insertCurrentPointer()> split condition 1" << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> split condition 1" << std::endl;
 
                     promote = splitNode(idx, unit_offset);
 
@@ -2160,7 +2160,7 @@ struct Unit{
                     }
 
                     if(rightUnit->getFrontSideUnit(rightUnitOffset)->getValidSize() == 2){
-                        std::clog << "<log> <insertCurrentPointer()> adjust side unit" << std::endl;
+                        // std::clog << "<log> <insertCurrentPointer()> adjust side unit" << std::endl;
                         bool inUnit = rightUnitOffset == 1;
                         Unit *newUnit = System::allocUnit(_options, rightUnit->getFrontSideUnit(rightUnitOffset)->isLeaf());
                         newUnit->setRoot(false);
@@ -2172,8 +2172,8 @@ struct Unit{
                         }
                         rightUnit->_tracks[rightUnitOffset]._data[0].setPtr(newUnit);
 
-                        std::clog << "<log> <insertCurrentPointer()::adjust> idx: " << idx << std::endl;
-                        std::clog << "<log> <insertCurrentPointer()> newUnit: " << newUnit << std::endl;
+                        // std::clog << "<log> <insertCurrentPointer()::adjust> idx: " << idx << std::endl;
+                        // std::clog << "<log> <insertCurrentPointer()> newUnit: " << newUnit << std::endl;
                         
                         
                         if(inUnit){
@@ -2200,7 +2200,7 @@ struct Unit{
                     return;
                 }
                 else if(insertSide){
-                    std::clog << "<log> <insertCurrentPointer()> split condition 2" << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> split condition 2" << std::endl;
 
                     promote = splitNode(idx, unit_offset, insertSide);
 
@@ -2225,7 +2225,7 @@ struct Unit{
                     // return;
                 }
                 else if(!isAllValid()){
-                    std::clog << "<log> <insertCurrentPointer()> split condition 3" << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> split condition 3" << std::endl;
                     
                     promote = splitNode(idx, unit_offset, insertSide);
 
@@ -2255,7 +2255,7 @@ struct Unit{
                 }
                 else{
                     // throw "test 2";
-                    std::clog << "<log> <insertCurrentPointer()> split condition 4" << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> split condition 4" << std::endl;
 
                     promote = splitNode(idx, unit_offset, insertSide);
 
@@ -2312,7 +2312,7 @@ struct Unit{
                 // std::clog << "<log> <insertCurrentPointer()> rightUnitOffset: " << rightUnitOffset << std::endl;
                 Unit *rightUnitSide = rightUnit->getFrontSideUnit(rightUnitOffset);
                 if(rightUnitSide->getValidSize() == 2){
-                    std::clog << "<log> <insertCurrentPointer()> adjust side unit" << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> adjust side unit" << std::endl;
                     bool inUnit = rightUnitOffset == 1;
                     Unit *newUnit = System::allocUnit(_options, rightUnitSide->isLeaf());
                     newUnit->setRoot(false);
@@ -2324,8 +2324,8 @@ struct Unit{
                     }
                     rightUnit->_tracks[rightUnitOffset]._data[0].setPtr(newUnit);
 
-                    std::clog << "<log> <insertCurrentPointer()::adjust> idx: " << idx << std::endl;
-                    std::clog << "<log> <insertCurrentPointer()> newUnit: " << newUnit << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()::adjust> idx: " << idx << std::endl;
+                    // std::clog << "<log> <insertCurrentPointer()> newUnit: " << newUnit << std::endl;
                     
                     
                     if(inUnit){
@@ -2808,7 +2808,7 @@ struct Unit{
                 }
                 else{
                     // throw "Internal split developing";
-                    std::clog << "<log> <splitNode()> unit_offset: " << unit_offset << std::endl;
+                    // std::clog << "<log> <splitNode()> unit_offset: " << unit_offset << std::endl;
                     if(unit_offset == 0){
                         // throw "<splitNode()::Else> Internal to Leaf Split";
                         // split operation will generate same level unit/node
@@ -3031,7 +3031,7 @@ struct Unit{
                 }
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                std::clog << "<log> <copyHalfNode()> Internal begin" << std::endl;
+                // std::clog << "<log> <copyHalfNode()> Internal begin" << std::endl;
                 // std::clog << "<log> <copyHalfNode()> Internal source begin: " << source << std::endl;
                 // std::clog << "<log> <copyHalfNode()> Internal destination begin: " << destination << std::endl;
 
@@ -3067,7 +3067,7 @@ struct Unit{
                 bool promoteMid = true;
                 for(int i = 0; i < _options.track_length; ++i){
                     if(source._data[i].getBitmap(0) && source._data[i].getKey(0) == promote.getKey(0)){
-                        std::clog << "<log> <copyHalfNode()> promoteLeft" << std::endl;
+                        // std::clog << "<log> <copyHalfNode()> promoteLeft" << std::endl;
                         source.deleteMark(i);
                         promoteMid = false;
                         destination.connectFrontSideUnit((Unit *)source._data[i].getPtr());
@@ -3077,7 +3077,7 @@ struct Unit{
                 for(int i = 0; i < _options.track_length; ++i){
                     // std::clog << "<log> <copyHalfNode()> " << destination._data[i] << std::endl;
                     if(destination._data[i].getBitmap(0) && destination._data[i].getKey(0) == promote.getKey(0)){
-                        std::clog << "<log> <copyHalfNode()> promoteRight" << std::endl;
+                        // std::clog << "<log> <copyHalfNode()> promoteRight" << std::endl;
                         
                         destination.deleteMark(i);
                         promoteMid = false;
@@ -3088,14 +3088,14 @@ struct Unit{
 
                 if(promoteMid){
                     // source.connectBackSideUnit((Unit *)destination._data[0].getPtr());
-                    std::clog << "<log> <copyHalfNode()> promoteMid" << std::endl;
+                    // std::clog << "<log> <copyHalfNode()> promoteMid" << std::endl;
                     if(promote.getKey(0) < source.getMaxIndex()){
                         // 
                         Index temp = promote.getKey(0);
                         promote.setKey(0, source._data[source.getRightMostOffset()].getKey(1));
                         source._data[source.getRightMostOffset()].setKey(1, temp);
                         wait_insert_idx = promote.getKey(0);
-                        std::clog << "<log> <copyHalfNode()> wait_insert_idx: " << wait_insert_idx << std::endl;
+                        // std::clog << "<log> <copyHalfNode()> wait_insert_idx: " << wait_insert_idx << std::endl;
                         // throw "p?";
                     }
                     //std::clog << "<log> <copyHalfNode()> destination._data[0].getPtr(): " << destination._data[0].getPtr() << std::endl;
@@ -3134,7 +3134,7 @@ struct Unit{
 
                 // std::clog << "<log> <copyHalfNode()> Internal to Leaf source end: " << source << std::endl;
                 // std::clog << "<log> <copyHalfNode()> Internal to Leaf destination end: " << destination << std::endl;
-                std::clog << "<log> <copyHalfNode()> Internal end" << std::endl;
+                // std::clog << "<log> <copyHalfNode()> Internal end" << std::endl;
             }
             
         }
@@ -3673,7 +3673,7 @@ struct Unit{
             throw "<migrateNode()> type error";
         }
 
-        std::clog << "<log> <Unit::migrateNode()>" << std::endl;
+        // std::clog << "<log> <Unit::migrateNode()>" << std::endl;
         // std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
         // std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
 
@@ -3696,12 +3696,12 @@ struct Unit{
                     if((Unit *)right._data[i].getPtr() != nullptr)
                         ((Unit *)right._data[i].getPtr())->connectParentUnit(parentUnit, parentUnitOffset);
                     left._data[i].delAll();
-                    std::clog << right._data[i] << std::endl;
+                    // std::clog << right._data[i] << std::endl;
                 }
             }
             right.connectFrontSideUnit(left._sideFront);
             right._sideFront->connectParentUnit(parentUnit, parentUnitOffset);
-            std::clog << "side: " << right._sideFront << std::endl;
+            // std::clog << "side: " << right._sideFront << std::endl;
         }
 
         left.setValid(false);
@@ -3894,6 +3894,27 @@ struct Unit{
         return unit;
     }
 
+    Size sparse(){
+        if(isLeaf()){
+            return _options.unit_size - getValidSize();
+        }
+        Size counter = 0;
+        for(int i = 0; i < _options.track_length; ++i){
+            for(int j = 0; j < _options.unit_size; ++j){
+                if(_tracks[j]._data[i].getBitmap(0)){
+                    counter += ((Unit *)_tracks[j]._data[i].getPtr())->sparse();
+                }
+            }
+        }
+        for(int j = 0; j < _options.unit_size; ++j){
+            if(hasFrontSideUnit(j)){
+                counter += getFrontSideUnit(j)->sparse();
+            }
+        }
+
+        return counter + _options.unit_size - getValidSize();
+    }
+
     /* Data Member */
 
     Node *_tracks;
@@ -3960,14 +3981,15 @@ std::ostream &operator<<(std::ostream &out, const Unit::Node &right){
     
 
     //* status
-    // out << "Node "<< right._id << "\n";
-    // out << right._shiftCounter << "\n";
-    // out << right._insertCounter << "\n";
-    // out << right._removeCounter << "\n";
-    // out << right._readCounter << "\n";
-    // out << right._migrateCounter << "\n";
-
+    #ifdef RELEASE
+    out << right._id << ",";
+    out << right._shiftCounter << ",";
+    out << right._insertCounter << ",";
+    out << right._removeCounter << ",";
+    out << right._readCounter << ",";
+    out << right._migrateCounter << "\n";
     //* debug
+    #elif DEBUG
     out << "\n\t\t(\n";
     // out << "\t\t\t" << "Node "<< right._id << "\n";
     // out << "\t\t\t" << right._shiftCounter << "\n";
@@ -3996,6 +4018,9 @@ std::ostream &operator<<(std::ostream &out, const Unit::Node &right){
     out << "\n\t\t)";
 
     if(!right.isValid()) out << "*";
+    #else
+        out << "not set output flag";
+    #endif
 
     return out;
 }
@@ -4003,9 +4028,30 @@ std::ostream &operator<<(std::ostream &out, const Unit::Node &right){
 std::ostream &operator<<(std::ostream &out, const Unit &right){
     //std::clog << "<log> Unit " << right._id << " Print" << std::endl;
     //* status
+    #ifdef RELEASE
     // out << "Unit " << right._id << "\n";
+    for(int i = 0; i < right._options.unit_size; ++i){
+        out << right._tracks[i];
+    }
+    if(!right.isLeaf()){
+        for(int i = 0; i < right._options.unit_size; ++i){
+            if(right._tracks[i]._isValid && right._tracks[i]._sideFrontBitmap && right._tracks[i]._sideFront != nullptr){
+                out << *(Unit *)right._tracks[i]._sideFront;
+            }
 
+            for(int j = 0; j < right._options.track_length; ++j){
+                if(right._tracks[i]._isValid && right._tracks[i]._data[j].getBitmap(0) && right._tracks[i]._data[j].getPtr() != nullptr){ //TODO
+                    out << *(Unit *)right._tracks[i]._data[j].getPtr();
+                }
+            }
+
+            if(right._tracks[i]._isValid && right._tracks[i]._sideBackBitmap && right._tracks[i]._sideBack != nullptr){
+                out << *(Unit *)right._tracks[i]._sideBack;
+            }
+        }
+    }
     //* debug
+    #elif DEBUG
     out << "\t[\t\n";
     out << "\t\t";
     if(right.isLeaf()) out << "Leaf Unit";
@@ -4020,6 +4066,7 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
     }
     out << "\t\t";
     if(right._isRoot) out << "Root" << "\n";
+    
 
     bool first = true;
     for(int i = 0; i < right._options.unit_size; ++i){
@@ -4045,6 +4092,9 @@ std::ostream &operator<<(std::ostream &out, const Unit &right){
             }
         }
     }
+    #else
+        out << "not set output flag";
+    #endif
 
     return out;
 }

@@ -17,8 +17,8 @@ public:
         return _root->searchData(idx, unit_offset);
     }
 
-    void updateData(Index idx, uint64_t data){
-        uint64_t unit_offset = 0;
+    void updateData(const Index &idx, const Data &data){
+        Offset unit_offset = 0;
         Data *dataPtr = _root->searchData(idx, unit_offset);
         
         if(dataPtr != nullptr){
@@ -26,7 +26,7 @@ public:
         }
     }
 
-    void insertData(const Index &idx, uint64_t data){
+    void insertData(const Index &idx, const Data &data){
         if(_root == nullptr){
             _root = new Unit(_options);
             _leftMostUnit = _root;
@@ -58,6 +58,25 @@ public:
         }
     }
 
+    Size height(){
+        if(_root == nullptr) return 0;
+
+        Unit *current = _root;
+        Size counter = 1;
+        while(!current->isLeaf()){
+            counter += 1;
+            current = current->getFrontSideUnit(0);
+        }
+
+        return counter;
+    }
+
+    Size sparse(){
+        if(_root == nullptr) return 0;
+
+        return _root->sparse();
+    }
+
     void sideChecker(){
 
     }
@@ -78,9 +97,16 @@ std::ostream &operator<<(std::ostream &out, const BPTree &right){
         out << "B+ Tree is not constructed!";
     }
     else{
+        #ifdef RELEASE
+        out << "id,shiftCounter,insertCounter,removeCounter,readCounter,migrateCounter\n";
+        out << *(right._root);
+        #elif DUBUG
         out << "{\n";
         out << *(right._root);
         out << "\n}\n";
+        #else 
+        out << "not set output flag";
+        #endif
     }
     
     return out;
