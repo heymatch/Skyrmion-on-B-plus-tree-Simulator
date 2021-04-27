@@ -9,7 +9,7 @@
 struct KeyPtrSet{
     KeyPtrSet(uint64_t capacity = 2, bool dataPtr = true){
         ptr = new Data('O');
-        key = new uint64_t[capacity - 1]();
+        key = new Index[capacity - 1]();
         bitmap = new bool[capacity - 1]();
 
         _size = 0;
@@ -18,7 +18,7 @@ struct KeyPtrSet{
     }
 
     KeyPtrSet(const KeyPtrSet &right){
-        key = new uint64_t[right._capacity - 1]();
+        key = new Index[right._capacity - 1]();
         bitmap = new bool[right._capacity - 1]();
 
         _size = right._size;
@@ -33,15 +33,17 @@ struct KeyPtrSet{
     }
 
     ~KeyPtrSet(){
+        delete ptr;
         delete[] key;
         delete[] bitmap;
     }
 
     KeyPtrSet &operator=(const KeyPtrSet &right){
+        delete ptr;
         delete[] key;
         delete[] bitmap;
 
-        key = new uint64_t[right._capacity - 1]();
+        key = new Index[right._capacity - 1]();
         bitmap = new bool[right._capacity - 1]();
 
         _size = right._size;
@@ -61,7 +63,7 @@ struct KeyPtrSet{
         ptr = addr;
     }
 
-    void setKey(uint64_t offset, uint64_t val){
+    void setKey(Offset offset, Index val){
         key[offset] = val;
         if(!bitmap[offset])
             ++_size;
@@ -75,7 +77,7 @@ struct KeyPtrSet{
         }
     }
 
-    void delKey(uint64_t offset){
+    void delKey(Offset offset){
         if(bitmap[offset])
             --_size;
         bitmap[offset] = false;
@@ -96,7 +98,7 @@ struct KeyPtrSet{
         _size = 0;
     }
 
-    void addKey(uint64_t val){
+    void addKey(Index val){
         if(_size == _capacity - 1)
             throw "KeyPtrSet overflow";
         
@@ -112,11 +114,11 @@ struct KeyPtrSet{
         }
     }
 
-    uint64_t getKey(uint64_t offset) const{
+    Index getKey(Offset offset) const{
         return key[offset];
     }
 
-    bool getBitmap(uint64_t offset) const{
+    bool getBitmap(Offset offset) const{
         return bitmap[offset];
     }
 
@@ -124,29 +126,33 @@ struct KeyPtrSet{
         return ptr;
     }
 
-    uint64_t getSize() const{
+    Size getSize() const{
         return _size;
+    }
+
+    Size getKeyCapacity() const{
+        return _capacity - 1;
     }
 
     bool isFull() const{
         return _size == _capacity - 1;
     }
 
-    uint64_t *key;
+    Index *key;
     void *ptr;
     bool *bitmap;
     ////
-    uint64_t _size;
-    uint64_t _capacity;
+    Size _size;
+    Size _capacity;
     bool _dataPtr;
 };
 
 #include <vector>
 #include <algorithm>
 namespace System{
-    uint64_t getMid(KeyPtrSet *arr, uint64_t len, uint64_t insert, Size capacity = 2){
-        uint64_t t_len = 1;
-        std::vector<uint64_t> V(t_len);
+    Index getMid(KeyPtrSet *arr, Size len, Index insert, Size capacity = 2){
+        Size t_len = 1;
+        std::vector<Index> V(t_len);
         V[0] = insert;
 
         for(int i = 0; i < len; ++i){

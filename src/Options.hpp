@@ -12,8 +12,14 @@ struct Options{
 
     // number of words in a track
     //! odd number leads to problem
-    // e.g., 4, 8, 16
+    // e.g., 2048
     Size track_length;
+    Size dataSize(const bool isLeaf) const{
+        if(isLeaf){
+            return track_length / word_length / 2;
+        }
+        return track_length / word_length / kp_length;
+    }
 
     // e.g., 1 = single track, 2 = double tracks
     Size unit_size; 

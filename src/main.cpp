@@ -64,10 +64,10 @@ int inputParser(string str, Index &idx, Data &data){
  * * setting file
 */
 Options settingParser(ifstream &fin){
-    uint64_t WORD_LENGTH = 0;
-    uint64_t TRACK_LENGTH = 0; 
-    uint64_t UNIT_SIZE = 0;
-    uint64_t KP_LENGTH = 0;
+    Size WORD_LENGTH = 0;
+    Size TRACK_LENGTH = 0; 
+    Size UNIT_SIZE = 0;
+    Size KP_LENGTH = 0;
     Options::ordering ordering = Options::ordering::None;
     Options::read_function read_function = Options::read_function::None;
     Options::search_function search_function = Options::search_function::None;
@@ -237,11 +237,12 @@ int main(int argc, char **argv){
                     try{
                         Data *dataPtr = tree.searchData(index);
                         
+                        #ifdef DEBUG
                         if(dataPtr == nullptr)
                             fout << "Search index " << index << ": " << "Not found" << endl;
                         else
                             fout << "Search index " << index << ": " << *dataPtr << endl;
-                        
+                        #endif
                     }
                     catch(const char* e){
                         cout << e << endl;
@@ -249,17 +250,23 @@ int main(int argc, char **argv){
                     break;
                 case Operation::INSERT:
                     tree.insertData(index, data);
+                    #ifdef DEBUG
                     // fout << "Insert index " << index << ": " << data << endl;
                     fout << "insert " << index << endl;
                     // fout << tree << endl;
+                    #endif
                     break;
                 case Operation::DELETE:
                     tree.deleteData(index);
+                    #ifdef DEBUG
                     fout << "Delete index " << index << endl;
+                    #endif
                     break;
                 case Operation::UPDATE:
                     tree.updateData(index, data);
+                    #ifdef DEBUG
                     fout << "Update index " << index << ": " << data << endl;
+                    #endif
                     break;
                 case Operation::SKIP:
                     continue;

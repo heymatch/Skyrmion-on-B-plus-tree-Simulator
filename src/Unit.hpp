@@ -8,44 +8,76 @@
 #include "Counter.hpp"
 
 namespace Evaluation{
-    uint64_t log2(uint64_t number) {
-        uint64_t count = 0;
-        while (number >>= 1) ++count;
-        return count;
+    Size log2(Size number) {
+        Size counter = 0;
+        Size ceil = countSkyrmion(number) != 1;
+        while(number >>= 1){
+            counter++;
+        }
+        return counter + ceil;
     }
 
-    uint64_t countSkyrmion(uint64_t data) {
-        uint64_t number = 0;
-        uint64_t a = 0;
-        while (data > 0) {
-            a = data % 2;
-            data = data / 2;
-            if (a == 1) {
+    Size countSkyrmion(Index data) {
+        Size number = 0;
+        Size a = 0;
+        while(data){
+            if(data % 2) {
                 number++;
             }
+            data >>= 1;
         }
         return number;
     }
 
     void sequential_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         if(isLeaf){
-
+            shiftCounter.count(2 *  options.track_length);
+            readCounter.count(options.track_length);
         }
         else{
-
+            shiftCounter.count(2 * options.track_length);  
+            readCounter.count(options.track_length);      
         }
     }
 
     void range_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         if(isLeaf){
-
+            shiftCounter.count(2 * options.word_length);
+            readCounter.count(options.word_length);
         }
         else{
-            
+            shiftCounter.count(2 * options.word_length);
+            readCounter.count(options.track_length);
         }
     }
 
-    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *OldData, const KeyPtrSet *NewData){
+    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
+        //* remove old data
+        shiftCounter.count(options.word_length);
+        for(int i = 0; i < oldData.getKeyCapacity(); ++i){
+            removeCounter.count(countSkyrmion( oldData.getKey(i) ));
+        }
+        removeCounter.count(countSkyrmion( (Size)oldData.getPtr() ));
+
+        //* write new data
+        for(int i = 0; i < newData.getKeyCapacity(); ++i){
+            insertCounter.count(countSkyrmion( newData.getKey(i) ));
+        }
+        insertCounter.count(countSkyrmion( (Size)newData.getPtr() ));
+        shiftCounter.count(options.word_length);
+    }
+
+    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
+        //* remove old data
+        shiftCounter.count(options.word_length);
+        removeCounter.count(countSkyrmion( newIndex ));
+
+        //* write new data
+        insertCounter.count(countSkyrmion( newIndex ));
+        shiftCounter.count(options.word_length);
+    }
+
+    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *oldData, const KeyPtrSet *newData){
         if(isLeaf){
 
         }
@@ -54,30 +86,69 @@ namespace Evaluation{
         }
     }
 
-    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *OldData, const KeyPtrSet *NewData){
-        if(isLeaf){
+    void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
+        //* compute shift
+        shiftCounter.count(options.word_length);
+        
+        //* write new data
+        for(int i = 0; i < newData.getKeyCapacity(); ++i){
+            insertCounter.count(countSkyrmion( newData.getKey(i) ));
+        }
+        insertCounter.count(countSkyrmion( (Size)newData.getPtr() ));
+        shiftCounter.count(options.word_length);
+    }
 
+    void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *data, const Index &searchKey){
+        if(isLeaf){
+            int l = 0;
+            int h = 0;
+            for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
+                if(data[i].getBitmap(0)){
+                    h = i;
+                    break;
+                }
+            }
+
+            bool left = true;
+            while (l <= h) {
+                int mid = (l + h) / 2;
+                while(!data[mid].getBitmap(0)){
+                    if(left && mid >= 0){
+                        --mid;
+                    }
+                    else if(!left && mid < options.dataSize(isLeaf)){
+                        ++mid;
+                    }
+                }
+                shiftCounter.count(2 * options.word_length);
+                readCounter.count(options.word_length);
+                if (data[mid].getKey(0) > searchKey) {
+                    h = mid - 1;
+                    left = false;
+                }
+                else if (data[mid].getKey(0) < searchKey) {
+                    l = mid + 1;
+                    left = true;
+                }
+                else{
+                    break;
+                }
+            }
         }
         else{
-            
+            shiftCounter.count(2 * options.word_length * log2(options.dataSize(isLeaf)));
+            readCounter.count(options.word_length);
         }
     }
 
-    void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *Data){
+    void bit_binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *data, const Index &searchKey){
         if(isLeaf){
-
+            shiftCounter.count(2 * options.word_length);
+            readCounter.count(options.track_length);
         }
         else{
-            
-        }
-    }
-
-    void bit_binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet *Data){
-        if(isLeaf){
-
-        }
-        else{
-            
+            shiftCounter.count(2 * options.word_length);
+            readCounter.count(options.track_length);
         }
     }
 
@@ -112,9 +183,9 @@ struct Unit{
                 _sideFrontBitmap = false;
                 _isValid = false;
                 
-                _data = new KeyPtrSet[_options.track_length]();
+                _data = new KeyPtrSet[_options.dataSize(_isLeaf)]();
                 if(!isLeaf){
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(_isLeaf); ++i){
                         _data[i] = KeyPtrSet(_options.kp_length);
                     }
                 }
@@ -126,7 +197,7 @@ struct Unit{
         Node(const Node &right){
             _options = right._options;
 
-            _data = new KeyPtrSet[_options.track_length]();
+            _data = new KeyPtrSet[_options.dataSize(_isLeaf)]();
 
             _isLeaf = right._isLeaf;
             _sideBack = right._sideBack;
@@ -138,7 +209,7 @@ struct Unit{
             _id = right._id;
             _isValid = right._isValid;
 
-            for(int i = 0; i < _options.track_length; ++i){
+            for(int i = 0; i < _options.dataSize(_isLeaf); ++i){
                 _data[i] = right._data[i];
             }
         }
@@ -153,7 +224,7 @@ struct Unit{
 
             _options = right._options;
 
-            _data = new KeyPtrSet[_options.track_length]();
+            _data = new KeyPtrSet[_options.dataSize(_isLeaf)]();
 
             _isLeaf = right._isLeaf;
             _sideBack = right._sideBack;
@@ -167,7 +238,7 @@ struct Unit{
 
             //_shiftCounter = right._shiftCounter;
 
-            for(int i = 0; i < _options.track_length; ++i){
+            for(int i = 0; i < _options.dataSize(_isLeaf); ++i){
                 _data[i] = right._data[i];
             }
 
@@ -206,40 +277,23 @@ struct Unit{
          * TODO evaluation
          */
         void *searchData(Index idx, Offset &next_unit_offset){
+            switch (_options.search_mode){
+            case Options::search_function::SEQUENTIAL:
+                //TODO evaluation 
+                break;
+            case Options::search_function::TRAD_BINARY_SEARCH:
+                Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                break;
+            case Options::search_function::BIT_BINARY_SEARCH:
+                Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                break;
+            default:
+                throw "undefined search operation";
+            }
+
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
                 if(_isLeaf){
-                    switch (_options.search_mode){
-                    case Options::search_function::SEQUENTIAL:
-                        //TODO evaluation 
-                        break;
-                    case Options::search_function::TRAD_BINARY_SEARCH:
-                    {
-                        int l = 0;
-                        int h = _options.track_length - 1;
-                        while (l <= h) {
-                            _shiftCounter.count(2 * _options.word_length);
-                            _readCounter.count(_options.word_length);
-                            int mid = (l + h) / 2;
-                            if (_data[mid].getKey(0) > idx) {
-                                h = mid - 1;
-                            }
-                            else if (_data[mid].getKey(0) < idx) {
-                                l = mid + 1;
-                            }
-                            else{
-                                break;
-                            }
-                        }
-                    }
-                        break;
-                    case Options::search_function::BIT_BINARY_SEARCH:
-                        _shiftCounter.count(2 * _options.word_length);
-                        break;
-                    default:
-                        throw "undefined search operation";
-                    }
-
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
                             return _data[i].getPtr();
                         }
@@ -248,22 +302,7 @@ struct Unit{
                     return nullptr;
                 }
                 else{
-                    switch (_options.search_mode)
-                    {
-                    case Options::search_function::SEQUENTIAL:
-                        //TODO evaluation 
-                        break;
-                    case Options::search_function::TRAD_BINARY_SEARCH:
-                        _shiftCounter.count(2 * _options.word_length * Evaluation::log2(_options.track_length));
-                        break;
-                    case Options::search_function::BIT_BINARY_SEARCH:
-                        _shiftCounter.count(2 * _options.word_length);
-                        break;
-                    default:
-                        throw "undefined search operation";
-                    }
-
-                    for(int i = _options.track_length - 1; i >= 0 ; --i){
+                    for(int i = _options.dataSize(isLeaf()) - 1; i >= 0 ; --i){
                         if(_data[i].getBitmap(0) && idx >= _data[i].getKey(0)){
                             return _data[i].getPtr();
                         }
@@ -271,23 +310,18 @@ struct Unit{
                     
                     return _sideFront;
                 }
-
-                throw "<Node> search error";
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                // std::clog << "<log> <Node::searchData()> idx: " << idx << std::endl;
                 if(_isLeaf){
-                    for(int i = 0; i < _options.track_length; ++i){
-                        // if(idx == 520) std::clog << _data[i].getKey(0) << std::endl;
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
                             return _data[i].getPtr();
                         }
                     }
-
                     return nullptr;
                 }
                 else{
-                    for(int i = _options.track_length - 1; i >= 0; --i){
+                    for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                         for(int j = _options.unit_size - 1; j >= 0; --j){
                             if(_data[i].getBitmap(j) && idx >= _data[i].getKey(j)){
                                 next_unit_offset = j;
@@ -299,14 +333,13 @@ struct Unit{
                     next_unit_offset = _options.unit_size;
                     return _sideFront;      
                 }
-                throw "<Node> search error";
             }
             
             throw "<Node> search error";
         }
         
         //?
-        void updateData(uint64_t idx, uint64_t data){
+        void updateData(Index idx, Data data){
             switch (_options.update_mode)
             {
             case Options::update_function::OVERWRITE:
@@ -338,30 +371,22 @@ struct Unit{
          * @param split if false, data will direct insert
         */
         void insertData(Index idx, void *data, Offset &insertPosition, bool insertSide = true){
-            if(_isLeaf){
-                //* Evaluate for insert a data
-                switch (_options.update_mode){
-                case Options::update_function::OVERWRITE:
-                    _shiftCounter.count(2 * _options.word_length);
-                    _removeCounter.count(2 * _options.word_length);
-                    _insertCounter.count(Evaluation::countSkyrmion(idx));
-                    _insertCounter.count(Evaluation::countSkyrmion((uint64_t)data));
-                    _shiftCounter.count(2 * _options.word_length);
-                    break;
-                case Options::update_function::PERMUTATION_WRITE:
+            //* find the insert position
+            switch (_options.search_mode){
+                case Options::search_function::SEQUENTIAL:
                     //TODO evaluation 
                     break;
-                case Options::update_function::PERMUTE_WORD_COUNTER:
-                    //TODO evaluation 
+                case Options::search_function::TRAD_BINARY_SEARCH:
+                    Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
                     break;
-                case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                    //TODO evaluation 
+                case Options::search_function::BIT_BINARY_SEARCH:
+                    Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
                     break;
                 default:
-                    throw "undefined update operation";
-                    break;
-                }
+                    throw "undefined search operation";
+            }
 
+            if(_isLeaf){
                 KeyPtrSet newData(2, true);
                 newData.setPtr(data);
                 newData.addKey(idx);
@@ -374,17 +399,37 @@ struct Unit{
                         if(shiftPos < insertPosition){
                             for(int i = shiftPos; i < insertPosition; ++i){
                                 _data[i] = _data[i+1];
-                                _shiftCounter.count(2 * _options.word_length);
                             }
                         }
                         else{
                             for(int i = shiftPos; i > insertPosition; --i){
                                 _data[i] = _data[i-1];
-                                _shiftCounter.count(2 * _options.word_length);
                             }
                         }
-                    }
 
+                        //* Evaluate for insert a data
+                        Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+                    }
+                    else{
+                        //* Evaluate for direct write a data
+                        switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
+                        }
+                    }
                     _data[insertPosition] = newData;
                 }
                 else if(_options.node_ordering == Options::ordering::UNSORTED){
@@ -396,30 +441,6 @@ struct Unit{
             }
             else{
                 if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                    
-                    //* Evaluate for insert a data
-                    switch (_options.update_mode){
-                    case Options::update_function::OVERWRITE:
-                        _shiftCounter.count(2 * _options.word_length);
-                        _removeCounter.count(2 * _options.word_length);
-                        _insertCounter.count(Evaluation::countSkyrmion(idx));
-                        _insertCounter.count(Evaluation::countSkyrmion((uint64_t)data));
-                        _shiftCounter.count(2 * _options.word_length);
-                        break;
-                    case Options::update_function::PERMUTATION_WRITE:
-                        //TODO evaluation 
-                        break;
-                    case Options::update_function::PERMUTE_WORD_COUNTER:
-                        //TODO evaluation 
-                        break;
-                    case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                        //TODO evaluation 
-                        break;
-                    default:
-                        throw "undefined update operation";
-                        break;
-                    }
-
                     KeyPtrSet newData(_options.kp_length, false);
                     newData.setPtr(data);
                     newData.addKey(idx);
@@ -432,14 +453,35 @@ struct Unit{
                         if(shiftPos < insertPosition){
                             for(int i = shiftPos; i < insertPosition; ++i){
                                 _data[i] = _data[i+1];
-                                _shiftCounter.count(2 * _options.word_length);
                             }
                         }
                         else{
                             for(int i = shiftPos; i > insertPosition; --i){
                                 _data[i] = _data[i-1];
-                                _shiftCounter.count(2 * _options.word_length);
                             }
+                        }
+
+                        //* Evaluate for insert a data
+                        Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+                    }
+                    else{
+                        //* Evaluate for direct write a data
+                        switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
                         }
                     }
 
@@ -465,18 +507,39 @@ struct Unit{
                     // std::clog << "<log> <Node::insertData()> data: " << data << std::endl;
                     // std::clog << "<log> <Node::insertData()> _sideBack: " << _sideBack << std::endl;
                     //* insert into the same pointer, just add the index to the key-point set
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
                             _data[i].addKey(idx);
                             
-                            for(int i = 1; i < _options.track_length; ++i){
+                            
+                            for(int i = 1; i < _options.dataSize(isLeaf()); ++i){
                                 if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
-                                    uint64_t temp = _data[i].getKey(0);
+                                    Index temp = _data[i].getKey(0);
                                     _data[i].setKey(0, _data[i-1].getKey(1));
                                     _data[i-1].setKey(1, temp);
                                 } 
                             }
                             // std::clog << "<log> <Node::insertData()> end with same pointer" << std::endl;
+
+                            //* Evaluate for direct write an index
+                            switch (_options.update_mode){
+                                case Options::update_function::OVERWRITE:
+                                    Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[i].getKey(1), idx);
+                                    break;
+                                case Options::update_function::PERMUTATION_WRITE:
+                                    //TODO evaluation 
+                                    break;
+                                case Options::update_function::PERMUTE_WORD_COUNTER:
+                                    //TODO evaluation 
+                                    break;
+                                case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                                    //TODO evaluation 
+                                    break;
+                                default:
+                                    throw "undefined update operation";
+                                    break;
+                            }
+
                             return;
                         }
                     }
@@ -488,13 +551,6 @@ struct Unit{
                     bool insertSide = false;
                     uint64_t shiftPos = getShiftPosition();
                     insertPosition = getInsertPosition(idx, shiftPos);
-                    /*
-                    if(insertSide && getRightMostOffset() != -1 && _data[getRightMostOffset()].getSize() == 1){
-                        _data[getRightMostOffset()].addKey(idx);
-                        _sideBack = (Unit *)data;
-                        return;
-                    }
-                    */
 
                     //* Only insert at unused KeyPtrSet
                     if(_data[insertPosition].getBitmap(0)){
@@ -508,91 +564,41 @@ struct Unit{
                                 _data[i] = _data[i-1];
                             }
                         }
+
+                        //* Evaluate for insert a data
+                        Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+                    }
+                    else{
+                        //* Evaluate for direct write a data
+                        switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
+                        }
                     }
 
                     _data[insertPosition] = newData;
                     
-                    for(int i = 1; i < _options.track_length; ++i){
+                    for(int i = 1; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
                             Index temp = _data[i].getKey(0);
                             _data[i].setKey(0, _data[i-1].getKey(1));
                             _data[i-1].setKey(1, temp);
                         }
                     }
-                    /*
-                    uint64_t rightMostOffset = getRightMostOffset();
-                    if(rightMostOffset != -1 && insertSide && _data[rightMostOffset].getSize() == 1){
-                        _data[rightMostOffset].addKey(idx);
-                        _sideBack = (Unit *)data;
-                        if(insertPos != rightMostOffset){
-                            deleteMark(insertPos);
-                        }
-                        return;
-                    }
-                    else{
-                        if(insertPos > 0 && newData.getKey(0) < _data[insertPos-1].getKey(1)){
-                            uint64_t temp = newData.getKey(0);
-                            newData.setKey(0, _data[insertPos-1].getKey(1));
-                            _data[insertPos-1].setKey(1, temp);
-                        }
-                        _data[insertPos] = newData;
-                    }   
-                    */
-                    //if(getSize() == 1 && _data[0].getSize() < 2){
-                        
-                //     return;
-                    //}
-
                     
-                    
-                    // for(int i = 0; i < _options.track_length - 1; ++i){
-                    //     if(
-                    //         _data[i].getBitmap(0) &&
-                    //         ((Unit *)_data[i].getPtr())->getValidSize() != _data[i].getSize() &&
-                    //         ((Unit *)_data[i+1].getPtr())->getValidSize() != _data[i+1].getSize()
-                    //     ){
-                    //         _data[i].addKey(_data[i+1].getKey(0));
-                    //         _data[i+1].delKey(0);
-                    //     }
-                    // }
-                    
-                    /*
-                    if(_data[getRightMostOffset()].getSize() == 1){
-                        _sideBack = (Unit *)_data[getRightMostOffset()].getPtr();
-                    }
-                    */
-                   
-                    // if(_sideBack != nullptr){
-                    //     if(insertSide && split){
-                    //         void *temp = _sideBack;
-                    //         _sideBack = (Unit *)_data[insertPosition].getPtr();
-                    //         _data[insertPosition].setPtr(temp);
-                    //     }
-                    //     else if(!insertSide && insertPosition == 0 && split){
-                    //         int i = 0;
-                    //         while(!_data[insertPosition+i+1].getBitmap(0))++i;
-                    //         //if(_data[insertPosition+i+1].getSize() == 1){
-                    //             void *temp = _data[insertPosition+i+1].getPtr();
-                    //             _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
-                    //             _data[insertPosition].setPtr(temp);
-                    //         //}
-
-                    //         // if(_data[insertPosition+i+1].getSize() == 1){
-                    //         //     void *temp = _data[insertPosition+i+1].getPtr();
-                    //         //     _data[insertPosition+i+1].setPtr(_data[insertPosition].getPtr());
-                    //         //     _data[insertPosition].setPtr(temp);
-                    //         // }
-                    //         // else{
-                    //         //     std::clog << "<log> <Node::insertData()> idx: " << idx << std::endl;
-                    //         //     //throw "test";
-                    //         // }
-
-                    //         if(_data[insertPosition+i+1].getSize() == _options.unit_size){
-                    //             _data[insertPosition].addKey(_data[insertPosition+i+1].getKey(0));
-                    //             _data[insertPosition+i+1].delKey(0);
-                    //         }
-                    //     }
-                    // }
                 }
         
             }
@@ -600,6 +606,7 @@ struct Unit{
 
         /**
          * * Insert KeyPtrSet to front
+         * ! not use
         */
         void insertDataFromFront(KeyPtrSet data){
             uint64_t shiftPos = _options.track_length - 1;
@@ -624,6 +631,7 @@ struct Unit{
 
         /**
          * * Insert KeyPtrSet to back
+         * ! not use
         */
         void insertDataFromBack(KeyPtrSet data){
             uint64_t insertPos = getSize();
@@ -667,36 +675,36 @@ struct Unit{
             }*/
 
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                for(int i = 0; i < _options.track_length; ++i){
-                    if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
-                        // delete side unit
-                        if(!_isLeaf && isRightMostOffset(i) && side){
-                            connectBackSideUnit((Unit *)_data[i].getPtr());
-                        }
-                        deleteMark(i);
-                        return;
-                    }
-                }
+                // for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
+                //     if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
+                //         // delete side unit
+                //         if(!_isLeaf && isRightMostOffset(i) && side){
+                //             connectBackSideUnit((Unit *)_data[i].getPtr());
+                //         }
+                //         deleteMark(i);
+                //         return;
+                //     }
+                // }
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                if(_isLeaf){
-                    for(int i = 0; i < _options.track_length; ++i){
-                        if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
-                            _data[i].delKey(0);
-                            return;
-                        }
-                    }
-                }
-                else{
-                    for(int i = 0; i < _options.track_length; ++i){
-                        for(int j = 0; j < _options.unit_size; ++j){
-                            if(_data[i].getBitmap(j) && idx == _data[i].getKey(j)){
-                                _data[i].delKey(j);
-                                return;
-                            }
-                        }
-                    }
-                }
+                // if(_isLeaf){
+                //     for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
+                //         if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
+                //             _data[i].delKey(0);
+                //             return;
+                //         }
+                //     }
+                // }
+                // else{
+                //     for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
+                //         for(int j = 0; j < _options.unit_size; ++j){
+                //             if(_data[i].getBitmap(j) && idx == _data[i].getKey(j)){
+                //                 _data[i].delKey(j);
+                //                 return;
+                //             }
+                //         }
+                //     }
+                // }
                 
             }
 
@@ -764,14 +772,14 @@ struct Unit{
         */
         uint64_t getOffsetByIndex(uint64_t idx){
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
                         return i;
                     }
                 }
             }
             else{
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     for(int j = 0; j < _options.unit_size; ++j){
                         if(_data[i].getBitmap(j) && idx == _data[i].getKey(j)){
                             return i + j;
@@ -780,7 +788,7 @@ struct Unit{
                 }
             }
             
-            return _options.track_length * _options.unit_size;
+            return _options.dataSize(isLeaf()) * _options.unit_size;
         }
 
         /**
@@ -788,14 +796,14 @@ struct Unit{
         */
         uint64_t getMinIndex(){
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         return _data[i].getKey(0);
                     }
                 }
             }
             else{
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     for(int j = 0; j < _options.unit_size; ++j){
                         if(_data[i].getBitmap(j)){
                             return _data[i].getKey(j);
@@ -810,16 +818,16 @@ struct Unit{
         /**
          * * Done
         */
-        uint64_t getMaxIndex(){
+        Index getMaxIndex(){
             if(_isLeaf){
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     if(_data[i].getBitmap(0)){
                         return _data[i].getKey(0);
                     }
                 }
             }
             else{
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     for(int j = _options.unit_size - 1; j >= 0; --j){
                         if(_data[i].getBitmap(j)){
                             return _data[i].getKey(j);
@@ -832,14 +840,14 @@ struct Unit{
 
         KeyPtrSet getMinData(){
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         return _data[i];
                     }
                 }
             }
             else{
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     for(int j = 0; j < _options.unit_size; ++j){
                         if(_data[i].getBitmap(j)){
                             return _data[i]; //?
@@ -852,14 +860,14 @@ struct Unit{
 
         KeyPtrSet getMaxData(){
             if(_isLeaf){
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     if(_data[i].getBitmap(0)){
                         return _data[i];
                     }
                 }
             }
             else{
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     for(int j = _options.unit_size - 1; j >= 0; --j){
                         if(_data[i].getBitmap(j)){
                             return _data[i]; //?
@@ -875,7 +883,7 @@ struct Unit{
         */
         uint64_t getLeftMostOffset(){
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0))
                         return i;
                 }
@@ -889,7 +897,7 @@ struct Unit{
                     }
                 }*/
 
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0))
                         return i;
                 }
@@ -903,7 +911,7 @@ struct Unit{
         */
         uint64_t getRightMostOffset(){
             if(_isLeaf){
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     if(_data[i].getBitmap(0))
                         return i;
                 }
@@ -917,7 +925,7 @@ struct Unit{
                     }
                 }
                 */
-                for(int i = _options.track_length - 1; i >= 0; --i){
+                for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                     if(_data[i].getBitmap(0))
                         return i;
                 }
@@ -930,7 +938,7 @@ struct Unit{
          * ? Checking
         */
         bool isRightMostOffset(uint64_t offset) const{
-            if(offset == _options.track_length)
+            if(offset == _options.dataSize(isLeaf()))
                 return true;
                 
             if(offset == -1)
@@ -940,7 +948,7 @@ struct Unit{
                 if(!_data[offset].getBitmap(0))
                     return false;
 
-                for(int i = offset + 1; i < _options.track_length; ++i){
+                for(int i = offset + 1; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0))
                         return false;
                 }
@@ -949,7 +957,7 @@ struct Unit{
                 if(!_data[offset / _options.unit_size].getBitmap(offset % _options.unit_size))
                     return false;
 
-                for(int i = offset + 1; i < _options.track_length; ++i){
+                for(int i = offset + 1; i <_options.dataSize(isLeaf()); ++i){
                     if(_data[i / _options.unit_size].getBitmap(i % _options.unit_size))
                         return false;
                 }
@@ -962,7 +970,7 @@ struct Unit{
          * ? Checking
         */
         bool isLeftMostOffset(uint64_t offset) const{
-            if(offset == -1 || offset == _options.track_length)
+            if(offset == -1 || offset == _options.dataSize(isLeaf()))
                 return false;
             
             if(_isLeaf){
@@ -994,14 +1002,14 @@ struct Unit{
         */
         uint64_t getClosestRightOffset(uint64_t offset){
             if(_isLeaf){
-                for(int i = offset + 1; i < _options.track_length; ++i){
+                for(int i = offset + 1; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         return i;
                     }
                 }
             }
             else{
-                for(int i = offset + 1; i < _options.track_length; ++i){
+                for(int i = offset + 1; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i / _options.unit_size].getBitmap(i % _options.unit_size)){
                         return i;
                     }
@@ -1015,7 +1023,7 @@ struct Unit{
         /**
          * ? Checking
         */
-        uint64_t getClosestLeftOffset(uint64_t offset){
+        Offset getClosestLeftOffset(Offset offset){
             if(_isLeaf){
                 for(int i = offset - 1; i >= 0; --i){
                     if(_data[i].getBitmap(0)){
@@ -1039,7 +1047,7 @@ struct Unit{
             if(_isLeaf){
                 if(_options.node_ordering == Options::ordering::SORTED){
                     Offset last = 0;
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0)){
                             last = i + 1;
                         } 
@@ -1055,10 +1063,10 @@ struct Unit{
                     }
                     
                     // insertSide = true;
-                    return last == _options.track_length ? last - 1 : last;
+                    return last == _options.dataSize(isLeaf()) ? last - 1 : last;
                 }
                 else if(_options.node_ordering == Options::ordering::UNSORTED){
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(!_data[i].getBitmap(0)){
                             return i;
                         }
@@ -1071,7 +1079,7 @@ struct Unit{
             }
             else{
                 Offset last = 0;
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         last = i + 1;
                     } 
@@ -1087,16 +1095,16 @@ struct Unit{
                 }
 
                 // insertSide = true;
-                return last == _options.track_length ? last - 1 : last;
+                return last == _options.dataSize(isLeaf()) ? last - 1 : last;
             }
             
         }
 
-        uint64_t getShiftPosition(){
-            uint64_t shiftPoint = -1;
+        Offset getShiftPosition(){
+            Offset shiftPoint = -1;
 
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(!_data[i].getBitmap(0)){
                         shiftPoint = i;
                         break;
@@ -1114,7 +1122,7 @@ struct Unit{
                 // }
 
                 // std::clog << "<log> <Node::getShiftPosition()> " << std::endl;
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     // std::clog << _data[i].getKey(0) << " ";
                     // std::clog << _data[i].getBitmap(0) << " ";
                     // std::clog << _data[i].getKey(1) << " ";
@@ -1138,10 +1146,10 @@ struct Unit{
         */
         bool isFull() const{
             if(_isLeaf){
-                return getSize() == _options.track_length;
+                return getSize() == _options.dataSize(isLeaf());
             }
             else{
-                return getSize() == _options.track_length;
+                return getSize() == _options.dataSize(isLeaf());
             }
             
         }
@@ -1150,7 +1158,7 @@ struct Unit{
          * * Done
         */
         bool isHalf() const{
-            return getSize() == _options.track_length / 2;
+            return getSize() == _options.dataSize(isLeaf()) / 2;
         }
 
         /**
@@ -1174,7 +1182,7 @@ struct Unit{
             Size counter = 0;
 
             if(_isLeaf){
-                for(int i = 0; i < _options.track_length; ++i){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         counter++;
                     }
@@ -1182,7 +1190,7 @@ struct Unit{
             }
             else{
                 if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0)){
                             counter++;
                         }
@@ -1198,7 +1206,7 @@ struct Unit{
                         }
                     }*/
                     
-                    for(int i = 0; i < _options.track_length; ++i){
+                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) || _data[i].getBitmap(1)){
                             counter++;
                         }
@@ -1211,6 +1219,10 @@ struct Unit{
             return counter;
         }
 
+        bool isLeaf() const{
+            return _isLeaf;
+        }
+
         /* Data Member (Data) */
         KeyPtrSet *_data;
 
@@ -1221,12 +1233,12 @@ struct Unit{
         bool _sideBackBitmap;
         bool _sideFrontBitmap;
         Unit *_parent;
-        uint64_t _parentOffset;
+        Offset _parentOffset;
         bool _isValid;
 
         /* System */
         Options _options;
-        uint64_t _id;
+        Size _id;
 
         Counter _readCounter = Counter("Read");
         Counter _shiftCounter = Counter("Shift");
@@ -1380,61 +1392,28 @@ struct Unit{
      */
     void insertData(Index idx, const Data data, Offset unit_offset, Offset data_enter_offset){
         // std::clog << "<log> <insertData()> idx: " << idx << std::endl;
+        
 
         if(isLeaf()){
-            switch (_options.search_mode){
-            case Options::search_function::SEQUENTIAL:
-                //TODO evaluation 
-                break;
-            case Options::search_function::TRAD_BINARY_SEARCH:
-            {
-                int l = 0;
-                int h = 0;
-                for(int i = _options.track_length - 1; i >= 0; --i){
-                    if(_tracks[unit_offset]._data[i].getBitmap(0)){
-                        h = i;
-                        break;
-                    }
-                }
-                while (l <= h) {
-                    int mid = (l + h) / 2;
-                    if (_tracks[unit_offset]._data[mid].getKey(0) > idx) {
-                        if(!_tracks[unit_offset]._data[mid].getBitmap(0)){
-                            h = mid - 1;
-                            continue;
-                        }
-                        h = mid - 1;
-                    }
-                    else if (_tracks[unit_offset]._data[mid].getKey(0) < idx) {
-                        if(!_tracks[unit_offset]._data[mid].getBitmap(0)){
-                            l = mid + 1;
-                            continue;
-                        }
-                        l = mid + 1;                   
-                    }
-                    else{
-                        _tracks[unit_offset]._shiftCounter.count(2 * _options.word_length);
-                        _tracks[unit_offset]._readCounter.count(_options.word_length);
-                        break;
-                    }
-                    _tracks[unit_offset]._shiftCounter.count(2 * _options.word_length);
-                    _tracks[unit_offset]._readCounter.count(_options.word_length);
-                }
-            }
-                break;
-            case Options::search_function::BIT_BINARY_SEARCH:
-                _tracks[unit_offset]._shiftCounter.count(2 * _options.word_length);
-                _tracks[unit_offset]._readCounter.count(_options.word_length * 2 * _options.track_length);
-                break;
-            default:
-                throw "undefined search operation";
-            }
-
             insertCurrentData(idx, data, unit_offset, data_enter_offset);
         }
         else{
-            if(_tracks[unit_offset]._sideFront == nullptr){
-                throw "insert side error";
+            switch (_options.search_mode){
+                case Options::search_function::SEQUENTIAL:
+                    //TODO evaluation 
+                    break;
+                case Options::search_function::TRAD_BINARY_SEARCH:
+                    Evaluation::binary_search(_options, isLeaf(), _tracks[unit_offset]._readCounter, _tracks[unit_offset]._shiftCounter, _tracks[unit_offset]._data, idx);
+                    break;
+                case Options::search_function::BIT_BINARY_SEARCH:
+                    Evaluation::bit_binary_search(_options, isLeaf(), _tracks[unit_offset]._readCounter, _tracks[unit_offset]._shiftCounter, _tracks[unit_offset]._data, idx);
+                    break;
+                default:
+                    throw "undefined search operation";
+            }
+
+            if(!hasFrontSideUnit(unit_offset)){
+                throw "<error> <Unit::insertData()> insert front side error";
             }
             
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){

@@ -1,5 +1,5 @@
 word_length=64
-track_length=16
+track_length=2048
 unit_size=1
 kp_length=2
 ordering=SORTED
