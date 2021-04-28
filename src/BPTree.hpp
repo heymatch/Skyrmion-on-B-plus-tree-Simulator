@@ -13,6 +13,10 @@ public:
     }
 
     Data *searchData(const Index &idx){
+        if(_root == nullptr){
+            return nullptr;
+        }
+        
         Offset unit_offset = 0;
         return _root->searchData(idx, unit_offset);
     }
