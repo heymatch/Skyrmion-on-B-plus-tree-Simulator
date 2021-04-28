@@ -1,16 +1,13 @@
 #ifndef KEYPTRSET_H
 #define KEYPTRSET_H
 
-#define uint64_t uint64_t
-
 #include "Options.hpp"
 #include <ostream>
 
-struct Unit;
-
 struct KeyPtrSet{
     KeyPtrSet(uint64_t capacity = 2, bool dataPtr = true){
-        ptr = new Data('O');
+        // ptr = new Data('O');
+        ptr = nullptr;
         key = new Index[capacity - 1]();
         bitmap = new bool[capacity - 1]();
 
@@ -35,13 +32,13 @@ struct KeyPtrSet{
     }
 
     ~KeyPtrSet(){
-        // if(_dataPtr) delete (Data*)ptr;
+        // if(_dataPtr && ptr != nullptr) delete((Data*)ptr);
         delete[] key;
         delete[] bitmap;
     }
 
     KeyPtrSet &operator=(const KeyPtrSet &right){
-        // if(_dataPtr) delete (Data*)ptr;
+        // if(_dataPtr && ptr != nullptr) delete((Data*)ptr);
         delete[] key;
         delete[] bitmap;
 
@@ -196,9 +193,10 @@ namespace System{
 std::ostream &operator<<(std::ostream &out, const KeyPtrSet& right){
     out << "<";
 
-    if(right._dataPtr)
-        out << *((Data *)right.ptr) << ", ";
-    else out << right.ptr << ", ";
+    // if(right._dataPtr && right.ptr != nullptr)
+    //     out << *((Data *)right.ptr) << ", ";
+    // else 
+    out << (Size)right.ptr << ", ";
 
     bool first = true;
     for(int i = 0; i < right._capacity - 1; ++i){

@@ -20,6 +20,15 @@ namespace Evaluation{
         return number;
     }
 
+    Size countSkyrmion(KeyPtrSet data) {
+        Size number = 0;
+        number += countSkyrmion((Index)data.getPtr());
+        for(int i = 0; i < data.getKeyCapacity(); ++i){
+            number += countSkyrmion(data.getKey(i));
+        }
+        return number;
+    }
+
     Size log2(Size number) {
         Size counter = 0;
         Size ceil = countSkyrmion(number) != 1;
@@ -52,16 +61,10 @@ namespace Evaluation{
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* remove old data
         shiftCounter.count(options.word_length);
-        for(int i = 0; i < oldData.getKeyCapacity(); ++i){
-            removeCounter.count(countSkyrmion( oldData.getKey(i) ));
-        }
-        removeCounter.count(countSkyrmion( (Size)oldData.getPtr() ));
+        removeCounter.count(countSkyrmion(oldData));
 
         //* write new data
-        for(int i = 0; i < newData.getKeyCapacity(); ++i){
-            insertCounter.count(countSkyrmion( newData.getKey(i) ));
-        }
-        insertCounter.count(countSkyrmion( (Size)newData.getPtr() ));
+        insertCounter.count(countSkyrmion(newData));
         shiftCounter.count(options.word_length);
     }
 
@@ -202,8 +205,6 @@ struct Unit{
         Node(const Node &right){
             _options = right._options;
 
-            _data = new KeyPtrSet[_options.dataSize(_isLeaf)]();
-
             _isLeaf = right._isLeaf;
             _sideBack = right._sideBack;
             _sideBackBitmap = right._sideBackBitmap;
@@ -211,9 +212,11 @@ struct Unit{
             _sideFrontBitmap = right._sideFrontBitmap;
             _parent = right._parent;
             _parentOffset = right._parentOffset;
-            _id = right._id;
             _isValid = right._isValid;
 
+            _id = right._id;
+
+            _data = new KeyPtrSet[_options.dataSize(_isLeaf)]();
             for(int i = 0; i < _options.dataSize(_isLeaf); ++i){
                 _data[i] = right._data[i];
             }
@@ -281,17 +284,17 @@ struct Unit{
          */
         void *searchData(Index idx, Offset &next_unit_offset){
             switch (_options.search_mode){
-            case Options::search_function::SEQUENTIAL:
-                //TODO evaluation 
-                break;
-            case Options::search_function::TRAD_BINARY_SEARCH:
-                Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
-                break;
-            case Options::search_function::BIT_BINARY_SEARCH:
-                Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
-                break;
-            default:
-                throw "undefined search operation";
+                case Options::search_function::SEQUENTIAL:
+                    //TODO evaluation 
+                    break;
+                case Options::search_function::TRAD_BINARY_SEARCH:
+                    Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                    break;
+                case Options::search_function::BIT_BINARY_SEARCH:
+                    Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                    break;
+                default:
+                    throw "undefined search operation";
             }
 
             if(_options.split_merge_mode == Options::split_merge_function::TRAD){
@@ -373,31 +376,35 @@ struct Unit{
          * TODO insert into the same pointer, just add the index to the key-point set
          * @param split if false, data will direct insert
         */
-        void insertData(Index idx, void *data, Offset &insertPosition, bool insertSide = true){
+        void insertData(Index idx, void *data, Offset &insertPosition, bool directInsert = false, Size migrateSkyrmion = 0){
             
             //* find the insert position
-            switch (_options.search_mode){
-                case Options::search_function::SEQUENTIAL:
-                    //TODO evaluation 
-                    break;
-                case Options::search_function::TRAD_BINARY_SEARCH:
-                    Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
-                    break;
-                case Options::search_function::BIT_BINARY_SEARCH:
-                    Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
-                    break;
-                default:
-                    throw "undefined search operation";
+            if(!directInsert){
+                switch (_options.search_mode){
+                    case Options::search_function::SEQUENTIAL:
+                        //TODO evaluation 
+                        break;
+                    case Options::search_function::TRAD_BINARY_SEARCH:
+                        Evaluation::binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                        break;
+                    case Options::search_function::BIT_BINARY_SEARCH:
+                        Evaluation::bit_binary_search(_options, isLeaf(), _readCounter, _shiftCounter, _data, idx);
+                        break;
+                    default:
+                        throw "undefined search operation";
+                }
             }
 
             if(_isLeaf){
-                
                 KeyPtrSet newData(2, true);
                 newData.setPtr(data);
                 newData.addKey(idx);
 
-                uint64_t shiftPos = getShiftPosition();
+                Offset shiftPos = getShiftPosition();
                 insertPosition = getInsertPosition(idx, shiftPos);
+
+                Size overwrittenSkyrmion = Evaluation::countSkyrmion(_data[shiftPos]);
+                Node oldData = *this;
 
                 if(_options.node_ordering == Options::ordering::SORTED){
                     if(_data[insertPosition].getBitmap(0)){
@@ -414,25 +421,29 @@ struct Unit{
 
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+
+                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                            //TODO add skyrmion to unused
+                        }
                     }
                     else{
                         //* Evaluate for direct write a data
                         switch (_options.update_mode){
-                        case Options::update_function::OVERWRITE:
-                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
-                            break;
-                        case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WORD_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        default:
-                            throw "undefined update operation";
-                            break;
+                            case Options::update_function::OVERWRITE:
+                                Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                                break;
+                            case Options::update_function::PERMUTATION_WRITE:
+                                //TODO evaluation 
+                                break;
+                            case Options::update_function::PERMUTE_WORD_COUNTER:
+                                //TODO evaluation 
+                                break;
+                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                                //TODO evaluation 
+                                break;
+                            default:
+                                throw "undefined update operation";
+                                break;
                         }
                     }
                     _data[insertPosition] = newData;
@@ -468,6 +479,10 @@ struct Unit{
 
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+
+                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                            //TODO add skyrmion to unused
+                        }
                     }
                     else{
                         //* Evaluate for direct write a data
@@ -552,7 +567,6 @@ struct Unit{
                     newData.setPtr(data);
                     newData.addKey(idx);
 
-                    bool insertSide = false;
                     uint64_t shiftPos = getShiftPosition();
                     insertPosition = getInsertPosition(idx, shiftPos);
 
@@ -571,6 +585,9 @@ struct Unit{
 
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                            //TODO add skyrmion to unused
+                        }
                     }
                     else{
                         //* Evaluate for direct write a data
@@ -610,11 +627,10 @@ struct Unit{
 
         /**
          * * Insert KeyPtrSet to front
-         * ! not use
         */
-        void insertDataFromFront(KeyPtrSet data){
-            uint64_t shiftPos = _options.dataSize(isLeaf()) - 1;
-            uint64_t insertPos = 0;
+        void insertDataFromFront(const KeyPtrSet &data){
+            Offset shiftPos = getShiftPosition();
+            Offset insertPos = 0;
 
             //* Only insert at unused KeyPtrSet
             if(_data[insertPos].getBitmap(0)){
@@ -629,16 +645,37 @@ struct Unit{
                     }
                 }
             }
+            else{
+
+            }
 
             _data[insertPos] = data;
         }
 
         /**
          * * Insert KeyPtrSet to back
-         * ! not use
         */
-        void insertDataFromBack(KeyPtrSet data){
-            uint64_t insertPos = getSize();
+        void insertDataFromBack(const KeyPtrSet &data){
+            Offset shiftPos = getShiftPosition();
+            Offset insertPos = _options.dataSize(isLeaf()) - 1;
+
+            //* Only insert at unused KeyPtrSet
+            if(_data[insertPos].getBitmap(0)){
+                if(shiftPos < insertPos){
+                    for(int i = shiftPos; i < insertPos; ++i){
+                        _data[i] = _data[i+1];
+                    }
+                }
+                else{
+                    for(int i = shiftPos; i > insertPos; --i){
+                        _data[i] = _data[i-1];
+                    }
+                }
+            }
+            else{
+
+            }
+
             _data[insertPos] = data;
         }
 
@@ -1430,10 +1467,6 @@ struct Unit{
     /**
      * * Insert data to current node
      * ! for leaf node
-     * TODO evaluation
-     * TODO check unit full, and then split to a new unit
-     * TODO check one node of unit, and then split in unit
-     * TODO in double tracks, probabaly balance operation
      * ? can merge with insertCurrentPoint()?
      */
     void insertCurrentData(uint64_t idx, uint64_t data, uint64_t unit_offset, uint64_t data_enter_offset){
@@ -2898,44 +2931,43 @@ struct Unit{
 
         if(isLeaf()){
             if(right.getSize() - left.getSize() == 1){
-                left.insertData(right._data[0].getKey(0), right._data[0].getPtr(), insertPosition);
+                left.insertData(right._data[0].getKey(0), right._data[0].getPtr(), insertPosition, true);
+                // left.insertDataFromBack(right._data[0]);
                 right.deleteMark(0);
             }
             else{
                 for(int i = 0; i < (right.getSize() - left.getSize()) / 2 ; ++i){
-                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition);
+                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition, true);
+                    // left.insertDataFromBack(right._data[i]);
                     right.deleteData(right._data[i].getKey(0));
                 }
             }
         }
         else{
-            if(right.getSize() - left.getSize() == 1){
-                ((Unit *)right._data[0].getPtr())->connectParentUnit(this, 0);
-                left.insertDataFromBack(right._data[0]);
+            // if(right.getSize() - left.getSize() == 1){
+            //     ((Unit *)right._data[0].getPtr())->connectParentUnit(this, 0);
+            //     left.insertDataFromBack(right._data[0]);
 
-                uint64_t rightMostoffset = left.getRightMostOffset();
-                void *temp = left._sideBack;
-                left.connectBackSideUnit((Unit *)left._data[rightMostoffset].getPtr());
-                left._data[rightMostoffset].setPtr(temp);
+            //     uint64_t rightMostoffset = left.getRightMostOffset();
+            //     void *temp = left._sideBack;
+            //     left.connectBackSideUnit((Unit *)left._data[rightMostoffset].getPtr());
+            //     left._data[rightMostoffset].setPtr(temp);
 
-                right.deleteMark(0);
-            }
-            else{
-                for(int i = 0; i < (right.getSize() - left.getSize()) / 2; ++i){
-                    ((Unit *)right._data[i].getPtr())->connectParentUnit(this, 0);
-                    left.insertDataFromBack(right._data[i]);
+            //     right.deleteMark(0);
+            // }
+            // else{
+            //     for(int i = 0; i < (right.getSize() - left.getSize()) / 2; ++i){
+            //         ((Unit *)right._data[i].getPtr())->connectParentUnit(this, 0);
+            //         left.insertDataFromBack(right._data[i]);
 
-                    uint64_t rightMostoffset = left.getRightMostOffset();
-                    void *temp = left._sideBack;
-                    left.connectBackSideUnit((Unit *)left._data[rightMostoffset].getPtr());
-                    left._data[rightMostoffset].setPtr(temp);
+            //         uint64_t rightMostoffset = left.getRightMostOffset();
+            //         void *temp = left._sideBack;
+            //         left.connectBackSideUnit((Unit *)left._data[rightMostoffset].getPtr());
+            //         left._data[rightMostoffset].setPtr(temp);
 
-                    right.deleteMark(i);
-                }
-
-                // std::clog << "<log> <balanceDataFromRight()> Internal left: " << left << std::endl;
-                // std::clog << "<log> <balanceDataFromRight()> Internal right: " << right << std::endl;
-            }
+            //         right.deleteMark(i);
+            //     }
+            // }
         }
 
         
@@ -2952,7 +2984,8 @@ struct Unit{
 
         if(isLeaf()){
             for(int i = begin; i < _options.dataSize(isLeaf()); ++i){
-                right.insertData(left._data[i].getKey(0), left._data[i].getPtr(), insertPosition);
+                right.insertData(left._data[i].getKey(0), left._data[i].getPtr(), insertPosition, true);
+                // right.insertDataFromFront(left._data[i]);
                 left.deleteData(left._data[i].getKey(0));
             }
 
@@ -2960,26 +2993,26 @@ struct Unit{
             //std::clog << "<log> <balanceDataFromLeft()> Leaf right: " << right << std::endl;
         }
         else{
-            Offset rightMostOffset = left.getRightMostOffset();
-            Index maxIndex = left.getMaxIndex();
+            // Offset rightMostOffset = left.getRightMostOffset();
+            // Index maxIndex = left.getMaxIndex();
 
-            if(left._sideBack->getValidSize() == 1){
-                left._sideBack->connectParentUnit(this, 1);
-                right.insertData(maxIndex, left._sideBack, insertPosition, false);
-                left.deleteData(maxIndex);
-                left.connectBackSideUnit((Unit *)left._data[left.getRightMostOffset()].getPtr());
-            }
-            else if(left._sideBack->getParentOffset(1) != left._sideBack->getParentOffset(0)){
-                left._sideBack->connectParentUnit(this, 1);
-                right.insertData(maxIndex, left._sideBack, insertPosition, false);
-                left.deleteData(maxIndex);
-                left.connectBackSideUnit((Unit *)left._data[left.getRightMostOffset()].getPtr());
-            }
-            else{
-                left._sideBack->connectParentUnit(this, 1, 1);
-                right.insertData(maxIndex, left._sideBack, insertPosition, false);
-                left.deleteData(maxIndex);
-            }
+            // if(left._sideBack->getValidSize() == 1){
+            //     left._sideBack->connectParentUnit(this, 1);
+            //     right.insertData(maxIndex, left._sideBack, insertPosition, false);
+            //     left.deleteData(maxIndex);
+            //     left.connectBackSideUnit((Unit *)left._data[left.getRightMostOffset()].getPtr());
+            // }
+            // else if(left._sideBack->getParentOffset(1) != left._sideBack->getParentOffset(0)){
+            //     left._sideBack->connectParentUnit(this, 1);
+            //     right.insertData(maxIndex, left._sideBack, insertPosition, false);
+            //     left.deleteData(maxIndex);
+            //     left.connectBackSideUnit((Unit *)left._data[left.getRightMostOffset()].getPtr());
+            // }
+            // else{
+            //     left._sideBack->connectParentUnit(this, 1, 1);
+            //     right.insertData(maxIndex, left._sideBack, insertPosition, false);
+            //     left.deleteData(maxIndex);
+            // }
 
             // std::clog << "<log> <balanceDataFromLeft()> Internal left: " << left << std::endl;
             // std::clog << "<log> <balanceDataFromLeft()> Internal right: " << right << std::endl;
@@ -2999,6 +3032,19 @@ struct Unit{
             throw "<migrateNode()> type error";
         }
 
+        //TODO Evaluation::migrate() need to check inUnit
+
+        switch (_options.read_mode){
+            case Options::read_function::SEQUENTIAL:
+                Evaluation::sequential_read(_options, isLeaf(), left._readCounter, left._shiftCounter);
+                break;
+            case Options::read_function::RANGE_READ:
+                Evaluation::range_read(_options, isLeaf(), left._readCounter, left._shiftCounter);
+                break;
+            default:
+                throw "undefined read operation";
+                break;
+        }
         // std::clog << "<log> <Unit::migrateNode()>" << std::endl;
         // std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
         // std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
@@ -3006,6 +3052,32 @@ struct Unit{
         if(left._isLeaf){
             for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                 if(left._data[i].getBitmap(0)){
+                    switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            Evaluation::overwrite(
+                                _options, 
+                                isLeaf(), 
+                                right._readCounter, 
+                                right._shiftCounter, 
+                                right._insertCounter, 
+                                right._removeCounter, 
+                                right._data[i], left._data[i]
+                            );
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
+                    }
+
                     right._data[i] = left._data[i];
                     left.deleteMark(i);
                 }
@@ -3018,6 +3090,32 @@ struct Unit{
 
             for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                 if(left._data[i].getBitmap(0)){
+                    switch (_options.update_mode){
+                        case Options::update_function::OVERWRITE:
+                            Evaluation::overwrite(
+                                _options, 
+                                isLeaf(), 
+                                right._readCounter, 
+                                right._shiftCounter, 
+                                right._insertCounter, 
+                                right._removeCounter, 
+                                right._data[i], left._data[i]
+                            );
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WORD_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                            //TODO evaluation 
+                            break;
+                        default:
+                            throw "undefined update operation";
+                            break;
+                    }
+
                     right._data[i] = left._data[i];
                     if((Unit *)right._data[i].getPtr() != nullptr)
                         ((Unit *)right._data[i].getPtr())->connectParentUnit(parentUnit, parentUnitOffset);
