@@ -241,6 +241,9 @@ int main(int argc, char **argv){
         #elif _WIN64
         while(getline(workload, input)){
         #endif
+            if(InstructionCounter % 1000000 == 0){
+                clog << "Processing " << InstructionCounter << endl;
+            }
             ++InstructionCounter;
             Index index = 0;
             Data data = 0;
@@ -298,7 +301,7 @@ int main(int argc, char **argv){
 
         fcsvTreeHeight << InstructionCounter << ",";
         fcsvTreeHeight << tree.height() << "\n";
-        
+
         fcsvNodeInfo << tree << endl;
     }
     catch(const char *e){
