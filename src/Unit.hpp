@@ -30,25 +30,23 @@ namespace Evaluation{
     }
 
     void sequential_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
-        if(isLeaf){
-            shiftCounter.count(2 *  options.track_length);
-            readCounter.count(options.track_length);
-        }
-        else{
-            shiftCounter.count(2 * options.track_length);  
-            readCounter.count(options.track_length);      
-        }
+        shiftCounter.count(2 * options.track_length);  
+        readCounter.count(options.track_length);   
+    }
+
+    void sequential_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+        shiftCounter.count(options.track_length);  
+        readCounter.count(options.track_length / 2);   
     }
 
     void range_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
-        if(isLeaf){
-            shiftCounter.count(2 * options.word_length);
-            readCounter.count(options.word_length);
-        }
-        else{
-            shiftCounter.count(2 * options.word_length);
-            readCounter.count(options.track_length);
-        }
+        shiftCounter.count(2 * options.word_length);
+        readCounter.count(options.track_length);
+    }
+
+    void range_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+        shiftCounter.count(2 * options.word_length);
+        readCounter.count(options.track_length / 2);
     }
 
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
@@ -3910,7 +3908,13 @@ std::ostream &operator<<(std::ostream &out, const Unit::Node &right){
     out << right._insertCounter << ",";
     out << right._removeCounter << ",";
     out << right._readCounter << ",";
-    out << right._migrateCounter << "\n";
+    out << right._migrateCounter;
+    if(InstructionCounter % 1000000 == 0){
+        out << std::endl;
+    }
+    else{
+        out << "\n";
+    }
     //* debug
     #elif defined DEBUG
     out << "\n\t\t(\n";

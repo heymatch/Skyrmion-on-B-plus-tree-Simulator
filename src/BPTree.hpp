@@ -33,7 +33,7 @@ public:
             _root->_tracks[0].setValid(true);
 
             fcsvTreeHeight << InstructionCounter << ",";
-            fcsvTreeHeight << height() << "\n";
+            fcsvTreeHeight << height() << std::endl;
         }
 
         _root->insertData(idx, data, 0, -1);
@@ -42,7 +42,7 @@ public:
             _root = _root->getParentUnit();
 
             fcsvTreeHeight << InstructionCounter << ",";
-            fcsvTreeHeight << height() << "\n";
+            fcsvTreeHeight << height() << std::endl;
         }
             
     }
