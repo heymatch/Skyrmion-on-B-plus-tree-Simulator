@@ -236,8 +236,8 @@ int main(int argc, char **argv){
     
     try{
         #ifdef __linux__
-        while(getline(workload, input, '\r')){
-            workload.ignore();
+        while(getline(workload, input)){
+            // workload.ignore();
         #elif _WIN64
         while(getline(workload, input)){
         #endif
