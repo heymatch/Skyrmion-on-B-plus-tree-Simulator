@@ -4,9 +4,11 @@
 #include <string>
 #include <ostream>
 
-static uint64_t BPTreeId = 0;
-static uint64_t UnitId = 0;
-static uint64_t NodeId = 0;
+#include "Options.hpp"
+
+static Size InstructionCounter = 0;
+static Size UnitId = 0;
+static Size NodeId = 0;
 
 class Counter{
     friend std::ostream& operator<<(std::ostream &out, Counter right);

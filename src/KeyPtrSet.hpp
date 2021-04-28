@@ -6,6 +6,8 @@
 #include "Options.hpp"
 #include <ostream>
 
+struct Unit;
+
 struct KeyPtrSet{
     KeyPtrSet(uint64_t capacity = 2, bool dataPtr = true){
         ptr = new Data('O');
@@ -33,13 +35,13 @@ struct KeyPtrSet{
     }
 
     ~KeyPtrSet(){
-        delete ptr;
+        // if(_dataPtr) delete (Data*)ptr;
         delete[] key;
         delete[] bitmap;
     }
 
     KeyPtrSet &operator=(const KeyPtrSet &right){
-        delete ptr;
+        // if(_dataPtr) delete (Data*)ptr;
         delete[] key;
         delete[] bitmap;
 
@@ -174,12 +176,10 @@ namespace System{
 
         std::sort(V.begin(), V.end());
 
-        /*
-        for(auto &it: V){
-            std::clog << it << " ";
-        }
-        std::clog << endl;
-        */
+        // for(auto &it: V){
+        //     std::clog << it << " ";
+        // }
+        // std::clog << endl;
         
         if(t_len % 2 == 0){
             //std::clog << "<log> V[t_len / 2 - 1]: " << V[t_len / 2 - 1] << std::endl;

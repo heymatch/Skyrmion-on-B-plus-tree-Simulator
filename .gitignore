@@ -33,3 +33,5 @@
 *.log
 *.dat
 *.csv
+test/tester/testcase_c.txt
+test/tester/testcase.txt

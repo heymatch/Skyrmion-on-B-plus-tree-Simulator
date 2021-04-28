@@ -26,17 +26,23 @@ public:
         }
     }
 
-    void insertData(const Index &idx, const Data &data){
+    void insertData(const Index &idx, const Data &data, std::ostream &fcsvTreeHeight){
         if(_root == nullptr){
             _root = new Unit(_options);
             _leftMostUnit = _root;
             _root->_tracks[0].setValid(true);
+
+            fcsvTreeHeight << InstructionCounter << ",";
+            fcsvTreeHeight << height() << "\n";
         }
-        
+
         _root->insertData(idx, data, 0, -1);
         
         if(_root->getParentUnit() != nullptr){
             _root = _root->getParentUnit();
+
+            fcsvTreeHeight << InstructionCounter << ",";
+            fcsvTreeHeight << height() << "\n";
         }
             
     }
@@ -98,9 +104,9 @@ std::ostream &operator<<(std::ostream &out, const BPTree &right){
     }
     else{
         #ifdef RELEASE
-        out << "id,shiftCounter,insertCounter,removeCounter,readCounter,migrateCounter\n";
+        
         out << *(right._root);
-        #elif DUBUG
+        #elif defined DEBUG
         out << "{\n";
         out << *(right._root);
         out << "\n}\n";

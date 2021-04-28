@@ -12,7 +12,7 @@ IF "%2" == "" ( GOTO DONE )
 
 SET /A target=1
 SET /A pass=0
-Skyrmion.exe test\testcase%1.txt benchmark\setting%2.txt test\output%1.dat test\output%1.csv 2> test\log%1.log
+Skyrmion.exe test\testcase%1.txt benchmark\setting%2.txt test\output%1.dat test\nodeInfo%1.csv test\treeHeight%1.csv 2> test\log%1.log
 IF %errorlevel%==0 ( ECHO test\testcase%1.txt ok & SET /A pass=pass+1 )
 REM FC test\answer%1.ans test\output%1.out
 GOTO DONE
@@ -22,7 +22,7 @@ SET /A target=17
 SET /A pass=0
 FOR /l %%a IN (1 1 %target%) DO (
     ECHO Test test\testcase%%a.txt ...
-    Skyrmion.exe test\testcase%%a.txt benchmark\setting%2.txt test\output%%a.dat test\output%%a.csv 2> test\log%%a.log && ( ECHO test\testcase%%a.txt ok & SET /A pass=pass+1 )
+    Skyrmion.exe test\testcase%%a.txt benchmark\setting%2.txt test\output%%a.dat test\nodeInfo%%a.csv test\treeHeight%%a.csv 2> test\log%%a.log && ( ECHO test\testcase%%a.txt ok & SET /A pass=pass+1 )
     ECHO Finish test\testcase%%a.txt
     ECHO:
 )
@@ -42,4 +42,4 @@ FOR /l %%a IN (1 1 %target%) DO (
 GOTO DONE
 
 :DONE
-IF %pass%==%target% ( ECHO Accept ) ELSE ( ECHO Wrong )
+IF %pass%==%target% ( ECHO Accept ^( %pass% / %target% ^) ) ELSE ( ECHO Wrong ^( %pass% / %target% ^) )

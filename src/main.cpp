@@ -181,10 +181,11 @@ int main(int argc, char **argv){
 	//* argument1 = data filename
     //* argument2 = setting filename
     //* argument3 = output filename
-    //* argument4 = csv output filename
-    if(argc != 5){
+    //* argument4 = csv node information filename
+    //* argument4 = csv tree information filename
+    if(argc != 6){
         cout << "invalid arguments" << endl;
-        cout << "arg1 = data, arg2 = setting, arg3 = status, arg4 = csv" << endl;
+        cout << "arg1 = data, arg2 = setting, arg3 = status, arg4 = node csv, arg5 = tree csv" << endl;
         return EXIT_FAILURE;
     }
         
@@ -202,17 +203,24 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    //* output setting
+    //* other message output
     ofstream fout(argv[3]);
     if(fout.fail()){
         cerr << "file: '" << argv[3] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
-    //* csv output setting
-    ofstream fcsv(argv[4]);
-    if(fcsv.fail()){
-        cerr << "file: '" << argv[3] << "' open error" << endl;
+    //* csv node information
+    ofstream fcsvNodeInfo(argv[4]);
+    if(fcsvNodeInfo.fail()){
+        cerr << "file: '" << argv[4] << "' open error" << endl;
+        return EXIT_FAILURE;
+    }
+
+    //* csv tree information
+    ofstream fcsvTreeHeight(argv[5]);
+    if(fcsvTreeHeight.fail()){
+        cerr << "file: '" << argv[5] << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
@@ -222,6 +230,9 @@ int main(int argc, char **argv){
 
     BPTree tree(settingParser(setting));
     string input;
+
+    fcsvNodeInfo << "id,shiftCounter,insertCounter,removeCounter,readCounter,migrateCounter" << endl;
+    fcsvTreeHeight << "inst_th,height" << endl;
     
     try{
         #ifdef __linux__
@@ -230,6 +241,7 @@ int main(int argc, char **argv){
         #elif _WIN64
         while(getline(workload, input)){
         #endif
+            ++InstructionCounter;
             Index index = 0;
             Data data = 0;
             switch(inputParser(input, index, data)){
@@ -249,7 +261,7 @@ int main(int argc, char **argv){
                     }
                     break;
                 case Operation::INSERT:
-                    tree.insertData(index, data);
+                    tree.insertData(index, data, fcsvTreeHeight);
                     #ifdef DEBUG
                     // fout << "Insert index " << index << ": " << data << endl;
                     fout << "insert " << index << endl;
@@ -280,17 +292,20 @@ int main(int argc, char **argv){
             }
             // std::clog << "<log> <main()> " << input << " finish" << std::endl;
         }
-        std::clog << "<log> input file: " << argv[1] << " success" << std::endl;
-        fout << "Tree Height: " << tree.height() << endl;
+        clog << "<log> input file: " << argv[1] << " success" << endl;
+
         fout << "Sparse Node: " << tree.sparse() << endl;
-        fcsv << tree << endl;
+
+        fcsvTreeHeight << InstructionCounter << ",";
+        fcsvTreeHeight << tree.height() << "\n";
+        
+        fcsvNodeInfo << tree << endl;
     }
     catch(const char *e){
         cout << e << endl;
         clog << e << endl;
         return EXIT_FAILURE;
     }
-
 
     workload.close();
     setting.close();

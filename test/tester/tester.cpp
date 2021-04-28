@@ -6,6 +6,7 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
 
     ofstream fout("testcase.txt");
+    FILE *file = fopen("testcase_c.txt", "w");
     
     int type = atoi(argv[1]);
     int numberOfTestcases = atoi(argv[2]);
@@ -16,23 +17,47 @@ int main(int argc, char **argv){
     if(type == 1){
         cout << "generate insert and search dataset" << endl;
         vector<int> index(numberOfTestcases+1);
+
+        cout << "generating..." << endl;
         for(int i = 1; i <= numberOfTestcases; ++i){
+            if(i % 1000000 == 1){
+                cout << "(" << i << "/" << numberOfTestcases << endl;
+            }
             index[i] = i + base;
         }
+
+        cout << "swaping..." << endl;
         for(int i = 1; i <= numberOfTestcases; ++i){
+            if(i % 1000000 == 1){
+                cout << "(" << i << "/" << numberOfTestcases << endl;
+            }
             swap(index[i], index[rand() % numberOfTestcases + 1]);
         }
 
+        cout << "output insert..." << endl;
         for(int i = 1; i <= numberOfTestcases; ++i){
-            fout << "insert " << index[i] << endl;
+            if(i % 1000000 == 1){
+                cout << "(" << i << "/" << numberOfTestcases << endl;
+            }
+            // fout << "insert " << index[i] << endl;
+            fprintf(file, "insert %d\n", index[i]);
         }
 
+        cout << "swaping..." << endl;
         for(int i = 1; i <= numberOfTestcases; ++i){
+            if(i % 1000000 == 1){
+                cout << "(" << i << "/" << numberOfTestcases << endl;
+            }
             swap(index[i], index[rand() % numberOfTestcases + 1]);
         }
 
+        cout << "output search..." << endl;
         for(int i = 1; i <= numberOfTestcases; ++i){
-            fout << "search " << index[i] << endl;
+            if(i % 1000000 == 1){
+                cout << "(" << i << "/" << numberOfTestcases << endl;
+            }
+            // fout << "search " << index[i] << endl;
+            fprintf(file, "search %d\n", index[i]);
         }
     }
     else if(type == 2){
