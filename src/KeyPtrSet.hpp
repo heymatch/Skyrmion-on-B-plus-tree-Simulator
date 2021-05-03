@@ -62,11 +62,13 @@ struct KeyPtrSet{
         ptr = addr;
     }
 
-    void setKey(Offset offset, Index val){
+    void setKey(Offset offset, Index val, bool bit = true){
         key[offset] = val;
-        if(!bitmap[offset])
-            ++_size;
-        bitmap[offset] = true;
+        if(bit){
+            if(!bitmap[offset])
+                ++_size;
+            bitmap[offset] = true;
+        }
 
         //! only for two keys
         if(_capacity == 3){
@@ -113,6 +115,12 @@ struct KeyPtrSet{
         }
     }
 
+    bool addSkyrmion(){
+        if(isFull()){
+            return false;
+        }
+    }
+
     Index getKey(Offset offset) const{
         return key[offset];
     }
@@ -131,6 +139,10 @@ struct KeyPtrSet{
 
     Size getKeyCapacity() const{
         return _capacity - 1;
+    }
+
+    bool isEmpty() const{
+        return _size == 0;
     }
 
     bool isFull() const{

@@ -71,20 +71,107 @@ namespace Evaluation{
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
         //* remove old data
         shiftCounter.count(options.word_length);
-        removeCounter.count(countSkyrmion( newIndex ));
+        removeCounter.count(countSkyrmion( oldIndex ));
 
         //* write new data
         insertCounter.count(countSkyrmion( newIndex ));
         shiftCounter.count(options.word_length);
     }
 
-    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet *oldData, const KeyPtrSet *newData){
-        if(isLeaf){
+    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, const KeyPtrSet oldData[], const KeyPtrSet newData[]){
+        if(options.read_mode == Options::read_function::SEQUENTIAL){
+            sequential_read(options, isLeaf, readCounter, shiftCounter);
+        }
+        else if(options.read_mode == Options::read_function::RANGE_READ){
+            range_read(options, isLeaf, readCounter, shiftCounter);
+        }
 
+        int oldBit[options.track_length] = {};
+        int newBit[options.track_length] = {};
+        
+        int b = options.track_length - 1;
+        for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
+            Size v = (Size) oldData[i].getPtr();
+            for(int j = options.word_length - 1; j >= 0; --j){
+                oldBit[b--] = v & 1;
+                v >>= 1;
+            }
+
+            for(int k = 0; k < oldData[i].getKeyCapacity(); ++k){
+                v = (Size) oldData[i].getKey(k);
+                for(int j = options.word_length - 1; j >= 0; --j){
+                    oldBit[b--] = v & 1;
+                    v >>= 1;
+                }
+            }
         }
-        else{
-            
+
+        b = options.track_length - 1;
+        for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
+            Size v = (Size) newData[i].getPtr();
+            for(int j = options.word_length - 1; j >= 0; --j){
+                newBit[b--] = v & 1;
+                v >>= 1;
+            }
+
+            for(int k = 0; k < newData[i].getKeyCapacity(); ++k){
+                v = (Size) newData[i].getKey(k);
+                for(int j = options.word_length - 1; j >= 0; --j){
+                    newBit[b--] = v & 1;
+                    v >>= 1;
+                }
+            }
         }
+
+        Size permuteRange = 0;
+        Size write_1 = 0;
+        Size write_0 = 0;
+
+        //* spacing shift
+        for(int i = 0; i < options.track_length; ++i){
+            if(oldBit[i] != newBit[i]){
+                permuteRange = options.track_length - i;
+                break;
+            }
+        }
+        shiftCounter.count(permuteRange);
+
+        //* write 1
+        for(int i = 0, j = 0; i < options.track_length; ++i){
+            if(newBit[i] == 1){
+                while(oldBit[j] == 0){
+                    ++write_1;
+                    ++j;
+                }
+                ++j;
+            }
+        }
+        shiftCounter.count(write_1);
+
+        //* write 0
+        Size old_b = 0, new_b = 0;
+        bool old_start = false, new_start = false;
+
+        for(int i = 0, j = 0; i < options.track_length; ++i){
+            if(old_start && oldBit[i] == 0){
+                ++old_b;
+            }
+            else if(oldBit[i] == 1){
+                old_start = true;
+            }
+        }
+
+        for(int i = 0, j = 0; i < options.track_length; ++i){
+            if(new_start && newBit[i] == 0){
+                ++new_b;
+            }
+            else if(newBit[i] == 1){
+                new_start = true;
+            }
+        }
+
+        write_0 = old_b < new_b ? new_b - old_b : old_b - new_b;
+        shiftCounter.count(write_0);
     }
 
     void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
@@ -421,32 +508,40 @@ struct Unit{
 
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
+                    }
 
-                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
-                            //TODO add skyrmion to unused
-                        }
-                    }
-                    else{
-                        //* Evaluate for direct write a data
-                        switch (_options.update_mode){
-                            case Options::update_function::OVERWRITE:
-                                Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
-                                break;
-                            case Options::update_function::PERMUTATION_WRITE:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WORD_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                //TODO evaluation 
-                                break;
-                            default:
-                                throw "undefined update operation";
-                                break;
-                        }
-                    }
                     _data[insertPosition] = newData;
+
+                    if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                        int64_t diff = diffSkyrmion(oldData._data);
+                        if(diff > 0){
+                            _insertCounter.count(diff);
+                            insertSkyrmion(diff);
+                        }
+                        else{
+                            _removeCounter.count(-diff);
+                            removeSkyrmion(-diff);
+                        }
+                    }
+
+                    switch (_options.update_mode){
+                    case Options::update_function::OVERWRITE:
+                        Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                        break;
+                    case Options::update_function::PERMUTATION_WRITE:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WORD_COUNTER:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                        Evaluation::permute(_options, isLeaf(), _readCounter, _shiftCounter, oldData._data, _data);
+                        break;
+                    default:
+                        throw "undefined update operation";
+                        break;
+                    }
+
                 }
                 else if(_options.node_ordering == Options::ordering::UNSORTED){
                     _data[insertPosition] = newData;
@@ -464,6 +559,9 @@ struct Unit{
                     Offset shiftPos = getShiftPosition();
                     insertPosition = getInsertPosition(idx, shiftPos);
 
+                    Size overwrittenSkyrmion = Evaluation::countSkyrmion(_data[shiftPos]);
+                    Node oldData = *this;
+
                     //* Only insert at unused KeyPtrSet
                     if(_data[insertPosition].getBitmap(0)){
                         if(shiftPos < insertPosition){
@@ -480,32 +578,42 @@ struct Unit{
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
 
-                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
-                            //TODO add skyrmion to unused
-                        }
+                        // if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                        //     insertSkyrmion(overwrittenSkyrmion);
+                        // }
                     }
-                    else{
-                        //* Evaluate for direct write a data
-                        switch (_options.update_mode){
-                        case Options::update_function::OVERWRITE:
-                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
-                            break;
-                        case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WORD_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        default:
-                            throw "undefined update operation";
-                            break;
+                    
+                    _data[insertPosition] = newData;
+
+                    if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                        int64_t diff = diffSkyrmion(oldData._data);
+                        if(diff > 0){
+                            _insertCounter.count(diff);
+                            insertSkyrmion(diff);
+                        }
+                        else{
+                            _removeCounter.count(-diff);
+                            removeSkyrmion(-diff);
                         }
                     }
 
-                    _data[insertPosition] = newData;  
+                    switch (_options.update_mode){
+                    case Options::update_function::OVERWRITE:
+                        Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                        break;
+                    case Options::update_function::PERMUTATION_WRITE:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WORD_COUNTER:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                        Evaluation::permute(_options, isLeaf(), _readCounter, _shiftCounter, oldData._data, _data);
+                        break;
+                    default:
+                        throw "undefined update operation";
+                        break;
+                    }
 
                     // if(_sideBack != nullptr){
                     //     if(insertSide){
@@ -529,6 +637,9 @@ struct Unit{
                     //* insert into the same pointer, just add the index to the key-point set
                     for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i].getPtr() == data){
+                            Size overwrittenSkyrmion = Evaluation::countSkyrmion(_data[i].getKey(1));
+                            Node oldData = *this;
+
                             _data[i].addKey(idx);
                             
                             for(int i = 1; i < _options.dataSize(isLeaf()); ++i){
@@ -538,25 +649,22 @@ struct Unit{
                                     _data[i-1].setKey(1, temp);
                                 } 
                             }
+
+                            // if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                            //     insertSkyrmion(overwrittenSkyrmion);
+                            // }
                             // std::clog << "<log> <Node::insertData()> end with same pointer" << std::endl;
 
-                            //* Evaluate for direct write an index
-                            switch (_options.update_mode){
-                                case Options::update_function::OVERWRITE:
-                                    Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[i].getKey(1), idx);
-                                    break;
-                                case Options::update_function::PERMUTATION_WRITE:
-                                    //TODO evaluation 
-                                    break;
-                                case Options::update_function::PERMUTE_WORD_COUNTER:
-                                    //TODO evaluation 
-                                    break;
-                                case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                                    //TODO evaluation 
-                                    break;
-                                default:
-                                    throw "undefined update operation";
-                                    break;
+                            if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                                int64_t diff = diffSkyrmion(oldData._data);
+                                if(diff > 0){
+                                    _insertCounter.count(diff);
+                                    insertSkyrmion(diff);
+                                }
+                                else{
+                                    _removeCounter.count(-diff);
+                                    removeSkyrmion(-diff);
+                                }
                             }
 
                             return;
@@ -569,6 +677,9 @@ struct Unit{
 
                     uint64_t shiftPos = getShiftPosition();
                     insertPosition = getInsertPosition(idx, shiftPos);
+
+                    Size overwrittenSkyrmion = Evaluation::countSkyrmion(_data[shiftPos]);
+                    Node oldData = *this;
 
                     //* Only insert at unused KeyPtrSet
                     if(_data[insertPosition].getBitmap(0)){
@@ -585,32 +696,24 @@ struct Unit{
 
                         //* Evaluate for insert a data
                         Evaluation::insert(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, newData);
-                        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
-                            //TODO add skyrmion to unused
-                        }
+                        // if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                        //     insertSkyrmion(overwrittenSkyrmion);
+                        // }
                     }
-                    else{
-                        //* Evaluate for direct write a data
-                        switch (_options.update_mode){
-                        case Options::update_function::OVERWRITE:
-                            Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
-                            break;
-                        case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WORD_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                            //TODO evaluation 
-                            break;
-                        default:
-                            throw "undefined update operation";
-                            break;
-                        }
-                    }
-
+                    
                     _data[insertPosition] = newData;
+
+                    if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                        int64_t diff = diffSkyrmion(oldData._data);
+                        if(diff > 0){
+                            _insertCounter.count(diff);
+                            insertSkyrmion(diff);
+                        }
+                        else{
+                            _removeCounter.count(-diff);
+                            removeSkyrmion(-diff);
+                        }
+                    }
                     
                     for(int i = 1; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) && _data[i-1].getBitmap(1) && _data[i].getKey(0) < _data[i-1].getKey(1)){
@@ -619,6 +722,25 @@ struct Unit{
                             _data[i-1].setKey(1, temp);
                         }
                     }
+
+                    switch (_options.update_mode){
+                    case Options::update_function::OVERWRITE:
+                        Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
+                        break;
+                    case Options::update_function::PERMUTATION_WRITE:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WORD_COUNTER:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                        Evaluation::permute(_options, isLeaf(), _readCounter, _shiftCounter, oldData._data, _data);
+                        break;
+                    default:
+                        throw "undefined update operation";
+                        break;
+                    }
+
                     
                 }
         
@@ -677,6 +799,86 @@ struct Unit{
             }
 
             _data[insertPos] = data;
+        }
+
+        void insertSkyrmion(Size n){
+            // std::clog << "n 0: " << n << std::endl;
+            int b = 0;
+            while(n){
+                // std::clog << "n 1: " << n << std::endl;
+                Offset r = -1;
+                for(int i = b; i < _options.dataSize(isLeaf()); ++i){
+                    if(!_data[i].isFull()){
+                        r = i;
+                        break;
+                    }
+                }
+                if(r == -1)
+                    return;
+                
+                Offset k = 0;
+                Size v = -1;
+
+                if(!_data[r].getBitmap(0)){
+                    v = (Size) _data[r].getPtr();
+                    k = 0;
+                }
+                
+                if(v == -1){
+                    // std::clog << "r 0: " << r << std::endl;
+                    if(!_data[r].getBitmap(0)){
+                        v = (Size) _data[r].getKey(0);
+                        k = 1;
+                    }
+                    else if(_data[r].getKeyCapacity() == 2 && !_data[r].getBitmap(1)){
+                        v = (Size) _data[r].getKey(1);
+                        k = 2;
+                    }
+                    else{
+                        b = r + 1;
+                        continue;
+                    }
+                }
+                
+
+                if(Evaluation::countSkyrmion(v) == _options.word_length){
+                    continue;
+                }
+
+                Size i = 1;
+                while(v & i == i && i != 0){
+                    i <<= 1;
+                }
+                v += i;
+
+                if(k == 0){
+                    _data[r].setPtr((void *)v);
+                }
+                else if(k == 1){
+                    _data[r].setKey(0, v, false);
+                }
+                else if(k == 2){
+                    _data[r].setKey(1, v, false);
+                }
+
+                --n;
+                
+            }
+            // std::clog << "n 0: " << n << std::endl;
+        }
+
+        void removeSkyrmion(Size n){
+            
+        }
+
+        int64_t diffSkyrmion(const KeyPtrSet rightData[]){
+            int64_t self = 0, right = 0;
+            for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
+                self += Evaluation::countSkyrmion(_data[i]);
+                right += Evaluation::countSkyrmion(rightData[i]);
+            }
+
+            return self - right;
         }
 
         /**
@@ -2305,6 +2507,7 @@ struct Unit{
      * TODO evaluation
      */
     void copyHalfNode(Node &source, Node &destination, KeyPtrSet &promote, Index &wait_insert_idx){
+        bool inUnit = false;
         //std::clog << "<log> <copyHalfNode()>" << std::endl;
         switch (_options.read_mode){
             case Options::read_function::SEQUENTIAL:
@@ -2317,6 +2520,9 @@ struct Unit{
                 throw "undefined read operation";
                 break;
         }
+
+        Node oldData_left = source;
+        Node oldData_right = destination;
 
         if(isLeaf()){
             if(_options.node_ordering == Options::ordering::SORTED){
@@ -2331,16 +2537,22 @@ struct Unit{
                 for(int i = mid, j = 0; i < _options.dataSize(isLeaf()); ++i, ++j){
                     switch (_options.update_mode){
                         case Options::update_function::OVERWRITE:
-                            Evaluation::overwrite(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
+                            Evaluation::overwrite(
+                                    _options, 
+                                    isLeaf(), 
+                                    destination._readCounter, 
+                                    destination._shiftCounter, 
+                                    destination._insertCounter, 
+                                    destination._removeCounter, 
+                                    destination._data[j], source._data[i]
+                                );
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
                             //TODO evaluation 
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
-                            //TODO evaluation 
                             break;
                         case Options::update_function::PERMUTE_WITHOUT_COUNTER:
-                            //TODO evaluation 
                             break;
                         default:
                             throw "undefined update operation";
@@ -2349,6 +2561,80 @@ struct Unit{
 
                     destination._data[j] = source._data[i];
                     source._data[i].delAll();
+                }
+
+                if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                    int64_t diff = source.diffSkyrmion(oldData_left._data);
+                    if(inUnit){
+                        if(diff > 0){
+                            source._migrateCounter.count(diff);
+                            source.insertSkyrmion(diff);
+                        }
+                        else{
+                            source._removeCounter.count(-diff);
+                            source.removeSkyrmion(-diff);
+                        }
+
+                        diff = destination.diffSkyrmion(oldData_right._data);
+                        if(diff > 0){
+                            destination._migrateCounter.count(diff);
+                            destination.insertSkyrmion(diff);
+                        }
+                        else{
+                            destination._removeCounter.count(-diff);
+                            destination.removeSkyrmion(-diff);
+                        }
+                    }
+                    else{
+                        if(diff > 0){
+                            source._insertCounter.count(diff);
+                            source.insertSkyrmion(diff);
+                        }
+                        else{
+                            source._removeCounter.count(-diff);
+                            source.removeSkyrmion(-diff);
+                        }
+
+                        diff = destination.diffSkyrmion(oldData_right._data);
+                        if(diff > 0){
+                            destination._insertCounter.count(diff);
+                            destination.insertSkyrmion(diff);
+                        }
+                        else{
+                            destination._removeCounter.count(-diff);
+                            destination.removeSkyrmion(-diff);
+                        }
+                    }
+                }
+
+                switch(_options.update_mode){
+                    case Options::update_function::OVERWRITE:
+                        break;
+                    case Options::update_function::PERMUTATION_WRITE:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WORD_COUNTER:
+                        //TODO evaluation 
+                        break;
+                    case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                        Evaluation::permute(
+                                _options, 
+                                isLeaf(), 
+                                source._readCounter, 
+                                source._shiftCounter, 
+                                oldData_left._data, source._data
+                            );
+                        Evaluation::permute(
+                                _options, 
+                                isLeaf(), 
+                                destination._readCounter, 
+                                destination._shiftCounter, 
+                                oldData_right._data, destination._data
+                            );
+                        break;
+                    default:
+                        throw "undefined update operation";
+                        break;
                 }
             }
             else if(_options.node_ordering == Options::ordering::UNSORTED){
@@ -2417,13 +2703,14 @@ struct Unit{
                 if(promoteMid){
                     //std::clog << "<log> <copyHalfNode()> promoteMid" << std::endl;
                 }
+
+                
             }
             else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
+                inUnit = isFull(0) && !isFull(1) && !isRoot() && getParentUnit()->getFrontSideUnit(getParentOffset()) != this;
                 // std::clog << "<log> <copyHalfNode()> Internal begin" << std::endl;
                 // std::clog << "<log> <copyHalfNode()> Internal source begin: " << source << std::endl;
-                // std::clog << "<log> <copyHalfNode()> Internal destination begin: " << destination << std::endl;
-
-                bool inUnit = isFull(0) && !isFull(1) && !isRoot() && getParentUnit()->getFrontSideUnit(getParentOffset()) != this;
+                // std::clog << "<log> <copyHalfNode()> Internal destination begin: " << destination << std::endl;  
 
                 Offset mid = 0;
                 if(wait_insert_idx < promote.getKey(0)){
@@ -2508,7 +2795,81 @@ struct Unit{
                 // std::clog << "<log> <copyHalfNode()> Internal to Leaf destination end: " << destination << std::endl;
                 // std::clog << "<log> <copyHalfNode()> Internal end" << std::endl;
             }
+
+            if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+                int64_t diff = source.diffSkyrmion(oldData_left._data);
+                if(inUnit){
+                    if(diff > 0){
+                        source._migrateCounter.count(diff);
+                        source.insertSkyrmion(diff);
+                    }
+                    else{
+                        source._removeCounter.count(-diff);
+                        source.removeSkyrmion(-diff);
+                    }
+
+                    diff = destination.diffSkyrmion(oldData_right._data);
+                    if(diff > 0){
+                        destination._migrateCounter.count(diff);
+                        destination.insertSkyrmion(diff);
+                    }
+                    else{
+                        destination._removeCounter.count(-diff);
+                        destination.removeSkyrmion(-diff);
+                    }
+                }
+                else{
+                    if(diff > 0){
+                        source._insertCounter.count(diff);
+                        source.insertSkyrmion(diff);
+                    }
+                    else{
+                        source._removeCounter.count(-diff);
+                        source.removeSkyrmion(-diff);
+                    }
+
+                    diff = destination.diffSkyrmion(oldData_right._data);
+                    if(diff > 0){
+                        destination._insertCounter.count(diff);
+                        destination.insertSkyrmion(diff);
+                    }
+                    else{
+                        destination._removeCounter.count(-diff);
+                        destination.removeSkyrmion(-diff);
+                    }
+                }
+                
+            }
             
+            switch(_options.update_mode){
+                case Options::update_function::OVERWRITE:
+                    break;
+                case Options::update_function::PERMUTATION_WRITE:
+                    //TODO evaluation 
+                    break;
+                case Options::update_function::PERMUTE_WORD_COUNTER:
+                    //TODO evaluation 
+                    break;
+                case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                    Evaluation::permute(
+                            _options, 
+                            isLeaf(), 
+                            source._readCounter, 
+                            source._shiftCounter, 
+                            oldData_left._data, source._data
+                        );
+                    Evaluation::permute(
+                            _options, 
+                            isLeaf(), 
+                            destination._readCounter, 
+                            destination._shiftCounter, 
+                            oldData_right._data, destination._data
+                        );
+                    break;
+                default:
+                    throw "undefined update operation";
+                    break;
+            }
         }
     }
     
@@ -3045,6 +3406,10 @@ struct Unit{
                 throw "undefined read operation";
                 break;
         }
+
+        Node oldData_left = left;
+        Node oldData_right = right;
+
         // std::clog << "<log> <Unit::migrateNode()>" << std::endl;
         // std::clog << "<log> <migrateNode() begin> left: " << left << std::endl;
         // std::clog << "<log> <migrateNode() begin> right: " << right << std::endl;
@@ -3127,6 +3492,60 @@ struct Unit{
             right._sideFront->connectParentUnit(parentUnit, parentUnitOffset);
             // std::clog << "side: " << right._sideFront << std::endl;
         }
+
+        if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
+            int64_t diff = left.diffSkyrmion(oldData_left._data);
+            if(diff > 0){
+                left._migrateCounter.count(diff);
+                left.insertSkyrmion(diff);
+            }
+            else{
+                left._removeCounter.count(-diff);
+                left.removeSkyrmion(-diff);
+            }
+
+            diff = right.diffSkyrmion(oldData_right._data);
+            if(diff > 0){
+                right._migrateCounter.count(diff);
+                right.insertSkyrmion(diff);
+            }
+            else{
+                right._removeCounter.count(-diff);
+                right.removeSkyrmion(-diff);
+            }
+      
+        }
+        
+        switch(_options.update_mode){
+            case Options::update_function::OVERWRITE:
+                break;
+            case Options::update_function::PERMUTATION_WRITE:
+                //TODO evaluation 
+                break;
+            case Options::update_function::PERMUTE_WORD_COUNTER:
+                //TODO evaluation 
+                break;
+            case Options::update_function::PERMUTE_WITHOUT_COUNTER:
+                Evaluation::permute(
+                        _options, 
+                        isLeaf(), 
+                        left._readCounter, 
+                        left._shiftCounter, 
+                        oldData_left._data, left._data
+                    );
+                Evaluation::permute(
+                        _options, 
+                        isLeaf(), 
+                        right._readCounter, 
+                        right._shiftCounter, 
+                        oldData_right._data, right._data
+                    );
+                break;
+            default:
+                throw "undefined update operation";
+                break;
+        }
+
 
         left.setValid(false);
         right.setValid(true);

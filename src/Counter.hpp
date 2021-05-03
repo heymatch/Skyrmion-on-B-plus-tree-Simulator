@@ -7,6 +7,7 @@
 #include "Options.hpp"
 
 static Size InstructionCounter = 0;
+static Size InsertionCounter = 0;
 static Size UnitId = 0;
 static Size NodeId = 0;
 

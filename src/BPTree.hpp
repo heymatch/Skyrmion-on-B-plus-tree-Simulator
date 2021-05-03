@@ -36,7 +36,7 @@ public:
             _leftMostUnit = _root;
             _root->_tracks[0].setValid(true);
 
-            fcsvTreeHeight << InstructionCounter << ",";
+            fcsvTreeHeight << InsertionCounter << ",";
             fcsvTreeHeight << height() << std::endl;
         }
 
@@ -45,7 +45,7 @@ public:
         if(_root->getParentUnit() != nullptr){
             _root = _root->getParentUnit();
 
-            fcsvTreeHeight << InstructionCounter << ",";
+            fcsvTreeHeight << InsertionCounter << ",";
             fcsvTreeHeight << height() << std::endl;
         }
             

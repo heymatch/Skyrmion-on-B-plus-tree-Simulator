@@ -232,7 +232,10 @@ int main(int argc, char **argv){
     string input;
 
     fcsvNodeInfo << "id,shiftCounter,insertCounter,removeCounter,readCounter,migrateCounter" << endl;
+
     fcsvTreeHeight << "inst_th,height" << endl;
+    fcsvTreeHeight << 0 << ",";
+    fcsvTreeHeight << 0 << std::endl;
     
     try{
         #ifdef __linux__
@@ -264,6 +267,7 @@ int main(int argc, char **argv){
                     }
                     break;
                 case Operation::INSERT:
+                    ++InsertionCounter;
                     tree.insertData(index, data, fcsvTreeHeight);
                     #ifdef DEBUG
                     // fout << "Insert index " << index << ": " << data << endl;
