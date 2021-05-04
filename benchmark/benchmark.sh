@@ -1,27 +1,29 @@
 #!/bin/bash
 
+echo time and memory ^> log/time.log
+
 for setting in {1..16};
 do
     echo setting: $setting
 
     echo tpch
-    ./process.sh tpch $setting
+    \time -v -a -o log/time.log ./process.sh tpch $setting
 
     echo zipfian
-    ./process.sh zipfian $setting
+    \time -v -a -o log/time.log ./process.sh zipfian $setting
 
     echo uniform
-    ./process.sh uniform $setting
+    \time -v -a -o log/time.log ./process.sh uniform $setting
 
     echo hotspot
-    ./process.sh hotspot $setting
+    \time -v -a -o log/time.log ./process.sh hotspot $setting
 
     echo sequential
-    ./process.sh sequential $setting
+    \time -v -a -o log/time.log ./process.sh sequential $setting
 
     echo exponential
-    ./process.sh exponential $setting
+    \time -v -a -o log/time.log ./process.sh exponential $setting
 
     echo latest
-    ./process.sh latest $setting
+    \time -v -a -o log/time.log ./process.sh latest $setting
 done

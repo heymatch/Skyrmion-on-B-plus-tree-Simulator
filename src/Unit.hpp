@@ -515,6 +515,11 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
+                            if(migrateSkyrmion > 0){
+                                _migrateCounter.count(migrateSkyrmion);
+                                diff -= migrateSkyrmion;
+                                diff = diff < 0 ? 0 : diff;
+                            }
                             _insertCounter.count(diff);
                             insertSkyrmion(diff);
                         }
@@ -588,6 +593,11 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
+                            if(migrateSkyrmion > 0){
+                                _migrateCounter.count(migrateSkyrmion);
+                                diff -= migrateSkyrmion;
+                                diff = diff < 0 ? 0 : diff;
+                            }
                             _insertCounter.count(diff);
                             insertSkyrmion(diff);
                         }
@@ -658,6 +668,11 @@ struct Unit{
                             if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
                                 int64_t diff = diffSkyrmion(oldData._data);
                                 if(diff > 0){
+                                    if(migrateSkyrmion > 0){
+                                        _migrateCounter.count(migrateSkyrmion);
+                                        diff -= migrateSkyrmion;
+                                        diff = diff < 0 ? 0 : diff;
+                                    }
                                     _insertCounter.count(diff);
                                     insertSkyrmion(diff);
                                 }
@@ -706,6 +721,11 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
+                            if(migrateSkyrmion > 0){
+                                _migrateCounter.count(migrateSkyrmion);
+                                diff -= migrateSkyrmion;
+                                diff = diff < 0 ? 0 : diff;
+                            }
                             _insertCounter.count(diff);
                             insertSkyrmion(diff);
                         }
@@ -3292,13 +3312,13 @@ struct Unit{
 
         if(isLeaf()){
             if(right.getSize() - left.getSize() == 1){
-                left.insertData(right._data[0].getKey(0), right._data[0].getPtr(), insertPosition, true);
+                left.insertData(right._data[0].getKey(0), right._data[0].getPtr(), insertPosition, true, Evaluation::countSkyrmion(right._data[0]));
                 // left.insertDataFromBack(right._data[0]);
                 right.deleteMark(0);
             }
             else{
                 for(int i = 0; i < (right.getSize() - left.getSize()) / 2 ; ++i){
-                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition, true);
+                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition, true, Evaluation::countSkyrmion(left._data[0]));
                     // left.insertDataFromBack(right._data[i]);
                     right.deleteData(right._data[i].getKey(0));
                 }
@@ -3345,7 +3365,7 @@ struct Unit{
 
         if(isLeaf()){
             for(int i = begin; i < _options.dataSize(isLeaf()); ++i){
-                right.insertData(left._data[i].getKey(0), left._data[i].getPtr(), insertPosition, true);
+                right.insertData(left._data[i].getKey(0), left._data[i].getPtr(), insertPosition, true, Evaluation::countSkyrmion(left._data[i]));
                 // right.insertDataFromFront(left._data[i]);
                 left.deleteData(left._data[i].getKey(0));
             }
