@@ -889,7 +889,70 @@ struct Unit{
         }
 
         void removeSkyrmion(Size n){
-            
+            int b = 0;
+            while(n){
+                // std::clog << "n 1: " << n << std::endl;
+                Offset r = -1;
+                for(int i = b; i < _options.dataSize(isLeaf()); ++i){
+                    if(!_data[i].isFull()){
+                        r = i;
+                        break;
+                    }
+                }
+                if(r == -1)
+                    return;
+                
+                Offset k = 0;
+                Size v = -1;
+
+                if(!_data[r].getBitmap(0)){
+                    v = (Size) _data[r].getPtr();
+                    k = 0;
+                }
+                
+                if(v == -1){
+                    // std::clog << "r 0: " << r << std::endl;
+                    if(!_data[r].getBitmap(0)){
+                        v = (Size) _data[r].getKey(0);
+                        k = 1;
+                    }
+                    else if(_data[r].getKeyCapacity() == 2 && !_data[r].getBitmap(1)){
+                        v = (Size) _data[r].getKey(1);
+                        k = 2;
+                    }
+                    else{
+                        b = r + 1;
+                        continue;
+                    }
+                }
+                
+
+                if(Evaluation::countSkyrmion(v) == _options.word_length){
+                    continue;
+                }
+
+                Size i = 1;
+                while(i != 0){
+                    if(v & i == i){
+                        break;
+                    }
+                    i <<= 1;
+                }
+                v -= i;
+
+                if(k == 0){
+                    _data[r].setPtr((void *)v);
+                }
+                else if(k == 1){
+                    _data[r].setKey(0, v, false);
+                }
+                else if(k == 2){
+                    _data[r].setKey(1, v, false);
+                }
+
+                --n;
+                
+            }
         }
 
         int64_t diffSkyrmion(const KeyPtrSet rightData[]){
