@@ -3378,13 +3378,17 @@ struct Unit{
             if(right.getSize() - left.getSize() == 1){
                 left.insertData(right._data[0].getKey(0), right._data[0].getPtr(), insertPosition, true, Evaluation::countSkyrmion(right._data[0]));
                 // left.insertDataFromBack(right._data[0]);
+                
                 right.deleteMark(0);
+                right.removeSkyrmion(Evaluation::countSkyrmion(right._data[0]));
             }
             else{
                 for(int i = 0; i < (right.getSize() - left.getSize()) / 2 ; ++i){
-                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition, true, Evaluation::countSkyrmion(left._data[0]));
+                    left.insertData(right._data[i].getKey(0), right._data[i].getPtr(), insertPosition, true, Evaluation::countSkyrmion(right._data[0]));
                     // left.insertDataFromBack(right._data[i]);
+                    
                     right.deleteData(right._data[i].getKey(0));
+                    right.removeSkyrmion(Evaluation::countSkyrmion(right._data[i]));
                 }
             }
         }
@@ -3431,7 +3435,9 @@ struct Unit{
             for(int i = begin; i < _options.dataSize(isLeaf()); ++i){
                 right.insertData(left._data[i].getKey(0), left._data[i].getPtr(), insertPosition, true, Evaluation::countSkyrmion(left._data[i]));
                 // right.insertDataFromFront(left._data[i]);
+                
                 left.deleteData(left._data[i].getKey(0));
+                left.removeSkyrmion(Evaluation::countSkyrmion(left._data[i]));
             }
 
             //std::clog << "<log> <balanceDataFromLeft()> Leaf left: " << left << std::endl;
