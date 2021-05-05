@@ -1,8 +1,12 @@
 #!/bin/bash
 
-echo time and memory ^> log/time.log
+if [ "$1" == "" ] || [ "$2" == "" ]; then 
+    exit
+fi
 
-for setting in {1..16};
+echo time and memory > log/time.log
+
+for setting in {$1..$2};
 do
     echo setting: $setting
 
