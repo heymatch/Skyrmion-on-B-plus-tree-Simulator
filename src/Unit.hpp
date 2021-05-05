@@ -667,6 +667,7 @@ struct Unit{
 
                             if(_options.update_mode == Options::update_function::PERMUTE_WITHOUT_COUNTER){
                                 int64_t diff = diffSkyrmion(oldData._data);
+                                // std::clog << "diff: " << diff << std::endl;
                                 if(diff > 0){
                                     if(migrateSkyrmion > 0){
                                         _migrateCounter.count(migrateSkyrmion);

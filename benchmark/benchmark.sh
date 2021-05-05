@@ -6,7 +6,7 @@ fi
 
 echo time and memory > log/time.log
 
-for setting in {$1..$2};
+for setting in $(eval echo {$1..$2});
 do
     echo setting: $setting
 
