@@ -1,6 +1,6 @@
 # setwd("D:/shared/Benchmark/ALL/csv")
 # setwd("C:/Users/heyma/Documents/Benchmark/csv")
-# setwd("D:/shared/Benchmark/backup/csv_202105050305")
+setwd("D:/shared/Benchmark/backup/csv_202105050305")
 setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105050305")
 
 # install.packages("stringr")
@@ -15,7 +15,7 @@ for(setting in 1:16){
   for(data in list.files(pattern = paste("*_setting", setting, "_nodeInfo.csv", sep = "")) ){
     print(data)
     nodeInfo <- read.csv(data, header = T)
-    s <- strsplit(data, "_")
+    s <- unlist(strsplit(data, "_"))
     combineData <- rbind(combineData, c(filename=data, workload = s[1], setting = setting, colSums(nodeInfo[,-1])) )
   }
   
