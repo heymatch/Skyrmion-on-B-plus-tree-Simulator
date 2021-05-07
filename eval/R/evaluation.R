@@ -1,12 +1,10 @@
 setwd("D:/shared/Benchmark/ALL/")
 # setwd("C:/Users/heyma/Documents/Benchmark/csv")
-<<<<<<< Updated upstream
 setwd("D:/shared/Benchmark/backup/csv_202105050305")
 setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105070044")
-=======
 setwd("D:/shared/Benchmark/backup/csv_202105070812")
 setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105050305")
->>>>>>> Stashed changes
+setwd("D:/shared/Benchmark/backup/csv_202105070044")
 
 # install.packages("stringr")
 # library("stringr")
