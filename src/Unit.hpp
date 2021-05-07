@@ -61,20 +61,54 @@ namespace Evaluation{
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* remove old data
         shiftCounter.count(options.word_length);
-        removeCounter.count(countSkyrmion(oldData));
+        removeCounter.count(options.word_length);
 
         //* write new data
-        insertCounter.count(countSkyrmion(newData));
+        insertCounter.count(countSkyrmion( newData ));
         shiftCounter.count(options.word_length);
     }
 
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
         //* remove old data
         shiftCounter.count(options.word_length);
-        removeCounter.count(countSkyrmion( oldIndex ));
+        removeCounter.count(options.word_length);
 
         //* write new data
         insertCounter.count(countSkyrmion( newIndex ));
+        shiftCounter.count(options.word_length);
+    }
+
+    void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
+        //* read old data
+        shiftCounter.count(options.word_length);
+        readCounter.count(options.word_length);
+
+        //* write new data
+        Size oldDataSkyrmion = countSkyrmion( oldData );
+        Size newDataSkyrmion = countSkyrmion( newData );
+        if(oldDataSkyrmion < newDataSkyrmion){
+            insertCounter.count(newDataSkyrmion - oldDataSkyrmion);
+        }
+        else{
+            removeCounter.count(oldDataSkyrmion - newDataSkyrmion);
+        }
+        shiftCounter.count(options.word_length);
+    }
+
+    void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
+        //* read old data
+        shiftCounter.count(options.word_length);
+        readCounter.count(options.word_length);
+
+        //* write new data
+        Size oldDataSkyrmion = countSkyrmion( oldIndex );
+        Size newDataSkyrmion = countSkyrmion( newIndex );
+        if(oldDataSkyrmion < newDataSkyrmion){
+            insertCounter.count(newDataSkyrmion - oldDataSkyrmion);
+        }
+        else{
+            removeCounter.count(oldDataSkyrmion - newDataSkyrmion);
+        }
         shiftCounter.count(options.word_length);
     }
 
@@ -86,92 +120,92 @@ namespace Evaluation{
             range_read(options, isLeaf, readCounter, shiftCounter);
         }
 
-        int oldBit[options.track_length] = {};
-        int newBit[options.track_length] = {};
+        // int oldBit[options.track_length] = {};
+        // int newBit[options.track_length] = {};
         
-        int b = options.track_length - 1;
-        for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
-            Size v = (Size) oldData[i].getPtr();
-            for(int j = options.word_length - 1; j >= 0; --j){
-                oldBit[b--] = v & 1;
-                v >>= 1;
-            }
+        // int b = options.track_length - 1;
+        // for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
+        //     Size v = (Size) oldData[i].getPtr();
+        //     for(int j = options.word_length - 1; j >= 0; --j){
+        //         oldBit[b--] = v & 1;
+        //         v >>= 1;
+        //     }
 
-            for(int k = 0; k < oldData[i].getKeyCapacity(); ++k){
-                v = (Size) oldData[i].getKey(k);
-                for(int j = options.word_length - 1; j >= 0; --j){
-                    oldBit[b--] = v & 1;
-                    v >>= 1;
-                }
-            }
-        }
+        //     for(int k = 0; k < oldData[i].getKeyCapacity(); ++k){
+        //         v = (Size) oldData[i].getKey(k);
+        //         for(int j = options.word_length - 1; j >= 0; --j){
+        //             oldBit[b--] = v & 1;
+        //             v >>= 1;
+        //         }
+        //     }
+        // }
 
-        b = options.track_length - 1;
-        for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
-            Size v = (Size) newData[i].getPtr();
-            for(int j = options.word_length - 1; j >= 0; --j){
-                newBit[b--] = v & 1;
-                v >>= 1;
-            }
+        // b = options.track_length - 1;
+        // for(int i = options.dataSize(isLeaf) - 1; i >= 0; --i){
+        //     Size v = (Size) newData[i].getPtr();
+        //     for(int j = options.word_length - 1; j >= 0; --j){
+        //         newBit[b--] = v & 1;
+        //         v >>= 1;
+        //     }
 
-            for(int k = 0; k < newData[i].getKeyCapacity(); ++k){
-                v = (Size) newData[i].getKey(k);
-                for(int j = options.word_length - 1; j >= 0; --j){
-                    newBit[b--] = v & 1;
-                    v >>= 1;
-                }
-            }
-        }
+        //     for(int k = 0; k < newData[i].getKeyCapacity(); ++k){
+        //         v = (Size) newData[i].getKey(k);
+        //         for(int j = options.word_length - 1; j >= 0; --j){
+        //             newBit[b--] = v & 1;
+        //             v >>= 1;
+        //         }
+        //     }
+        // }
 
-        Size permuteRange = 0;
-        Size write_1 = 0;
-        Size write_0 = 0;
+        // Size permuteRange = 0;
+        // Size write_1 = 0;
+        // Size write_0 = 0;
 
-        //* spacing shift
-        for(int i = 0; i < options.track_length; ++i){
-            if(oldBit[i] != newBit[i]){
-                permuteRange = options.track_length - i;
-                break;
-            }
-        }
-        shiftCounter.count(permuteRange);
+        // //* spacing shift
+        // for(int i = 0; i < options.track_length; ++i){
+        //     if(oldBit[i] != newBit[i]){
+        //         permuteRange = options.track_length - i;
+        //         break;
+        //     }
+        // }
+        // shiftCounter.count(permuteRange);
 
-        //* write 1
-        for(int i = 0, j = 0; i < options.track_length; ++i){
-            if(newBit[i] == 1){
-                while(oldBit[j] == 0){
-                    ++write_1;
-                    ++j;
-                }
-                ++j;
-            }
-        }
-        shiftCounter.count(write_1);
+        // //* write 1
+        // for(int i = 0, j = 0; i < options.track_length; ++i){
+        //     if(newBit[i] == 1){
+        //         while(oldBit[j] == 0){
+        //             ++write_1;
+        //             ++j;
+        //         }
+        //         ++j;
+        //     }
+        // }
+        // shiftCounter.count(write_1);
 
-        //* write 0
-        Size old_b = 0, new_b = 0;
-        bool old_start = false, new_start = false;
+        // //* write 0
+        // Size old_b = 0, new_b = 0;
+        // bool old_start = false, new_start = false;
 
-        for(int i = 0, j = 0; i < options.track_length; ++i){
-            if(old_start && oldBit[i] == 0){
-                ++old_b;
-            }
-            else if(oldBit[i] == 1){
-                old_start = true;
-            }
-        }
+        // for(int i = 0, j = 0; i < options.track_length; ++i){
+        //     if(old_start && oldBit[i] == 0){
+        //         ++old_b;
+        //     }
+        //     else if(oldBit[i] == 1){
+        //         old_start = true;
+        //     }
+        // }
 
-        for(int i = 0, j = 0; i < options.track_length; ++i){
-            if(new_start && newBit[i] == 0){
-                ++new_b;
-            }
-            else if(newBit[i] == 1){
-                new_start = true;
-            }
-        }
+        // for(int i = 0, j = 0; i < options.track_length; ++i){
+        //     if(new_start && newBit[i] == 0){
+        //         ++new_b;
+        //     }
+        //     else if(newBit[i] == 1){
+        //         new_start = true;
+        //     }
+        // }
 
-        write_0 = old_b < new_b ? new_b - old_b : old_b - new_b;
-        shiftCounter.count(write_0);
+        // write_0 = old_b < new_b ? new_b - old_b : old_b - new_b;
+        // shiftCounter.count(write_0);
     }
 
     void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
