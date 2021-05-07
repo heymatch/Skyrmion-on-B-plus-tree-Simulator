@@ -1,7 +1,7 @@
 # setwd("D:/shared/Benchmark/ALL/csv")
 # setwd("C:/Users/heyma/Documents/Benchmark/csv")
 setwd("D:/shared/Benchmark/backup/csv_202105050305")
-setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105050305")
+setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105070044")
 
 # install.packages("stringr")
 # library("stringr")
@@ -26,8 +26,12 @@ for(setting in 1:16){
 evaluation <- c()
 for(data in list.files(pattern = "*_evaluation.csv") ){
   evalInfo <- read.csv(data, header = T)
-  evalInfo <- cbind(evalInfo, Energy = evalInfo$shiftCounter * 6e11 + evalInfo$insertCounter * 1.1e13 + evalInfo$removeCounter * 2e12)
-  evalInfo <- cbind(evalInfo, Latency = evalInfo$shiftCounter * 0.88 + evalInfo$insertCounter * 0.19 + evalInfo$removeCounter * 0.15)
+  dataSize <- rep(c(10, 100, 5, 50))
+  
+  evalInfo <- cbind(evalInfo, dataSize = dataSize)
+  evalInfo <- cbind(evalInfo, Energy = evalInfo$shiftCounter * 6e11 + evalInfo$insertCounter * 1.1e13 + evalInfo$removeCounter * 2e12 + evalInfo$migrateCounter * 2e12)
+  evalInfo <- cbind(evalInfo, Latency = evalInfo$shiftCounter * 0.88 + evalInfo$insertCounter * 0.19 + evalInfo$removeCounter * 0.15 + evalInfo$migrateCounter * 0.15)
+  
   evaluation <- rbind(evaluation, evalInfo)
 }
 write.csv(evaluation, "evaluation.csv", row.names = F, quote = F)
