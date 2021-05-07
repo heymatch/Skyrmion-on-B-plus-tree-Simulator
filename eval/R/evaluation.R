@@ -8,6 +8,8 @@ setwd("D:/shared/Benchmark/backup/csv_202105070044")
 
 # install.packages("stringr")
 # library("stringr")
+install.packages("readr")
+library("readr")
 
 # result <- c()
 
@@ -17,7 +19,7 @@ for(setting in 1:16){
   print(paste("*_setting", setting, "_nodeInfo.csv", sep = ""))
   for(data in list.files(pattern = paste("*_setting", setting, "_nodeInfo.csv", sep = "")) ){
     print(data)
-    nodeInfo <- read.csv(data, header = T)
+    nodeInfo <- read_csv(data, col_names = T)
     s <- unlist(strsplit(data, "_"))
     combineData <- rbind(combineData, c(filename=data, workload = s[1], setting = setting, colSums(nodeInfo[,-1])) )
   }
