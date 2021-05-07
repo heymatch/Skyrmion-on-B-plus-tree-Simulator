@@ -1,4 +1,4 @@
-setwd("D:/shared/Benchmark/ALL/")
+setwd("D:/shared/Benchmark/ALL/csv")
 # setwd("C:/Users/heyma/Documents/Benchmark/csv")
 setwd("D:/shared/Benchmark/backup/csv_202105050305")
 setwd("C:/Users/user/Documents/GitHub/Skyrmion/eval/evaluation_202105070044")
@@ -13,7 +13,7 @@ library("readr")
 
 # result <- c()
 
-for(setting in 1:16){
+for(setting in c(2, 4)){
   combineData <- c()
   # print(setting)
   print(paste("*_setting", setting, "_nodeInfo.csv", sep = ""))
