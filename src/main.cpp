@@ -14,6 +14,7 @@ using namespace std;
 #include "BPTree.hpp"
 
 enum Operation{
+    END,
     SEARCH,
     INSERT,
     DELETE,
@@ -58,6 +59,7 @@ int inputParser(string str, Index &idx, Data &data){
     else if(op == ""){
         return Operation::SKIP;
     }
+
 }
 
 /**
@@ -182,7 +184,7 @@ int main(int argc, char **argv){
     //* argument2 = setting filename
     //* argument3 = output filename
     //* argument4 = csv node information filename
-    //* argument4 = csv tree information filename
+    //* argument5 = csv tree information filename
     if(argc != 6){
         cout << "invalid arguments" << endl;
         cout << "arg1 = data, arg2 = setting, arg3 = status, arg4 = node csv, arg5 = tree csv" << endl;
@@ -224,9 +226,17 @@ int main(int argc, char **argv){
         return EXIT_FAILURE;
     }
 
-    //* initial
+    //* environmnet initial
     srand(0);
-    std::clog << boolalpha;
+    clog << boolalpha;
+
+    //* speed up i/o
+    ios_base::sync_with_stdio(false);
+    workload.tie(NULL);
+    setting.tie(NULL);
+    fout.tie(NULL);
+    fcsvNodeInfo.tie(NULL);
+    fcsvTreeHeight.tie(NULL);
 
     BPTree tree(settingParser(setting));
     string input;
