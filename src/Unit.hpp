@@ -60,12 +60,23 @@ namespace Evaluation{
 
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* remove old data
-        shiftCounter.count(options.word_length);
-        removeCounter.count(options.word_length);
-
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
+            removeCounter.count(options.word_length * 2);
+        }
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+            removeCounter.count(options.word_length * options.kp_length);
+        }
+        
         //* write new data
         insertCounter.count(countSkyrmion( newData ));
-        shiftCounter.count(options.word_length);
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
+        }
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+        }
     }
 
     void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
@@ -80,8 +91,14 @@ namespace Evaluation{
 
     void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* read old data
-        shiftCounter.count(options.word_length);
-        readCounter.count(options.word_length);
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
+            readCounter.count(options.word_length * 2);
+        }
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+            readCounter.count(options.word_length * options.kp_length);
+        }
 
         //* write new data
         Size oldDataSkyrmion = countSkyrmion( oldData );
@@ -92,7 +109,13 @@ namespace Evaluation{
         else{
             removeCounter.count(oldDataSkyrmion - newDataSkyrmion);
         }
-        shiftCounter.count(options.word_length);
+
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
+        }
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+        }
     }
 
     void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
@@ -213,15 +236,22 @@ namespace Evaluation{
     }
 
     void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
-        //* compute shift
-        shiftCounter.count(options.word_length);
+        //* spacing data size
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
+        }
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+        }
         
         //* write new data
-        for(int i = 0; i < newData.getKeyCapacity(); ++i){
-            insertCounter.count(countSkyrmion( newData.getKey(i) ));
+        insertCounter.count(countSkyrmion( newData ));
+        if(isLeaf){
+            shiftCounter.count(options.word_length * 2);
         }
-        insertCounter.count(countSkyrmion( (Size)newData.getPtr() ));
-        shiftCounter.count(options.word_length);
+        else{
+            shiftCounter.count(options.word_length * options.kp_length);
+        }
     }
 
     void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
@@ -269,8 +299,8 @@ namespace Evaluation{
             }
         }
         else{
-            shiftCounter.count(2 * options.word_length * log2(options.dataSize(isLeaf)));
-            readCounter.count(options.word_length);
+            shiftCounter.count(2 * options.word_length * log2(options.dataSize(isLeaf) * options.unit_size));
+            readCounter.count(options.word_length * log2(options.dataSize(isLeaf) * options.unit_size));
         }
     }
 
