@@ -30,9 +30,12 @@
 *.exe
 *.out
 *.app
+Skyrmion
+
+# Data
 *.log
 *.dat
 *.csv
 test/tester/testcase_c.txt
 test/tester/testcase.txt
-Skyrmion
+eval/evaluation

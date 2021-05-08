@@ -112,6 +112,10 @@ namespace Evaluation{
         shiftCounter.count(options.word_length);
     }
 
+    void permutation_write_node(){
+        
+    }
+
     void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, const KeyPtrSet oldData[], const KeyPtrSet newData[]){
         if(options.read_mode == Options::read_function::SEQUENTIAL){
             sequential_read(options, isLeaf, readCounter, shiftCounter);
