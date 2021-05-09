@@ -84,6 +84,9 @@
         "typeindex": "cpp",
         "valarray": "cpp",
         "xhash": "cpp",
-        "bit": "cpp"
+        "bit": "cpp",
+        "any": "cpp",
+        "charconv": "cpp",
+        "variant": "cpp"
     }
 }

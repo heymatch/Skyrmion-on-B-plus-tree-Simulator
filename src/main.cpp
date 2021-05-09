@@ -24,7 +24,7 @@ enum Operation{
     CHECK
 };
 
-int inputParser(string str, Index &idx, Data &data){
+int inputParser(const string &str, Index &idx, Data &data){
     stringstream ss(str);
     string op;
     ss >> op;
@@ -126,8 +126,8 @@ Options settingParser(ifstream &fin){
             if(val == "OVERWRITE"){
                 update_function = Options::update_function::OVERWRITE;
             }
-            else if(val == "PERMUTE_WITHOUT_COUNTER"){
-                update_function = Options::update_function::PERMUTE_WITHOUT_COUNTER;
+            else if(val == "PERMUTATION_WRITE"){
+                update_function = Options::update_function::PERMUTATION_WRITE;
             }
         }
         else if(op == "insert_function"){
@@ -229,14 +229,6 @@ int main(int argc, char **argv){
     //* environmnet initial
     srand(0);
     clog << boolalpha;
-
-    //* speed up i/o
-    ios_base::sync_with_stdio(false);
-    workload.tie(NULL);
-    setting.tie(NULL);
-    fout.tie(NULL);
-    fcsvNodeInfo.tie(NULL);
-    fcsvTreeHeight.tie(NULL);
 
     BPTree tree(settingParser(setting));
     string input;

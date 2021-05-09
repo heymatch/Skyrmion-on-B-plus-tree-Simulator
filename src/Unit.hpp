@@ -132,6 +132,7 @@ namespace Evaluation{
         else{
             removeCounter.count(oldDataSkyrmion - newDataSkyrmion);
         }
+
         shiftCounter.count(options.word_length);
     }
 
@@ -236,22 +237,14 @@ namespace Evaluation{
     }
 
     void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
-        //* spacing data size
-        if(isLeaf){
-            shiftCounter.count(options.word_length * 2);
-        }
-        else{
-            shiftCounter.count(options.word_length * options.kp_length);
-        }
-        
         //* write new data
-        insertCounter.count(countSkyrmion( newData ));
         if(isLeaf){
             shiftCounter.count(options.word_length * 2);
         }
         else{
             shiftCounter.count(options.word_length * options.kp_length);
         }
+        insertCounter.count(countSkyrmion( newData ));
     }
 
     void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
@@ -437,7 +430,7 @@ struct Unit{
         /**
          * TODO evaluation
          */
-        void *searchData(Index idx, Offset &next_unit_offset){
+        void *searchData(const Index &idx, Offset &next_unit_offset){
             switch (_options.search_mode){
                 case Options::search_function::SEQUENTIAL:
                     //TODO evaluation 
@@ -531,7 +524,7 @@ struct Unit{
          * TODO insert into the same pointer, just add the index to the key-point set
          * @param split if false, data will direct insert
         */
-        void insertData(Index idx, void *data, Offset &insertPosition, bool directInsert = false, Size migrateSkyrmion = 0){
+        void insertData(const Index &idx, void *data, Offset &insertPosition, bool directInsert = false, Size migrateSkyrmion = 0){
             
             //* find the insert position
             if(!directInsert){
@@ -602,7 +595,7 @@ struct Unit{
                         Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
                         break;
                     case Options::update_function::PERMUTATION_WRITE:
-                        //TODO evaluation 
+                        Evaluation::permutation_write(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
                         break;
                     case Options::update_function::PERMUTE_WORD_COUNTER:
                         //TODO evaluation 
@@ -680,7 +673,7 @@ struct Unit{
                         Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
                         break;
                     case Options::update_function::PERMUTATION_WRITE:
-                        //TODO evaluation 
+                        Evaluation::permutation_write(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
                         break;
                     case Options::update_function::PERMUTE_WORD_COUNTER:
                         //TODO evaluation 
@@ -817,7 +810,7 @@ struct Unit{
                         Evaluation::overwrite(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData);
                         break;
                     case Options::update_function::PERMUTATION_WRITE:
-                        //TODO evaluation 
+                        Evaluation::permutation_write(_options, isLeaf(), _readCounter, _shiftCounter, _insertCounter, _removeCounter, _data[insertPosition], newData); 
                         break;
                     case Options::update_function::PERMUTE_WORD_COUNTER:
                         //TODO evaluation 
@@ -1675,7 +1668,7 @@ struct Unit{
      * * Return data pointer
      * * DONE
      */
-    Data *searchData(Index idx, Offset &unit_offset){
+    Data *searchData(const Index &idx, Offset &unit_offset){
         Data *dataPtr = nullptr;
 
         if(_options.split_merge_mode == Options::split_merge_function::TRAD){
@@ -2020,7 +2013,15 @@ struct Unit{
                                         );
                                     break;
                                 case Options::update_function::PERMUTATION_WRITE:
-                                    //TODO evaluation 
+                                    Evaluation::permutation_write(
+                                            _options, isLeaf(), 
+                                            getParentUnit()->_tracks[getParentOffset()]._readCounter, 
+                                            getParentUnit()->_tracks[getParentOffset()]._shiftCounter, 
+                                            getParentUnit()->_tracks[getParentOffset()]._insertCounter, 
+                                            getParentUnit()->_tracks[getParentOffset()]._removeCounter, 
+                                            getParentUnit()->_tracks[getParentOffset()]._data[data_enter_offset].getKey(1), 
+                                            mid
+                                        );
                                     break;
                                 case Options::update_function::PERMUTE_WORD_COUNTER:
                                     //TODO evaluation 
@@ -2705,7 +2706,15 @@ struct Unit{
                                 );
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
+                            Evaluation::permutation_write(
+                                    _options, 
+                                    isLeaf(), 
+                                    destination._readCounter, 
+                                    destination._shiftCounter, 
+                                    destination._insertCounter, 
+                                    destination._removeCounter, 
+                                    destination._data[j], source._data[i]
+                                );
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             break;
@@ -2781,7 +2790,6 @@ struct Unit{
                     case Options::update_function::OVERWRITE:
                         break;
                     case Options::update_function::PERMUTATION_WRITE:
-                        //TODO evaluation 
                         break;
                     case Options::update_function::PERMUTE_WORD_COUNTER:
                         //TODO evaluation 
@@ -2832,7 +2840,7 @@ struct Unit{
                             Evaluation::overwrite(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
+                            Evaluation::permutation_write(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             //TODO evaluation 
@@ -2896,7 +2904,7 @@ struct Unit{
                             Evaluation::overwrite(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
+                            Evaluation::permutation_write(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             //TODO evaluation 
@@ -3028,7 +3036,6 @@ struct Unit{
                 case Options::update_function::OVERWRITE:
                     break;
                 case Options::update_function::PERMUTATION_WRITE:
-                    //TODO evaluation 
                     break;
                 case Options::update_function::PERMUTE_WORD_COUNTER:
                     //TODO evaluation 
@@ -3621,7 +3628,15 @@ struct Unit{
                             );
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
+                            Evaluation::permutation_write(
+                                _options, 
+                                isLeaf(), 
+                                right._readCounter, 
+                                right._shiftCounter, 
+                                right._insertCounter, 
+                                right._removeCounter, 
+                                right._data[i], left._data[i]
+                            );
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             //TODO evaluation 
@@ -3659,7 +3674,15 @@ struct Unit{
                             );
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
-                            //TODO evaluation 
+                            Evaluation::permutation_write(
+                                _options, 
+                                isLeaf(), 
+                                right._readCounter, 
+                                right._shiftCounter, 
+                                right._insertCounter, 
+                                right._removeCounter, 
+                                right._data[i], left._data[i]
+                            );
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             //TODO evaluation 
@@ -3745,7 +3768,6 @@ struct Unit{
             case Options::update_function::OVERWRITE:
                 break;
             case Options::update_function::PERMUTATION_WRITE:
-                //TODO evaluation 
                 break;
             case Options::update_function::PERMUTE_WORD_COUNTER:
                 //TODO evaluation 
