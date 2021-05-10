@@ -4,8 +4,9 @@ unit_size=2
 kp_length=3
 ordering=SORTED
 read_function=RANGE_READ
-search_function=TRAD_BINARY_SEARCH
-update_function=PERMUTATION_WRITE
+search_function=BIT_BINARY_SEARCH
+update_function=OVERWRITE
 insert_function=SEQUENTIAL
 delete_function=SEQUENTIAL
 split_merge_function=UNIT
+                        

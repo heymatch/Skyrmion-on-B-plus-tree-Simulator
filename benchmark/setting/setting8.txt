@@ -3,9 +3,10 @@ track_length=2048
 unit_size=1
 kp_length=2
 ordering=SORTED
-read_function=SEQUENTIAL
+read_function=RANGE_READ
 search_function=BIT_BINARY_SEARCH
 update_function=PERMUTATION_WRITE
 insert_function=SEQUENTIAL
 delete_function=SEQUENTIAL
 split_merge_function=TRAD
+                        

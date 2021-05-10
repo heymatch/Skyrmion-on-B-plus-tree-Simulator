@@ -64,6 +64,7 @@ struct Options{
         None,
         OVERWRITE,
         PERMUTATION_WRITE,
+        PERMUTATION_WRITE_MIGRATE,
         PERMUTE_WORD_COUNTER, //! skip
         PERMUTE_WITHOUT_COUNTER
     };

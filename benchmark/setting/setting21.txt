@@ -1,11 +1,12 @@
 word_length=64
 track_length=2048
-unit_size=1
-kp_length=2
+unit_size=2
+kp_length=3
 ordering=SORTED
 read_function=SEQUENTIAL
 search_function=TRAD_BINARY_SEARCH
-update_function=OVERWRITE
+update_function=PERMUTATION_WRITE_MIGRATE
 insert_function=SEQUENTIAL
 delete_function=SEQUENTIAL
-split_merge_function=TRAD
+split_merge_function=UNIT
+                        
