@@ -129,6 +129,9 @@ Options settingParser(ifstream &fin){
             else if(val == "PERMUTATION_WRITE"){
                 update_function = Options::update_function::PERMUTATION_WRITE;
             }
+            else if(val == "PERMUTATION_WRITE_MIGRATE"){
+                update_function = Options::update_function::PERMUTATION_WRITE_MIGRATE;
+            }
         }
         else if(op == "insert_function"){
             if(val == "SEQUENTIAL"){

@@ -539,6 +539,8 @@ struct Unit{
             case Options::update_function::PERMUTATION_WRITE:
                 //TODO evaluation 
                 break;
+            case Options::update_function::PERMUTATION_WRITE_MIGRATE:
+                break;
             case Options::update_function::PERMUTE_WORD_COUNTER:
                 //TODO evaluation 
                 break;
@@ -2962,6 +2964,11 @@ struct Unit{
                             break;
                         case Options::update_function::PERMUTATION_WRITE:
                             Evaluation::permutation_write(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
+                            break;
+                        case Options::update_function::PERMUTATION_WRITE_MIGRATE:
+                            if(!inUnit){
+                                Evaluation::permutation_write_migrate(_options, isLeaf(), destination._readCounter, destination._shiftCounter, destination._insertCounter, destination._removeCounter, destination._data[j], source._data[i]);
+                            }
                             break;
                         case Options::update_function::PERMUTE_WORD_COUNTER:
                             if(!inUnit){
