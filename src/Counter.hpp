@@ -19,15 +19,15 @@ public:
         _times = 0;
     }
 
-    void count(uint64_t times){
+    inline void count(uint64_t times){
         _times += times;
     }
 
-    uint64_t get() const{
+    inline uint64_t get() const{
         return _times;
     }
 
-    std::string name() const{
+    inline std::string name() const{
         return _name;
     }
 

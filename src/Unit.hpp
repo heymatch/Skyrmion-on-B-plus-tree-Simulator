@@ -8,7 +8,7 @@
 #include "Counter.hpp"
 
 namespace Evaluation{
-    Size countSkyrmion(Index data) {
+    inline Size countSkyrmion(Index data) {
         Size number = 0;
         Size a = 0;
         while(data){
@@ -20,7 +20,7 @@ namespace Evaluation{
         return number;
     }
 
-    Size countSkyrmion(KeyPtrSet data) {
+    inline Size countSkyrmion(KeyPtrSet data) {
         Size number = 0;
         number += countSkyrmion((Index)data.getPtr());
         for(int i = 0; i < data.getKeyCapacity(); ++i){
@@ -29,7 +29,7 @@ namespace Evaluation{
         return number;
     }
 
-    Size log2(Size number) {
+    inline Size log2(Size number) {
         Size counter = 0;
         Size ceil = countSkyrmion(number) != 1;
         while(number >>= 1){
@@ -38,27 +38,27 @@ namespace Evaluation{
         return counter + ceil;
     }
 
-    void sequential_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+    inline void sequential_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         shiftCounter.count(2 * options.track_length);  
         readCounter.count(options.track_length);   
     }
 
-    void sequential_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+    inline void sequential_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         shiftCounter.count(options.track_length);  
         readCounter.count(options.track_length / 2);   
     }
 
-    void range_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+    inline void range_read(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         shiftCounter.count(2 * options.word_length);
         readCounter.count(options.track_length);
     }
 
-    void range_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
+    inline void range_read_half(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter){
         shiftCounter.count(2 * options.word_length);
         readCounter.count(options.track_length / 2);
     }
 
-    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
+    inline void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* remove old data
         if(isLeaf){
             shiftCounter.count(options.word_length * 2);
@@ -79,7 +79,7 @@ namespace Evaluation{
         }
     }
 
-    void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
+    inline void overwrite(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
         //* remove old data
         shiftCounter.count(options.word_length);
         removeCounter.count(options.word_length);
@@ -89,7 +89,7 @@ namespace Evaluation{
         shiftCounter.count(options.word_length);
     }
 
-    void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
+    inline void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* read old data
         if(isLeaf){
             shiftCounter.count(options.word_length * 2);
@@ -118,7 +118,7 @@ namespace Evaluation{
         }
     }
 
-    void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
+    inline void permutation_write(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
         //* read old data
         shiftCounter.count(options.word_length);
         readCounter.count(options.word_length);
@@ -136,7 +136,7 @@ namespace Evaluation{
         shiftCounter.count(options.word_length);
     }
 
-    void permutation_write_migrate(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
+    inline void permutation_write_migrate(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const KeyPtrSet &oldData, const KeyPtrSet &newData){
         //* read old data
         if(isLeaf){
             shiftCounter.count(options.word_length * 2);
@@ -162,7 +162,7 @@ namespace Evaluation{
         }
     }
 
-    void permutation_write_migrate(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
+    inline void permutation_write_migrate(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, Counter &removeCounter, const Index &oldIndex, const Index &newIndex){
         //* read old data
         shiftCounter.count(options.word_length);
         readCounter.count(options.word_length);
@@ -177,7 +177,7 @@ namespace Evaluation{
         shiftCounter.count(options.word_length);
     }
 
-    void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, const KeyPtrSet oldData[], const KeyPtrSet newData[]){
+    inline void permute(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, const KeyPtrSet oldData[], const KeyPtrSet newData[]){
         if(options.read_mode == Options::read_function::SEQUENTIAL){
             sequential_read(options, isLeaf, readCounter, shiftCounter);
         }
@@ -273,7 +273,7 @@ namespace Evaluation{
         // shiftCounter.count(write_0);
     }
 
-    void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
+    inline void insert(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, Counter &insertCounter, const KeyPtrSet &newData){
         //* write new data
         if(isLeaf){
             shiftCounter.count(options.word_length * 2);
@@ -284,7 +284,7 @@ namespace Evaluation{
         insertCounter.count(countSkyrmion( newData ));
     }
 
-    void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
+    inline void binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
         if(isLeaf){
             int l = 0;
             int h = 0;
@@ -334,7 +334,7 @@ namespace Evaluation{
         }
     }
 
-    void bit_binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
+    inline void bit_binary_search(const Options &options, const bool &isLeaf, Counter &readCounter, Counter &shiftCounter, KeyPtrSet data[], const Index &searchKey){
         if(isLeaf){
             shiftCounter.count(2 * options.word_length);
             readCounter.count(options.track_length);
@@ -345,7 +345,7 @@ namespace Evaluation{
         }
     }
 
-    void migrate(const Options &options, const bool &isLeaf, Counter &shiftCounter, Counter &migrateCounter, KeyPtrSet *Data){
+    inline void migrate(const Options &options, const bool &isLeaf, Counter &shiftCounter, Counter &migrateCounter, KeyPtrSet *Data){
         if(isLeaf){
 
         }
@@ -464,9 +464,6 @@ struct Unit{
             return arr; 
         }
 
-        /**
-         * TODO evaluation
-         */
         void *searchData(const Index &idx, Offset &next_unit_offset){
             switch (_options.search_mode){
                 case Options::search_function::SEQUENTIAL:
@@ -640,12 +637,12 @@ struct Unit{
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
                             if(migrateSkyrmion > 0){
-                                _migrateCounter.count(migrateSkyrmion);
+                                // _migrateCounter.count(migrateSkyrmion);
                                 diff -= migrateSkyrmion;
                                 diff = diff < 0 ? 0 : diff;
                             }
-                            _insertCounter.count(diff);
-                            insertSkyrmion(diff + overwrittenSkyrmion);
+                            // _insertCounter.count(diff);
+                            insertSkyrmion(diff);
                         }
                         else{
                             _removeCounter.count(-diff);
@@ -722,12 +719,12 @@ struct Unit{
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
                             if(migrateSkyrmion > 0){
-                                _migrateCounter.count(migrateSkyrmion);
+                                // _migrateCounter.count(migrateSkyrmion);
                                 diff -= migrateSkyrmion;
                                 diff = diff < 0 ? 0 : diff;
                             }
-                            _insertCounter.count(diff);
-                            insertSkyrmion(diff + overwrittenSkyrmion);
+                            // _insertCounter.count(diff);
+                            insertSkyrmion(diff);
                         }
                         else{
                             _removeCounter.count(-diff);
@@ -803,11 +800,11 @@ struct Unit{
                                 // std::clog << "diff: " << diff << std::endl;
                                 if(diff > 0){
                                     if(migrateSkyrmion > 0){
-                                        _migrateCounter.count(migrateSkyrmion);
+                                        // _migrateCounter.count(migrateSkyrmion);
                                         diff -= migrateSkyrmion;
                                         diff = diff < 0 ? 0 : diff;
                                     }
-                                    _insertCounter.count(diff);
+                                    // _insertCounter.count(diff);
                                     insertSkyrmion(diff + overwrittenSkyrmion);
                                 }
                                 else{
@@ -878,12 +875,12 @@ struct Unit{
                         int64_t diff = diffSkyrmion(oldData._data);
                         if(diff > 0){
                             if(migrateSkyrmion > 0){
-                                _migrateCounter.count(migrateSkyrmion);
+                                // _migrateCounter.count(migrateSkyrmion);
                                 diff -= migrateSkyrmion;
                                 diff = diff < 0 ? 0 : diff;
                             }
-                            _insertCounter.count(diff);
-                            insertSkyrmion(diff + overwrittenSkyrmion);
+                            // _insertCounter.count(diff);
+                            insertSkyrmion(diff);
                         }
                         else{
                             _removeCounter.count(-diff);
@@ -957,7 +954,7 @@ struct Unit{
             _data[insertPos] = data;
         }
 
-        void insertSkyrmion(Size n){
+        Size insertSkyrmion(Size n){
             // std::clog << "n 0: " << n << std::endl;
             int b = 0;
             while(n){
@@ -970,7 +967,7 @@ struct Unit{
                     }
                 }
                 if(r == -1)
-                    return;
+                    return n;
                 
                 Offset k = 0;
                 Size v = -1;
@@ -1020,6 +1017,8 @@ struct Unit{
                 --n;
                 
             }
+
+            return n;
             // std::clog << "n 0: " << n << std::endl;
         }
 
@@ -2781,10 +2780,10 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTATION_WRITE_MIGRATE){
                         if(inUnit){
                             Size migrateSkyrmion = Evaluation::countSkyrmion(source._data[i]);
-                            destination.insertSkyrmion(migrateSkyrmion);
+                            Size redundant = destination.insertSkyrmion(migrateSkyrmion);
 
-                            source._migrateCounter.count(migrateSkyrmion);
-                            source.removeSkyrmion(migrateSkyrmion);
+                            source._migrateCounter.count(migrateSkyrmion - redundant);
+                            source.removeSkyrmion(migrateSkyrmion - redundant);
                         }
                     }
 
@@ -2867,10 +2866,10 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTATION_WRITE_MIGRATE){
                         if(inUnit){
                             Size migrateSkyrmion = Evaluation::countSkyrmion(source._data[i]);
-                            destination.insertSkyrmion(migrateSkyrmion);
+                            Size redundant = destination.insertSkyrmion(migrateSkyrmion);
 
-                            source._migrateCounter.count(migrateSkyrmion);
-                            source.removeSkyrmion(migrateSkyrmion);
+                            source._migrateCounter.count(migrateSkyrmion - redundant);
+                            source.removeSkyrmion(migrateSkyrmion - redundant);
                         }
                     }
 
@@ -2915,6 +2914,7 @@ struct Unit{
                         source.deleteMark(i);
                         promoteMid = false;
                         destination.connectFrontSideUnit((Unit *)source._data[i].getPtr());
+                        break;
                         //std::clog << "<log> <copyHalfNode()> source" << std::endl;
                     }
                 }
@@ -2923,6 +2923,7 @@ struct Unit{
                         destination.deleteMark(i);
                         promoteMid = false;
                         destination.connectFrontSideUnit((Unit *)destination._data[i].getPtr());
+                        break;
                         //std::clog << "<log> <copyHalfNode()> destination" << std::endl;
                     }                 
                 }
@@ -2951,10 +2952,10 @@ struct Unit{
                     if(_options.update_mode == Options::update_function::PERMUTATION_WRITE_MIGRATE){
                         if(inUnit){
                             Size migrateSkyrmion = Evaluation::countSkyrmion(source._data[i]);
-                            destination.insertSkyrmion(migrateSkyrmion);
+                            Size redundant = destination.insertSkyrmion(migrateSkyrmion);
 
-                            source._migrateCounter.count(migrateSkyrmion);
-                            source.removeSkyrmion(migrateSkyrmion);
+                            source._migrateCounter.count(migrateSkyrmion - redundant);
+                            source.removeSkyrmion(migrateSkyrmion - redundant);
                         }
                     }
 
@@ -3015,6 +3016,7 @@ struct Unit{
                         source.deleteMark(i);
                         promoteMid = false;
                         destination.connectFrontSideUnit((Unit *)source._data[i].getPtr());
+                        break;
                         //std::clog << "<log> <copyHalfNode()> source" << std::endl;
                     }
                 }
@@ -3025,6 +3027,7 @@ struct Unit{
                         destination.deleteMark(i);
                         promoteMid = false;
                         destination.connectFrontSideUnit((Unit *)destination._data[i].getPtr());
+                        break;
                     }                 
                 }
 
@@ -3690,10 +3693,11 @@ struct Unit{
                 if(_options.update_mode == Options::update_function::PERMUTATION_WRITE_MIGRATE){
                     if(inUnit){
                         Size migrateSkyrmion = Evaluation::countSkyrmion(left._data[i]);
-                        right.insertSkyrmion(migrateSkyrmion);
+                        Size redundant = right.insertSkyrmion(migrateSkyrmion);
 
-                        left._migrateCounter.count(migrateSkyrmion);
-                        left.removeSkyrmion(migrateSkyrmion);
+                        left._migrateCounter.count(migrateSkyrmion - redundant);
+                        left.removeSkyrmion(migrateSkyrmion - redundant);
+                        
                     }
                 }
 
@@ -3766,10 +3770,11 @@ struct Unit{
                 if(_options.update_mode == Options::update_function::PERMUTATION_WRITE_MIGRATE){
                     if(inUnit){
                         Size migrateSkyrmion = Evaluation::countSkyrmion(left._data[i]);
-                        right.insertSkyrmion(migrateSkyrmion);
+                        Size redundant = right.insertSkyrmion(migrateSkyrmion);
 
-                        left._migrateCounter.count(migrateSkyrmion);
-                        left.removeSkyrmion(migrateSkyrmion);
+                        left._migrateCounter.count(migrateSkyrmion - redundant);
+                        left.removeSkyrmion(migrateSkyrmion - redundant);
+                        
                     }
                 }
 

@@ -58,7 +58,7 @@ struct KeyPtrSet{
         return *this;
     }
 
-    void setPtr(void *addr){
+    inline void setPtr(void *addr){
         ptr = addr;
     }
 
@@ -121,7 +121,7 @@ struct KeyPtrSet{
         }
     }
 
-    Index getKey(Offset offset) const{
+    inline Index getKey(Offset offset) const{
         return key[offset];
     }
 

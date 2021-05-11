@@ -13,7 +13,7 @@ library("readr")
 
 # result <- c()
 
-for(setting in 1:16){
+for(setting in 1:23){
   combineData <- c()
   # print(setting)
   print(paste("*_setting", setting, "_nodeInfo.csv", sep = ""))
@@ -34,8 +34,8 @@ for(data in list.files(pattern = "*_evaluation.csv") ){
   dataSize <- rep(c(10, 100, 5, 50))
   
   evalInfo <- cbind(evalInfo, dataSize = dataSize)
-  evalInfo <- cbind(evalInfo, Energy = evalInfo$shiftCounter * 6e11 + evalInfo$insertCounter * 1.1e13 + evalInfo$removeCounter * 2e12 + evalInfo$migrateCounter * 2e12)
-  evalInfo <- cbind(evalInfo, Latency = evalInfo$shiftCounter * 0.88 + evalInfo$insertCounter * 0.19 + evalInfo$removeCounter * 0.15 + evalInfo$migrateCounter * 0.15)
+  evalInfo <- cbind(evalInfo, Energy = evalInfo$shiftCounter * 6e11 * 0.88 + evalInfo$insertCounter * 1.1e13 * 0.19 + evalInfo$removeCounter * 2e12 * 0.15 + evalInfo$migrateCounter * 6e11 * 0.88)
+  evalInfo <- cbind(evalInfo, Latency = evalInfo$shiftCounter * 0.88 + evalInfo$insertCounter * 0.19 + evalInfo$removeCounter * 0.15 + evalInfo$migrateCounter * 0.88)
   
   evaluation <- rbind(evaluation, evalInfo)
 }

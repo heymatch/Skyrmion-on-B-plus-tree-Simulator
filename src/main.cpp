@@ -243,12 +243,7 @@ int main(int argc, char **argv){
     fcsvTreeHeight << 0 << std::endl;
     
     try{
-        #ifdef __linux__
         while(getline(workload, input)){
-            // workload.ignore();
-        #elif _WIN64
-        while(getline(workload, input)){
-        #endif
             if(InstructionCounter % 1000000 == 0){
                 clog << "Processing " << InstructionCounter << endl;
             }

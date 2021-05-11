@@ -1,6 +1,6 @@
 # set C++ compiler
 CC := g++
-CFLAGS := -std=c++11
+CFLAGS := -std=c++11 -O2 -static
 
 # source
 ifeq ($(OS), Windows_NT)
