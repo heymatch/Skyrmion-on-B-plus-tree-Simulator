@@ -13,7 +13,7 @@ library("readr")
 
 # result <- c()
 
-for(setting in 1:23){
+for(setting in 1:24){
   combineData <- c()
   # print(setting)
   print(paste("*_setting", setting, "_nodeInfo.csv", sep = ""))
