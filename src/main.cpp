@@ -182,8 +182,7 @@ int main(int argc, char **argv){
 	//* argument1 = workload filename
     //* argument2 = setting filename
     //* argument3 = output filename
-    //* argument4 = csv node information filename
-    //* argument5 = csv tree information filename
+    //* argument4 = output path
     if(argc != 5){
         cout << "invalid arguments" << endl;
         cout << "arg1 = workload, arg2 = setting, arg3 = output, arg4 = output path" << endl;
