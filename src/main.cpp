@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <sstream>
+#include <cstring>
 using namespace std;
 
 #define RELEASE
@@ -60,6 +61,7 @@ int inputParser(const string &str, Index &idx, Data &data){
         return Operation::SKIP;
     }
 
+    return Operation::END;
 }
 
 /**
@@ -83,11 +85,7 @@ Options settingParser(ifstream &fin){
         stringstream ss(input);
         string op, val;
         getline(ss, op, '=');
-        #ifdef __linux__
-        getline(ss, val, '\r');
-        #elif _WIN64
         getline(ss, val);
-        #endif
         
         if(op == "word_length"){
             WORD_LENGTH = stoi(val);
@@ -154,8 +152,8 @@ Options settingParser(ifstream &fin){
 
         std::clog << "<log> setting: " << op << " " << val << std::endl;
     }
-    
-    Options options(
+
+    return Options(
         WORD_LENGTH,
         TRACK_LENGTH,
         UNIT_SIZE,
@@ -168,8 +166,6 @@ Options settingParser(ifstream &fin){
         delete_function,
         split_merge_function
     );
-
-    return options;
 }
 
 int main(int argc, char **argv){
@@ -183,17 +179,17 @@ int main(int argc, char **argv){
     #endif
 
     // argument
-	//* argument1 = data filename
+	//* argument1 = workload filename
     //* argument2 = setting filename
     //* argument3 = output filename
     //* argument4 = csv node information filename
     //* argument5 = csv tree information filename
-    if(argc != 6){
+    if(argc != 5){
         cout << "invalid arguments" << endl;
-        cout << "arg1 = data, arg2 = setting, arg3 = status, arg4 = node csv, arg5 = tree csv" << endl;
+        cout << "arg1 = workload, arg2 = setting, arg3 = output, arg4 = output path" << endl;
         return EXIT_FAILURE;
     }
-        
+    
     //* load data
     ifstream workload(argv[1]);
     if(workload.fail()){
@@ -209,23 +205,23 @@ int main(int argc, char **argv){
     }
 
     //* other message output
-    ofstream fout(argv[3]);
+    ofstream fout(string() + argv[4] + "/info/" + argv[3] + ".info");
     if(fout.fail()){
-        cerr << "file: '" << argv[3] << "' open error" << endl;
+        cerr << "file: '" << string() + argv[4] + "/info/" + argv[3] + ".info" << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
     //* csv node information
-    ofstream fcsvNodeInfo(argv[4]);
+    ofstream fcsvNodeInfo(string() + argv[4] + "/csv/" + argv[3] + "_NodeInfo.csv");
     if(fcsvNodeInfo.fail()){
-        cerr << "file: '" << argv[4] << "' open error" << endl;
+        cerr << "file: '" << string() + argv[4] + "/csv/" + argv[3] + "_NodeInfo.csv"<< "' open error" << endl;
         return EXIT_FAILURE;
     }
 
     //* csv tree information
-    ofstream fcsvTreeHeight(argv[5]);
+    ofstream fcsvTreeHeight(string() + argv[4] + "/csv/" + argv[3] + "_TreeHeight.csv");
     if(fcsvTreeHeight.fail()){
-        cerr << "file: '" << argv[5] << "' open error" << endl;
+        cerr << "file: '" << string() + argv[4] + "/csv/" + argv[3] + "_TreeHeight.csv" << "' open error" << endl;
         return EXIT_FAILURE;
     }
 
@@ -240,7 +236,7 @@ int main(int argc, char **argv){
 
     fcsvTreeHeight << "inst_th,height" << endl;
     fcsvTreeHeight << 0 << ",";
-    fcsvTreeHeight << 0 << std::endl;
+    fcsvTreeHeight << 0 << endl;
     
     try{
         while(getline(workload, input)){
@@ -317,6 +313,8 @@ int main(int argc, char **argv){
     workload.close();
     setting.close();
     fout.close();
+    fcsvNodeInfo.close();
+    fcsvTreeHeight.close();
 
     std::clog << "<log> exit success" << std::endl;
 

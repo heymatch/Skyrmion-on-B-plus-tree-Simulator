@@ -36,6 +36,7 @@ Skyrmion
 *.log
 *.dat
 *.csv
+*.info
 test/tester/testcase_c.txt
 test/tester/testcase.txt
 eval/evaluation

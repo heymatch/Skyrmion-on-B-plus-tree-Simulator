@@ -19,11 +19,11 @@ public:
         _times = 0;
     }
 
-    inline void count(uint64_t times){
+    inline void count(const Size &times){
         _times += times;
     }
 
-    inline uint64_t get() const{
+    inline Size get() const{
         return _times;
     }
 
@@ -33,7 +33,7 @@ public:
 
 private:
     std::string _name;
-    uint64_t _times;
+    Size _times;
 };
 
 std::ostream& operator<<(std::ostream &out, Counter right){

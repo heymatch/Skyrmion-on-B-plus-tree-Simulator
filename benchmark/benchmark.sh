@@ -11,23 +11,23 @@ do
     echo setting: $setting
 
     echo tpch
-    \time -v -a -o log/time.log ./process.sh tpch $setting
+    bash process.sh tpch $setting
 
     echo zipfian
-    \time -v -a -o log/time.log ./process.sh zipfian $setting
+    bash process.sh zipfian $setting
 
     echo uniform
-    \time -v -a -o log/time.log ./process.sh uniform $setting
+    bash process.sh uniform $setting
 
     echo hotspot
-    \time -v -a -o log/time.log ./process.sh hotspot $setting
+    bash process.sh hotspot $setting
 
     echo sequential
-    \time -v -a -o log/time.log ./process.sh sequential $setting
+    bash process.sh sequential $setting
 
     echo exponential
-    \time -v -a -o log/time.log ./process.sh exponential $setting
+    bash process.sh exponential $setting
 
     echo latest
-    \time -v -a -o log/time.log ./process.sh latest $setting
+    bash process.sh latest $setting
 done

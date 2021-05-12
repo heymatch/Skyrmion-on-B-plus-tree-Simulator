@@ -115,37 +115,31 @@ struct KeyPtrSet{
         }
     }
 
-    bool addSkyrmion(){
-        if(isFull()){
-            return false;
-        }
-    }
-
-    inline Index getKey(Offset offset) const{
+    inline Index getKey(const Offset &offset) const{
         return key[offset];
     }
 
-    bool getBitmap(Offset offset) const{
+    inline bool getBitmap(const Offset &offset) const{
         return bitmap[offset];
     }
 
-    void *getPtr() const{
+    inline void *getPtr() const{
         return ptr;
     }
 
-    Size getSize() const{
+    inline Size getSize() const{
         return _size;
     }
 
-    Size getKeyCapacity() const{
+    inline Size getKeyCapacity() const{
         return _capacity - 1;
     }
 
-    bool isEmpty() const{
+    inline bool isEmpty() const{
         return _size == 0;
     }
 
-    bool isFull() const{
+    inline bool isFull() const{
         return _size == _capacity - 1;
     }
 

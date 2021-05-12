@@ -359,7 +359,7 @@ namespace Evaluation{
 struct Unit;
 
 namespace System{
-    Unit *allocUnit(Options options, bool isLeaf = true);
+    Unit *allocUnit(const Options &options, bool isLeaf = true);
 }
 
 struct Unit{
@@ -479,17 +479,17 @@ struct Unit{
                     throw "undefined search operation";
             }
 
-            if(_options.split_merge_mode == Options::split_merge_function::TRAD){
-                if(_isLeaf){
-                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
-                        if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
-                            return _data[i].getPtr();
-                        }
+            if(isLeaf()){
+                for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
+                    if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
+                        return _data[i].getPtr();
                     }
-
-                    return nullptr;
                 }
-                else{
+
+                return nullptr;
+            }
+            else{
+                if(_options.split_merge_mode == Options::split_merge_function::TRAD){
                     for(int i = _options.dataSize(isLeaf()) - 1; i >= 0 ; --i){
                         if(_data[i].getBitmap(0) && idx >= _data[i].getKey(0)){
                             return _data[i].getPtr();
@@ -498,17 +498,7 @@ struct Unit{
                     
                     return _sideFront;
                 }
-            }
-            else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                if(_isLeaf){
-                    for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
-                        if(_data[i].getBitmap(0) && _data[i].getKey(0) == idx){
-                            return _data[i].getPtr();
-                        }
-                    }
-                    return nullptr;
-                }
-                else{
+                else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
                     for(int i = _options.dataSize(isLeaf()) - 1; i >= 0; --i){
                         for(int j = _options.unit_size - 1; j >= 0; --j){
                             if(_data[i].getBitmap(j) && idx >= _data[i].getKey(j)){
@@ -524,10 +514,11 @@ struct Unit{
             }
             
             throw "<Node> search error";
+            return nullptr;
         }
         
         //?
-        void updateData(Index idx, Data data){
+        void updateData(const Index &idx, const Data &data){
             switch (_options.update_mode)
             {
             case Options::update_function::OVERWRITE:
@@ -550,7 +541,7 @@ struct Unit{
             }
         }
 
-        void updateIndex(uint64_t offset, uint64_t idx){
+        void updateIndex(const Offset &offset, const Index &idx){
             _data[offset].setKey(0, idx);
         }
 
@@ -1179,7 +1170,7 @@ struct Unit{
         /**
          * * Done
         */
-        void connectBackSideUnit(Unit *unit){
+        inline void connectBackSideUnit(Unit *unit){
             _sideBack = unit;
             _sideBackBitmap = true;
         }
@@ -1187,7 +1178,7 @@ struct Unit{
         /**
          * * Done
         */
-        void connectFrontSideUnit(Unit *unit){
+        inline void connectFrontSideUnit(Unit *unit){
             _sideFront = unit;
             _sideFrontBitmap = true;
         }
@@ -1195,7 +1186,7 @@ struct Unit{
         /**
          * * Done
         */
-        void connectParentNode(Unit *unit, uint64_t offset = 0){
+        inline void connectParentNode(Unit *unit, uint64_t offset = 0){
             _parent = unit;
             _parentOffset = offset;
         }
@@ -1219,7 +1210,7 @@ struct Unit{
          * * Done
          * @return offset
         */
-        uint64_t getOffsetByIndex(uint64_t idx){
+        Offset getOffsetByIndex(const Offset &idx){
             if(_isLeaf){
                 for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0) && idx == _data[i].getKey(0)){
@@ -1243,7 +1234,7 @@ struct Unit{
         /**
          * * Done
         */
-        uint64_t getMinIndex(){
+        Index getMinIndex(){
             if(_isLeaf){
                 for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
@@ -1261,7 +1252,8 @@ struct Unit{
                 }
             }
             
-            throw "getMinIndex() error";
+            throw "<exception> getMinIndex() error";
+            return -1;
         }
 
         /**
@@ -1284,7 +1276,9 @@ struct Unit{
                     }
                 }
             }
-            
+
+            throw "<exception> getMaxIndex() error";
+            return -1;
         }
 
         KeyPtrSet getMinData(){
@@ -1305,6 +1299,8 @@ struct Unit{
                 }
             }
             
+            throw "<exception> getMinData()";
+            return 0;
         }
 
         KeyPtrSet getMaxData(){
@@ -1325,6 +1321,8 @@ struct Unit{
                 }
             }
             
+            throw "<exception> getMaxData()";
+            return 0;
         }
 
         /**
@@ -1536,7 +1534,7 @@ struct Unit{
         Offset getShiftPosition(){
             Offset shiftPoint = -1;
 
-            if(_isLeaf){
+            if(isLeaf()){
                 for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(!_data[i].getBitmap(0)){
                         shiftPoint = i;
@@ -1577,34 +1575,28 @@ struct Unit{
         /**
          * * Done
         */
-        bool isFull() const{
-            if(_isLeaf){
-                return getSize() == _options.dataSize(isLeaf());
-            }
-            else{
-                return getSize() == _options.dataSize(isLeaf());
-            }
-            
+        inline bool isFull() const{
+            return getSize() == _options.dataSize(isLeaf());
         }
 
         /**
          * * Done
         */
-        bool isHalf() const{
+        inline bool isHalf() const{
             return getSize() == _options.dataSize(isLeaf()) / 2;
         }
 
         /**
          * * Done
         */
-        void setValid(bool valid){
+        inline void setValid(bool valid){
             _isValid = valid;
         }
 
         /**
          * * Done
         */
-        bool isValid() const{
+        inline bool isValid() const{
             return _isValid;
         }
 
@@ -1614,7 +1606,7 @@ struct Unit{
         Size getSize() const{
             Size counter = 0;
 
-            if(_isLeaf){
+            if(isLeaf()){
                 for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                     if(_data[i].getBitmap(0)){
                         counter++;
@@ -1630,15 +1622,6 @@ struct Unit{
                     }
                 }
                 else if(_options.split_merge_mode == Options::split_merge_function::UNIT){
-                    /*
-                    for(int i = 0; i < _options.track_length; ++i){
-                        for(int j = 0; j < _options.unit_size; ++j){
-                            if(_data[i].getBitmap(j)){
-                                counter++;
-                            }
-                        }
-                    }*/
-                    
                     for(int i = 0; i < _options.dataSize(isLeaf()); ++i){
                         if(_data[i].getBitmap(0) || _data[i].getBitmap(1)){
                             counter++;
@@ -1652,7 +1635,7 @@ struct Unit{
             return counter;
         }
 
-        bool isLeaf() const{
+        inline bool isLeaf() const{
             return _isLeaf;
         }
 
@@ -2569,7 +2552,7 @@ struct Unit{
      * TODO TRAD: in double tracks, new node may be allocated to the same unit
      * ! in UNIT method, unit_offset should be the right most (for easy implement)
      */
-    KeyPtrSet splitNode(uint64_t &wait_insert_idx, uint64_t unit_offset, bool insertSide = false){
+    KeyPtrSet splitNode(Index &wait_insert_idx, Offset unit_offset, bool insertSide = false){
         KeyPtrSet promote(2);
 
         if(_options.split_merge_mode == Options::split_merge_function::TRAD){
@@ -3986,7 +3969,7 @@ struct Unit{
         return true;
     }
 
-    bool isRoot() const{
+    inline bool isRoot() const{
         return _isRoot;
     }
 
@@ -4075,13 +4058,13 @@ struct Unit{
     uint64_t _id;
 };
 
-#include<unordered_map>
+#include <unordered_map>
 namespace System{
     // store unit pointer
     // store how many the tracks of the unit is using
     //std::unordered_map<Unit *, uint64_t> unitPool;
     
-    Unit *allocUnit(Options options, bool isLeaf){
+    Unit *allocUnit(const Options &options, bool isLeaf){
         Unit *newUnit = nullptr;
 
         switch (options.split_merge_mode)

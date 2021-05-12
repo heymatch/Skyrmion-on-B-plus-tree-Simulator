@@ -14,7 +14,7 @@ struct Options{
     //! odd number leads to problem
     // e.g., 2048
     Size track_length;
-    Size dataSize(const bool isLeaf) const{
+    inline Size dataSize(const bool &isLeaf) const{
         if(isLeaf){
             return track_length / word_length / 2;
         }
@@ -40,10 +40,6 @@ struct Options{
         SORTED
     };
     ordering node_ordering;
-    void checkSorted(){
-        if(node_ordering != ordering::SORTED)
-            throw "This operation needs sorted structure";
-    }
 
     enum struct read_function : Size{
         None,
