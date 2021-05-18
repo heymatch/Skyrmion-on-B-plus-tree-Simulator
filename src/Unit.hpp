@@ -3710,7 +3710,7 @@ struct Unit{
                             break;
                         case Options::update_function::PERMUTATION_WRITE_MIGRATE:
                             if(!inUnit){
-                                Evaluation::permutation_write(
+                                Evaluation::permutation_write_migrate(
                                     _options, 
                                     isLeaf(), 
                                     right._readCounter, 
@@ -3741,7 +3741,6 @@ struct Unit{
                 if(inUnit){
                     right._shiftCounter.count(_options.word_length);
                 }
-                
             }
         }
         else{
